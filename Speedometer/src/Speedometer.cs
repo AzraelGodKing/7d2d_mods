@@ -14,6 +14,46 @@ public class AzraelSpeedometerMod : IModApi
         Log.Out($"[Speedometer] Loaded. Mode={SpeedoSettings.ModeName}, Unit={SpeedoSettings.UnitName}, " +
                 $"Keys: show/hide={SpeedoSettings.KeyName(SpeedoSettings.KeyHide)}, units={SpeedoSettings.KeyName(SpeedoSettings.KeyUnit)}. " +
                 "Type 'speedo' in the console (F1) for options.");
+        if (!GameManager.IsDedicatedServer)
+            new HarmonyLib.Harmony("azrael.speedometer").PatchAll(typeof(AzraelSpeedometerMod).Assembly);
+    }
+}
+
+// On a multiplayer server the game sends EVERY F1 command to the server, and the server
+// answers "Unknown command" for commands it doesn't have. This makes "speedo" run on
+// the player's own PC instead, so the server doesn't need this mod.
+[HarmonyLib.HarmonyPatch(typeof(GUIWindowConsole), nameof(GUIWindowConsole.EnterCommand))]
+public static class SpeedoConsolePatch
+{
+    static readonly string[] LocalCommands = { "speedo", "speedometer" };
+
+    static bool Prefix(GUIWindowConsole __instance, string _command)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(_command)) return true;
+            var cm = SingletonMonoBehaviour<ConnectionManager>.Instance;
+            if (cm == null || !cm.IsClient) return true; // single player / host: normal path already works
+            var first = _command.Trim().Split(' ')[0].ToLowerInvariant();
+            if (Array.IndexOf(LocalCommands, first) < 0) return true;
+
+            __instance.scrollRect.verticalNormalizedPosition = 0f;
+            __instance.internalAddLine(new GUIWindowConsole.ConsoleLine("> " + _command, string.Empty, LogType.Log));
+            GUIWindowConsole.AddLines(SingletonMonoBehaviour<SdtdConsole>.Instance.ExecuteSync(_command, null));
+
+            var hist = __instance.lastCommands;
+            if (hist.Count == 0 || !hist[hist.Count - 1].Equals(_command)) { hist.Remove(_command); hist.Add(_command); }
+            __instance.lastCommandsIdx = hist.Count;
+            __instance.commandField.text = "";
+            __instance.commandField.Select();
+            __instance.commandField.ActivateInputField();
+            return false;
+        }
+        catch (Exception e)
+        {
+            Log.Warning("[Speedometer] console patch: " + e.Message);
+            return true;
+        }
     }
 }
 

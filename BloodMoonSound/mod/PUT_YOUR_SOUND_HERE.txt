@@ -1,0 +1,7 @@
+Put your sound file in this folder and name it:
+
+    bloodmoon.ogg   (best)
+    bloodmoon.wav
+    bloodmoon.mp3
+
+Then start the game. In the F1 console, type  bmsound test  to hear it right away.

@@ -1,0 +1,15 @@
+# Blood Moon Sound settings. Changes apply next time the game starts (or type: bmsound reload).
+#
+# Your sound goes in this folder as  bloodmoon.ogg,  bloodmoon.wav  or  bloodmoon.mp3
+# (OGG or WAV are the safest).
+#
+# PlayAt:  horde    = when the blood moon horde starts (default)
+#          warning  = at WarningHour on blood moon day
+#          both     = both of the above
+PlayAt=horde
+
+# Hour (0-23) for the warning, e.g. 21 = one hour before a normal 22:00 horde.
+WarningHour=21
+
+# 0.0 - 1.0. The game's Overall volume slider still applies on top of this.
+Volume=1.0

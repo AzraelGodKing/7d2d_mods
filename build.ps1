@@ -23,7 +23,11 @@ $dist = Join-Path $root 'dist'
 $mods = @(
     @{ Dir = 'RemoveZombieDogs';   Name = 'RemoveZombieDogs';         Project = $null },
     @{ Dir = 'QuestDisconnectFix'; Name = 'AzraelQuestDisconnectFix'; Project = 'src\AzraelQuestDisconnectFix.csproj' },
-    @{ Dir = 'Speedometer';        Name = 'AzraelSpeedometer';        Project = 'src\AzraelSpeedometer.csproj' }
+    @{ Dir = 'Speedometer';        Name = 'AzraelSpeedometer';        Project = 'src\AzraelSpeedometer.csproj' },
+    @{ Dir = 'KeepBackpacks';      Name = 'AzraelKeepBackpacks';      Project = $null },
+    # Private = gitignored files (e.g. a copyrighted sound clip) kept OUT of the public zip.
+    # If present, a second "-with-sound" zip is made and -Install uses that version.
+    @{ Dir = 'BloodMoonSound';     Name = 'AzraelBloodMoonSound';     Project = 'src\AzraelBloodMoonSound.csproj'; Private = @('bloodmoon.*') }
 )
 if ($Only) { $mods = $mods | Where-Object { $Only -contains $_.Dir -or $Only -contains $_.Name } }
 
@@ -43,7 +47,15 @@ New-Item -ItemType Directory -Force $dist | Out-Null
 foreach ($m in $mods) {
     $out = Join-Path $dist $m.Name
     if (Test-Path $out) { Remove-Item $out -Recurse -Force }
-    Copy-Item (Join-Path $root "$($m.Dir)\mod") $out -Recurse
+    $modSrc = Join-Path $root "$($m.Dir)\mod"
+    Copy-Item $modSrc $out -Recurse
+
+    # Pull private files out of the public copy (they stay in the repo folder, gitignored)
+    $privFiles = @()
+    if ($m.Private) {
+        foreach ($p in $m.Private) { $privFiles += Get-ChildItem $modSrc -File -Filter $p }
+        foreach ($f in $privFiles) { Remove-Item (Join-Path $out $f.Name) -Force }
+    }
 
     if ($m.Project) {
         $a = @('build', (Join-Path $root "$($m.Dir)\$($m.Project)"), '-c', 'Release', '-o', $out, '--nologo', '-v', 'quiet')
@@ -58,11 +70,24 @@ foreach ($m in $mods) {
     New-ModZip $out $zipPath $m.Name
     Write-Host "  -> dist\$($m.Name)-v$version.zip" -ForegroundColor Green
 
+    # Private build: public files + private files, for your own game / friends only
+    $installFrom = $out
+    $localOut = "$out-with-sound"
+    if (Test-Path $localOut) { Remove-Item $localOut -Recurse -Force }
+    if ($privFiles.Count -gt 0) {
+        Copy-Item $out $localOut -Recurse
+        foreach ($f in $privFiles) { Copy-Item $f.FullName $localOut }
+        $privZip = Join-Path $dist "$($m.Name)-v$version-with-sound.zip"
+        New-ModZip $localOut $privZip $m.Name
+        Write-Host "  -> dist\$($m.Name)-v$version-with-sound.zip (PRIVATE - do not upload)" -ForegroundColor Yellow
+        $installFrom = $localOut
+    }
+
     if ($Install) {
         $gd = if ($GameDir) { $GameDir } else { 'E:\SteamLibrary\steamapps\common\7 Days To Die' }
         $target = Join-Path $gd "Mods\$($m.Name)"
         if (Test-Path $target) { Remove-Item $target -Recurse -Force }
-        Copy-Item $out $target -Recurse
+        Copy-Item $installFrom $target -Recurse
         Write-Host "  -> installed to $target" -ForegroundColor Green
     }
 }

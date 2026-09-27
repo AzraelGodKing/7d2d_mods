@@ -1,0 +1,25 @@
+<configs>
+	<!--
+		TimeStayAfterDeath is in seconds; the game multiplies it by 20 (ticks) and stores it in a
+		32-bit int. Anything above ~107,000,000 overflows to a negative number and the bag vanishes
+		instantly, and 0 also means "vanish now", so "forever" is done with 100,000,000 seconds:
+		about 3 years of the bag's area being loaded. The timer only runs while a player is near
+		enough to keep that area loaded.
+
+		Empty bags that have been opened still disappear, as in vanilla.
+	-->
+
+	<!-- Player death backpack: effectively permanent -->
+	<set xpath="/entity_classes/entity_class[@name='Backpack']/property[@name='TimeStayAfterDeath']/@value">100000000</set>
+
+	<!-- Bags of items a player drops on the ground: 24 hours -->
+	<set xpath="/entity_classes/entity_class[@name='DroppedLootContainer']/property[@name='TimeStayAfterDeath']/@value">86400</set>
+
+	<!-- Bag left behind when a vehicle's storage is dropped (vehicle picked up / destroyed): 24 hours -->
+	<set xpath="/entity_classes/entity_class[@name='DroppedVehicleContainer']/property[@name='TimeStayAfterDeath']/@value">86400</set>
+
+	<!-- Zombie loot bags (regular, nurse, lab, utility, soldier, thug, strong, boss, plague): 24 hours.
+	     Not permanent on purpose: every zombie can drop one, so permanent bags would pile up by the
+	     thousands and slow the server. -->
+	<set xpath="/entity_classes/entity_class[starts-with(@name,'EntityLootContainer')]/property[@name='TimeStayAfterDeath']/@value">86400</set>
+</configs>

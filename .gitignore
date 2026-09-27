@@ -17,3 +17,9 @@ Directory.Build.local.props
 # never commit game assemblies
 *.dll
 *.pdb
+
+# personal sound clips (not ours to redistribute)
+BloodMoonSound/mod/bloodmoon.*
+
+# Nexus page art (not needed to build or run the mods)
+media/
