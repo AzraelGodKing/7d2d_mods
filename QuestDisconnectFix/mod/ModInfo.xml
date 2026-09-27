@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xml>
+	<Name value="AzraelQuestDisconnectFix" />
+	<DisplayName value="Quest Disconnect Fix (No Ghost Players)" />
+	<Description value="Server-side fix for ghost players: stops a quest POI unlock crash that aborted player logouts, leaving players stuck in the world and blocking rejoins until a restart. Players do not need to install anything." />
+	<Author value="Azrael" />
+	<Version value="1.0.0" />
+	<Website value="" />
+</xml>

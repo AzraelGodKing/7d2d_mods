@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xml>
+	<Name value="AzraelSpeedometer" />
+	<DisplayName value="Speedometer (MPH / KM/H)" />
+	<Description value="Shows your speed on the HUD while driving. F5 shows/hides it, F2 switches MPH / KM/H (both changeable). Console (F1): speedo for all options. Install on the server and every player's game." />
+	<Author value="Azrael" />
+	<Version value="1.1.0" />
+	<Website value="" />
+</xml>

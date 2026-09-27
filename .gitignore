@@ -1,0 +1,19 @@
+# build output
+bin/
+obj/
+dist/
+*.zip
+
+# per-PC settings (game install path)
+Directory.Build.local.props
+
+# IDE
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+
+# never commit game assemblies
+*.dll
+*.pdb

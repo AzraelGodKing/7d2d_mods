@@ -1,0 +1,12 @@
+<configs>
+	<append xpath="/windows">
+		<!-- Speedometer: bottom right, directly above the vehicle gas/health bars (same x and width). -->
+		<window name="windowAzraelSpeedo" anchor="BottomRight" pos="-177, 156" width="168" height="40" depth="5">
+			<rect name="speedo" width="168" height="40" controller="AzraelSpeedo, AzraelSpeedometer" visible="{speedovisible}" on_press="true">
+				<sprite depth="1" name="background" color="0,0,0,150" type="sliced"/>
+				<sprite depth="2" name="border" color="0,0,0,255" type="sliced" fillcenter="false"/>
+				<label depth="3" name="speedText" pos="0,-20" width="168" height="32" font_size="28" color="[white]" justify="center" pivot="left" text="{speedovalue} {speedounit}"/>
+			</rect>
+		</window>
+	</append>
+</configs>
