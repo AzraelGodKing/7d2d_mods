@@ -8,7 +8,7 @@ Small mods for 7 Days to Die, built and tested on **V3.2 (b9/b10)**.
 | [Quest Disconnect Fix](#quest-disconnect-fix) | Code (Harmony) | Server only | 1.0.0 |
 | [Speedometer](#speedometer) | Code + UI | Server **and** every player | 1.1.0 |
 | [Keep Backpacks](#keep-backpacks) | XML only | Server (clients get it automatically) | 1.2.0 |
-| [Blood Moon Sound](#blood-moon-sound) | Code (Harmony) | Players (sound); server optional (Discord posts) | 1.1.0 |
+| [Blood Moon Sound](#blood-moon-sound) | Code (Harmony) | Players (own sound); server optional (sound for everyone, Discord posts) | 1.1.0 |
 
 Download the zips from the Releases page, unzip, and put the folder inside the game's `Mods` folder
 (or the server's `Mods` folder). Mods with code need EasyAntiCheat turned off.
@@ -97,38 +97,71 @@ It won't play if you join in the middle of a blood moon, only when one starts wh
 Any `bloodmoon.*` file in `BloodMoonSound/mod/` is gitignored. `build.ps1` leaves it out of the
 public zip and makes a second `-with-sound` zip (private, for your own group) which `-Install` uses.
 
+### Horde sound for everyone (server only, on by default)
+
+With the mod on a **dedicated server**, when the horde starts the server tells every player's game to
+play one built-in sound (`alarm1_oneshot` by default), so **everyone hears something, even players
+without the mod**.
+
+- Players **with** the mod **and** their own `bloodmoon.*` clip hear only their own clip: around horde
+  start (±15 game minutes) the mod skips the server's sound and plays their clip instead. Outside that
+  window, or with no clip loaded, or with `PlayAt=warning`, the server's sound plays normally.
+- How it tells them apart: the server sends the name as `AzraelBloodMoon/alarm1_oneshot`. The vanilla
+  game drops the "folder" part of sound names, so players without the mod just hear `alarm1_oneshot`;
+  the mod spots the `AzraelBloodMoon/` prefix. Uses the game's own `NetPackageAudioPlayInHead`.
+- Server settings (in the server's `settings.txt`): `HordeSound=on|off`,
+  `HordeSoundName=<any name from Data\Config\sounds.xml>`.
+- `bmdiscord sound` plays it for everyone online right now (a test; it's outside the horde window,
+  so modded players hear the game sound too).
+
 ### Discord posts (server only, optional)
 
 Put the same mod on a **dedicated server** and it posts blood moon updates to a Discord channel
 through a webhook. Players don't need the mod for this, and the sound part does nothing on the server.
 
-| Message | Default | Default text |
+The whole schedule is set in `discord.txt`:
+
+| Setting | Default | What it does |
 |---|---|---|
-| Day before | 12:00 the day before | Blood Moon **tomorrow night** (day N). Get your base ready! |
-| Warning | 18:00 on blood moon day | Blood Moon **tonight** (day N). The horde comes at dusk. |
-| Start | when the horde starts | The Blood Moon has risen! Horde incoming. Online: *names* |
-| End | at dawn afterwards | Dawn! Blood Moon day N survived. Online: *names* |
+| `Reminder = <days before> <hour> \| <message>` | 1 day before at 12:00, and 18:00 on the day | Any number of reminders before the blood moon, one per line (`Reminder=none` for none) |
+| `Countdown` / `CountdownHour` / `CountdownFromDays` | off / 8 / 7 | A post every in-game day, "N days until the Blood Moon" |
+| `Start` | on | When the horde starts |
+| `UpdateEveryHours` | 0 (off) | Extra posts every N in-game hours while the horde is on |
+| `End` | on | At dawn afterwards |
+| `MsgCountdown`, `MsgStart`, `MsgUpdate`, `MsgEnd` | see file | Message text |
+
+Placeholders: `{day}` blood moon day, `{days}` days left, `{s}` plural "s" (`{days} day{s}`),
+`{players}` who's online, `{count}` how many, `\n` new line.
+
+Reminders and the countdown follow the game's own "next blood moon day", so they work with any
+blood moon frequency (a 30-day server gets its reminders before day 30, 60, ...) and with a random range.
 
 Setup: copy `discord.example.txt` to `discord.txt` **on the server**, paste the webhook URL
 (Discord: channel settings > Integrations > Webhooks), then `bmdiscord reload` and `bmdiscord test`.
-Every message can be turned off, retimed or reworded in `discord.txt` (`{day}`, `{players}`, `{count}`).
+`bmdiscord` lists the schedule and any mistakes in the file (bad lines are listed as PROBLEM).
 
 | Server console | What it does |
 |---|---|
-| `bmdiscord` | Status: on/off, messages, next blood moon day, result of the last post |
+| `bmdiscord` | Status: on/off, full schedule, next blood moon day, result of the last post |
 | `bmdiscord test` | Post a test message |
-| `bmdiscord test daybefore\|warning\|start\|end` | Post that message now |
-| `bmdiscord reload` | Re-read `discord.txt` |
+| `bmdiscord test reminder <n>` | Post reminder number n now |
+| `bmdiscord test countdown\|start\|update\|end` | Post that message now |
+| `bmdiscord sound` | Play the horde sound for everyone online now |
+| `bmdiscord reload` | Re-read `discord.txt` and `settings.txt` |
 
 - Nothing is posted when the server starts in the middle of a blood moon.
-- Start/dawn are skipped when nobody is online (`SkipEmptyServer=false` to always post).
+- Start/update/dawn are skipped when nobody is online (`SkipEmptyServer=off` to always post).
+- Every successful post is logged as `[BloodMoonDiscord] Posted: ...`.
 - Nobody gets pinged unless `Mentions=true`, even if a message contains `@everyone`.
 - Posting is asynchronous, so a slow or unreachable Discord never lags the server.
 - `discord.txt` holds a secret (anyone with the URL can post there): it's gitignored, and `build.ps1`
   leaves it out of **every** zip, including the private `-with-sound` one.
 
 **Changelog**
-- 1.1.0: server-side Discord posts (day before, warning, horde start, dawn) with `bmdiscord` console command.
+- 1.1.0: server-side Discord posts with a fully custom schedule (any number of reminders, daily
+  countdown, horde start, updates during the horde, dawn) and the `bmdiscord` console command.
+  Server plays a vanilla horde sound (`alarm1_oneshot`) for every player; players with their own clip
+  hear only theirs. Fixed start/dawn both posting when a time skip lands after midnight.
 - 1.0.1: `bmsound` now works on multiplayer servers that don't have the mod.
 - 1.0.0: first version.
 

@@ -66,6 +66,36 @@ public static class BmsConsolePatch
     }
 }
 
+// The server's horde sound (see BmdNotifier.BroadcastHordeSound) arrives as "AzraelBloodMoon/<name>".
+// Players WITHOUT this mod: the game drops the "folder" part of sound names and plays <name>.
+// Players WITH this mod and their own clip: around horde start, skip it and play their own clip
+// instead, so nobody hears two sounds. Any other time, or with no clip loaded, it plays normally.
+[HarmonyLib.HarmonyPatch(typeof(NetPackageAudioPlayInHead), nameof(NetPackageAudioPlayInHead.ProcessPackage))]
+public static class BmsHordeSoundPatch
+{
+    public const string Marker = "AzraelBloodMoon/";
+
+    static bool Prefix(NetPackageAudioPlayInHead __instance, World _world)
+    {
+        try
+        {
+            var name = __instance.soundName;
+            if (name == null || !name.StartsWith(Marker, StringComparison.OrdinalIgnoreCase)) return true;
+            var p = BmsPlayer.Instance;
+            if (p == null || p.Clip == null || !BmsSettings.PlaysAtHorde || _world == null) return true;
+            if (!p.InHordeWindow(_world.worldTime)) return true;
+            Log.Out($"[BloodMoonSound] Server horde sound '{name.Substring(Marker.Length)}' replaced by {p.ClipFile}.");
+            p.TryPlayHorde(GameStats.GetInt(EnumGameStats.BloodMoonDay));
+            return false;
+        }
+        catch (Exception e)
+        {
+            Log.Warning("[BloodMoonSound] horde sound patch: " + e.Message);
+            return true;
+        }
+    }
+}
+
 public static class BmsSettings
 {
     public enum Trigger { Horde, Warning, Both }
@@ -74,9 +104,17 @@ public static class BmsSettings
     public static int WarningHour = 21;
     public static float Volume = 1f;
 
+    // Server only: vanilla sound the server tells every player to play at horde start.
+    public const string DefaultHordeSoundName = "alarm1_oneshot";
+    public static bool HordeSound = true;
+    public static string HordeSoundName = DefaultHordeSoundName;
+
+    public static bool PlaysAtHorde => PlayAt == Trigger.Horde || PlayAt == Trigger.Both;
+
     public static void Load()
     {
         PlayAt = Trigger.Horde; WarningHour = 21; Volume = 1f;
+        HordeSound = true; HordeSoundName = DefaultHordeSoundName;
         try
         {
             var path = Path.Combine(ModPath, "settings.txt");
@@ -91,6 +129,8 @@ public static class BmsSettings
                 if (k == "playat") PlayAt = v == "warning" ? Trigger.Warning : v == "both" ? Trigger.Both : Trigger.Horde;
                 else if (k == "warninghour" && int.TryParse(v, out var h)) WarningHour = Mathf.Clamp(h, 0, 23);
                 else if (k == "volume" && float.TryParse(v, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var vol)) Volume = Mathf.Clamp01(vol);
+                else if (k == "hordesound") HordeSound = !(v == "off" || v == "false" || v == "no" || v == "0");
+                else if (k == "hordesoundname" && v.Length > 0) HordeSoundName = Path.GetFileName(v);
             }
         }
         catch (Exception e) { Log.Warning("[BloodMoonSound] Could not read settings.txt: " + e.Message); }
@@ -107,7 +147,37 @@ public class BmsPlayer : MonoBehaviour
 
     float timer;
     bool? lastBloodMoon;
-    int lastDay = -1, lastHour = -1, lastHordeDay = -1, lastWarnDay = -1;
+    int lastDay = -1, lastHour = -1, lastHordeKey = -1, lastWarnDay = -1;
+    float lastHordeEdgeAt = -999f; // realtime when this PC saw the blood moon begin
+
+    // How close (in game time) to the horde start the server's sound may be replaced.
+    // 1000 world-time units = 1 game hour, so 250 = 15 game minutes either side.
+    const ulong WindowWorldTime = 250;
+    const float WindowRealSeconds = 30f;
+
+    // Plays the custom clip once per blood moon. Keyed by the blood moon's day (not today's date),
+    // so the local trigger and the server's sound can never both play it.
+    public void TryPlayHorde(int bloodMoonDay)
+    {
+        if (lastHordeKey == bloodMoonDay) return;
+        lastHordeKey = bloodMoonDay;
+        Play();
+    }
+
+    // True only right around the start of the blood moon horde.
+    public bool InHordeWindow(ulong t)
+    {
+        int bmDay = GameStats.GetInt(EnumGameStats.BloodMoonDay);
+        if (bmDay <= 0) return false;
+        var duskDawn = GameUtils.CalcDuskDawnHours(GameStats.GetInt(EnumGameStats.DayLightLength));
+        ulong start = (ulong)(bmDay - 1) * 24000UL + (ulong)duskDawn.duskHour * 1000UL;
+        ulong diff = t > start ? t - start : start - t;
+        if (diff <= WindowWorldTime) return true;
+        // Admin time skips can jump straight into the blood moon: allow it only if this PC
+        // is seeing (or has just seen) the blood moon begin.
+        return GameUtils.IsBloodMoonTime(t, duskDawn, bmDay)
+            && (lastBloodMoon == false || Time.realtimeSinceStartup - lastHordeEdgeAt < WindowRealSeconds);
+    }
 
     void Start()
     {
@@ -197,11 +267,10 @@ public class BmsPlayer : MonoBehaviour
         }
 
         var mode = BmsSettings.PlayAt;
-        if ((mode == BmsSettings.Trigger.Horde || mode == BmsSettings.Trigger.Both)
-            && bloodMoon && lastBloodMoon == false && lastHordeDay != day)
+        if (bloodMoon && lastBloodMoon == false)
         {
-            lastHordeDay = day;
-            Play();
+            lastHordeEdgeAt = Time.realtimeSinceStartup;
+            if (BmsSettings.PlaysAtHorde) TryPlayHorde(bmDay);
         }
 
         if ((mode == BmsSettings.Trigger.Warning || mode == BmsSettings.Trigger.Both)
