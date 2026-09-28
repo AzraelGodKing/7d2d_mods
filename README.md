@@ -8,6 +8,7 @@ Small mods for 7 Days to Die, built and tested on **V3.2 (b9/b10)**.
 | [Quest Disconnect Fix](#quest-disconnect-fix) | Code (Harmony) | Server only | 1.0.0 |
 | [Speedometer](#speedometer) | Code + UI | Server **and** every player | 1.1.0 |
 | [Keep Backpacks](#keep-backpacks) | XML only | Server (clients get it automatically) | 1.2.0 |
+| [Blood Moon Sound](#blood-moon-sound) | Code (Harmony) | Players (sound); server optional (Discord posts) | 1.1.0 |
 
 Download the zips from the Releases page, unzip, and put the folder inside the game's `Mods` folder
 (or the server's `Mods` folder). Mods with code need EasyAntiCheat turned off.
@@ -91,12 +92,43 @@ The mod ships **without** a sound: drop `bloodmoon.ogg`, `.wav` or `.mp3` into t
 `settings.txt`: `PlayAt=horde|warning|both`, `WarningHour=21`, `Volume=1.0`.
 It won't play if you join in the middle of a blood moon, only when one starts while you're in game.
 
-**Only players need it; the server doesn't.** Players launch without EAC.
+**Only players need it for the sound; the server doesn't.** Players launch without EAC.
 
 Any `bloodmoon.*` file in `BloodMoonSound/mod/` is gitignored. `build.ps1` leaves it out of the
 public zip and makes a second `-with-sound` zip (private, for your own group) which `-Install` uses.
 
+### Discord posts (server only, optional)
+
+Put the same mod on a **dedicated server** and it posts blood moon updates to a Discord channel
+through a webhook. Players don't need the mod for this, and the sound part does nothing on the server.
+
+| Message | Default | Default text |
+|---|---|---|
+| Day before | 12:00 the day before | Blood Moon **tomorrow night** (day N). Get your base ready! |
+| Warning | 18:00 on blood moon day | Blood Moon **tonight** (day N). The horde comes at dusk. |
+| Start | when the horde starts | The Blood Moon has risen! Horde incoming. Online: *names* |
+| End | at dawn afterwards | Dawn! Blood Moon day N survived. Online: *names* |
+
+Setup: copy `discord.example.txt` to `discord.txt` **on the server**, paste the webhook URL
+(Discord: channel settings > Integrations > Webhooks), then `bmdiscord reload` and `bmdiscord test`.
+Every message can be turned off, retimed or reworded in `discord.txt` (`{day}`, `{players}`, `{count}`).
+
+| Server console | What it does |
+|---|---|
+| `bmdiscord` | Status: on/off, messages, next blood moon day, result of the last post |
+| `bmdiscord test` | Post a test message |
+| `bmdiscord test daybefore\|warning\|start\|end` | Post that message now |
+| `bmdiscord reload` | Re-read `discord.txt` |
+
+- Nothing is posted when the server starts in the middle of a blood moon.
+- Start/dawn are skipped when nobody is online (`SkipEmptyServer=false` to always post).
+- Nobody gets pinged unless `Mentions=true`, even if a message contains `@everyone`.
+- Posting is asynchronous, so a slow or unreachable Discord never lags the server.
+- `discord.txt` holds a secret (anyone with the URL can post there): it's gitignored, and `build.ps1`
+  leaves it out of **every** zip, including the private `-with-sound` one.
+
 **Changelog**
+- 1.1.0: server-side Discord posts (day before, warning, horde start, dawn) with `bmdiscord` console command.
 - 1.0.1: `bmsound` now works on multiplayer servers that don't have the mod.
 - 1.0.0: first version.
 

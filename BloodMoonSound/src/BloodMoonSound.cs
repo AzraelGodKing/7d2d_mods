@@ -6,7 +6,9 @@ using UnityEngine;
 using UnityEngine.Networking;
 
 // Blood Moon Sound: plays a user-supplied clip when the blood moon horde starts (and/or as a warning).
-// Client-side only. Reads the world clock the client already has; needs nothing from the server.
+// The sound is client-side only: it reads the world clock the client already has and needs nothing
+// from the server. On a dedicated server the same mod posts blood moon updates to Discord instead
+// (see BloodMoonDiscord.cs); players don't need the mod for that.
 
 public class AzraelBloodMoonSoundMod : IModApi
 {
@@ -15,7 +17,10 @@ public class AzraelBloodMoonSoundMod : IModApi
         BmsSettings.ModPath = _modInstance.Path;
         if (GameManager.IsDedicatedServer)
         {
-            Log.Out("[BloodMoonSound] Dedicated server detected: nothing to do here (sound plays on players' PCs).");
+            Log.Out("[BloodMoonSound] Dedicated server: no sound here (it plays on players' PCs). Starting Discord posts.");
+            var srv = new GameObject("AzraelBloodMoonDiscord");
+            UnityEngine.Object.DontDestroyOnLoad(srv);
+            BmdNotifier.Instance = srv.AddComponent<BmdNotifier>();
             return;
         }
         var go = new GameObject("AzraelBloodMoonSound");

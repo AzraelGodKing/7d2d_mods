@@ -3,7 +3,7 @@
   <PropertyGroup>
     <AssemblyName>AzraelBloodMoonSound</AssemblyName>
     <RootNamespace>AzraelBloodMoonSound</RootNamespace>
-    <Version>1.0.1</Version>
+    <Version>1.1.0</Version>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="0Harmony"><HintPath>$(HarmonyDir)\0Harmony.dll</HintPath><Private>false</Private></Reference>

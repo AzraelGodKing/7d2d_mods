@@ -27,7 +27,8 @@ $mods = @(
     @{ Dir = 'KeepBackpacks';      Name = 'AzraelKeepBackpacks';      Project = $null },
     # Private = gitignored files (e.g. a copyrighted sound clip) kept OUT of the public zip.
     # If present, a second "-with-sound" zip is made and -Install uses that version.
-    @{ Dir = 'BloodMoonSound';     Name = 'AzraelBloodMoonSound';     Project = 'src\AzraelBloodMoonSound.csproj'; Private = @('bloodmoon.*') }
+    # Exclude = gitignored files kept out of EVERY zip (e.g. discord.txt holds a secret webhook URL).
+    @{ Dir = 'BloodMoonSound';     Name = 'AzraelBloodMoonSound';     Project = 'src\AzraelBloodMoonSound.csproj'; Private = @('bloodmoon.*'); Exclude = @('discord.txt') }
 )
 if ($Only) { $mods = $mods | Where-Object { $Only -contains $_.Dir -or $Only -contains $_.Name } }
 
@@ -49,6 +50,11 @@ foreach ($m in $mods) {
     if (Test-Path $out) { Remove-Item $out -Recurse -Force }
     $modSrc = Join-Path $root "$($m.Dir)\mod"
     Copy-Item $modSrc $out -Recurse
+
+    # Secrets never ship, not even in the private zip
+    if ($m.Exclude) {
+        foreach ($p in $m.Exclude) { Get-ChildItem $out -File -Filter $p | Remove-Item -Force }
+    }
 
     # Pull private files out of the public copy (they stay in the repo folder, gitignored)
     $privFiles = @()

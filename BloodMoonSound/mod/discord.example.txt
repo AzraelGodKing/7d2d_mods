@@ -1,0 +1,37 @@
+# Blood Moon Discord settings (SERVER ONLY - players can ignore this file).
+#
+# On a dedicated server, Blood Moon Sound can post blood moon updates to a Discord channel.
+# To turn it on:
+#   1. In Discord: Channel settings > Integrations > Webhooks > New Webhook > Copy Webhook URL
+#   2. On the SERVER, copy this file to  discord.txt  (same folder) and paste the URL below
+#   3. Restart the server, or type  bmdiscord reload  in the server console
+#   4. Type  bmdiscord test  to check it works
+#
+# Keep the webhook URL private: anyone who has it can post in that channel.
+# Don't put discord.txt in a mod zip you give to players.
+
+Webhook=
+
+# Name the messages are posted under.
+BotName=Blood Moon
+
+# Which messages to send (true/false) and when (in-game hour, 0-23).
+DayBefore=true
+DayBeforeHour=12
+Warning=true
+WarningHour=18
+Start=true
+End=true
+
+# Skip the "has risen" and "dawn" messages when nobody is online.
+SkipEmptyServer=true
+
+# Allow @everyone / @role pings written in the messages below (false = never ping anyone).
+Mentions=false
+
+# Message text. Leave a line out (or empty) to use the default.
+# {day} = blood moon day, {players} = names of who's online, {count} = how many.  \n = new line.
+#MsgDayBefore=Blood Moon tomorrow night (day {day}). Get your base ready!
+#MsgWarning=Blood Moon tonight (day {day}). The horde comes at dusk.
+#MsgStart=The Blood Moon has risen! Horde incoming. Online: {players}
+#MsgEnd=Dawn! Blood Moon day {day} survived. Online: {players}

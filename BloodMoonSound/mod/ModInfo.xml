@@ -2,8 +2,8 @@
 <xml>
 	<Name value="AzraelBloodMoonSound" />
 	<DisplayName value="Blood Moon Sound" />
-	<Description value="Plays your own sound clip when the blood moon horde starts (and/or as a warning earlier that day). Drop bloodmoon.ogg / .wav / .mp3 into this folder. Client-side only: the server does not need it." />
+	<Description value="Plays your own sound clip when the blood moon horde starts (and/or as a warning earlier that day). Drop bloodmoon.ogg / .wav / .mp3 into this folder. Players: the server does not need it. Server (optional): posts blood moon updates to Discord (see discord.example.txt); players do not need it for that." />
 	<Author value="Azrael" />
-	<Version value="1.0.1" />
+	<Version value="1.1.0" />
 	<Website value="https://github.com/AzraelGodKing/7d2d_mods" />
 </xml>
