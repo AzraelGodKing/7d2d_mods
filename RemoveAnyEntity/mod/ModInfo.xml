@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xml>
+	<Name value="AzraelRemoveAnyEntity" />
+	<DisplayName value="Remove Any Entity" />
+	<Description value="Choose which zombies and animals stop spawning: remove the # in front of their names in entities.txt. Servers: only the server needs this mod. Replaces Remove Zombie Dogs." />
+	<Author value="Azrael" />
+	<Version value="2.0.0" />
+	<Website value="https://github.com/AzraelGodKing/7d2d_mods" />
+</xml>

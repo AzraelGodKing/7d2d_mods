@@ -21,7 +21,7 @@ $dist = Join-Path $root 'dist'
 
 # Folder in repo -> folder name in Mods\ (and the .csproj, if the mod has code)
 $mods = @(
-    @{ Dir = 'RemoveZombieDogs';   Name = 'RemoveZombieDogs';         Project = $null },
+    @{ Dir = 'RemoveAnyEntity';    Name = 'AzraelRemoveAnyEntity';    Project = 'src\AzraelRemoveAnyEntity.csproj' },
     @{ Dir = 'QuestDisconnectFix'; Name = 'AzraelQuestDisconnectFix'; Project = 'src\AzraelQuestDisconnectFix.csproj' },
     @{ Dir = 'Speedometer';        Name = 'AzraelSpeedometer';        Project = 'src\AzraelSpeedometer.csproj' },
     @{ Dir = 'KeepBackpacks';      Name = 'AzraelKeepBackpacks';      Project = $null },

@@ -4,7 +4,7 @@ Small mods for 7 Days to Die, built and tested on **V3.2 (b9/b10)**.
 
 | Mod | Type | Install on | Version |
 |---|---|---|---|
-| [Remove Zombie Dogs](#remove-zombie-dogs) | XML only | Server (clients get it automatically) | 1.1.1 |
+| [Remove Any Entity](#remove-any-entity) | Code (Harmony) | Server only (single player: your game) | 2.0.0 |
 | [Quest Disconnect Fix](#quest-disconnect-fix) | Code (Harmony) | Server only | 1.0.0 |
 | [Speedometer](#speedometer) | Code + UI | Server **and** every player | 1.1.0 |
 | [Keep Backpacks](#keep-backpacks) | XML only | Server (clients get it automatically) | 1.2.0 |
@@ -14,20 +14,45 @@ Download the zips from the Releases page, unzip, and put the folder inside the g
 
 ---
 
-## Remove Zombie Dogs
+## Remove Any Entity
 
-Removes zombie dogs, coyotes, dire wolves and screamers from every spawn group: biome spawns,
-POI sleepers, wandering hordes, blood moon hordes, screamer/heat scouts and Twitch spawn actions.
+(Formerly **Remove Zombie Dogs**.) Pick which zombies and animals stop spawning. `entities.txt` in the
+mod folder lists every vanilla entity that spawns naturally, all commented out; remove the `#` in front
+of a name to take it out of the game, then restart.
 
-- Groups left empty get a random pick of 10 basic zombies (Arlene, Boe, Joe, Marlene, Moe,
-  Darlene, Yo, Steve, Businessman, Janitor).
-- Groups whose first entry would become `none` get the same zombies inserted first (low weight), which
-  avoids a `NullReferenceException` in `EntityGroups.IsEnemyGroup` (the v1.1.0 snow-biome bug).
-- Twitch actions that spawned these animals by class name spawn a random basic zombie instead.
+```
+#animalZombieDog          zombie dog         <- still spawns
+animalCoyote              coyote             <- removed
+```
 
-Known side effect: the "Kill 50 coyotes" challenge can't be completed.
+- A name also removes its tiered versions: `zombieScreamer` removes the Feral, Radiated, Charged and
+  Infernal screamers too. List a full name (`zombieScreamerRadiated`) to remove just one version.
+  Names from other mods work as well.
+- Applies to every spawn group (biomes, POI sleepers, wandering and blood moon hordes, screamer/heat
+  scouts) as the game loads `entitygroups.xml`, and to Twitch spawn actions. Entities already in the
+  world stay, and admins can still `spawnentity` anything.
+- Remaining chances are rescaled, so the rest of a group spawns in the removed entities' place.
+  A group left with nothing real to spawn gets a random pick from `Replacement=` (10 basic zombies by
+  default); its original "nothing spawns" chance is kept, so rare spawns stay rare.
+- `none` entries are never left first in a group, which avoids the `EntityGroups.IsEnemyGroup` NRE
+  from the old v1.1.0 snow-biome bug.
+
+**Server only**: spawning is decided by the server, so players install nothing. In single player it
+goes in your own Mods folder.
+
+| Server console | What it does |
+|---|---|
+| `rae` | What's removed, how many groups changed, typos in `entities.txt` |
+| `rae group <name>` | What a spawn group can spawn now, with chances (partial names are suggested) |
+
+Upgrading from Remove Zombie Dogs: delete the old `RemoveZombieDogs` folder, install this one, and
+uncomment `animalZombieDog`, `animalCoyote`, `animalDireWolf` and `zombieScreamer` for the same result.
+
+Known side effect: challenges that need a removed creature (e.g. "Kill 50 coyotes") can't be completed.
 
 **Changelog**
+- 2.0.0: renamed to Remove Any Entity. Now a code mod driven by `entities.txt` (any entity, all tiers,
+  other mods' entities), with `rae` / `rae group` console commands and typo warnings.
 - 1.1.1: fix `IsEnemyGroup` NRE spam from `EnemyAnimalsSnowNight` (only `none` left after removal).
 - 1.1.0: also remove coyotes, dire wolves, screamers; random zombie replacements.
 - 1.0.0: remove zombie dogs (rewrite of CraftManiac's old CSV-based mod for the new `<e n=... p=...>` format).
