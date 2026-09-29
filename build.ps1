@@ -24,6 +24,7 @@ $mods = @(
     @{ Dir = 'RemoveZombieDogs';   Name = 'RemoveZombieDogs';         Project = $null },
     @{ Dir = 'QuestDisconnectFix'; Name = 'AzraelQuestDisconnectFix'; Project = 'src\AzraelQuestDisconnectFix.csproj' },
     @{ Dir = 'Speedometer';        Name = 'AzraelSpeedometer';        Project = 'src\AzraelSpeedometer.csproj' },
+    @{ Dir = 'HonkDoorFix';        Name = 'HonkDoorFix';              Project = 'src\HonkDoorFix.csproj' },
     @{ Dir = 'KeepBackpacks';      Name = 'AzraelKeepBackpacks';      Project = $null },
     # Private = gitignored files (e.g. a copyrighted sound clip) kept OUT of the public zip.
     # If present, a second "-with-sound" zip is made and -Install uses that version.

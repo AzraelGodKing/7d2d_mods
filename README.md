@@ -6,6 +6,7 @@ Small mods for 7 Days to Die, built and tested on **V3.2 (b9/b10)**.
 |---|---|---|---|
 | [Remove Zombie Dogs](#remove-zombie-dogs) | XML only | Server (clients get it automatically) | 1.1.1 |
 | [Quest Disconnect Fix](#quest-disconnect-fix) | Code (Harmony) | Server only | 1.0.0 |
+| [Honk Door Fix](#honk-door-fix) | Code (Harmony) | Server only | 1.0.0 |
 | [Speedometer](#speedometer) | Code + UI | Server **and** every player | 1.1.0 |
 | [Keep Backpacks](#keep-backpacks) | XML only | Server (clients get it automatically) | 1.2.0 |
 
@@ -47,6 +48,27 @@ The mod:
 - as a safety net, catches any other exception in the quest cleanup so the logout always finishes.
 
 Server-side only; players install nothing.
+
+## Honk Door Fix
+
+Fixes a vanilla bug that can put a dedicated server into an endless error loop.
+
+Vanilla bug: honking a vehicle horn fires the `honk_trader_doors` game event, whose `BlockDoorState`
+action scans blocks around the vehicle (`-5,0,-5` to `5,3,5`). `ActionBaseBlockAction.OnPerformAction`
+skips positions below y 0 but never checks the top of the world (255), so a honk at Y 253+ reads past
+the chunk and throws `IndexOutOfRangeException` in `Chunk.GetBlockNoDamage`. The event never finishes,
+so it throws again every tick.
+
+The mod (Harmony) trims the scan to the world height before it runs (nothing above 255 exists anyway),
+and as a safety net ends any block-scan event that still reads out of range. Honking at traders works
+exactly as in vanilla. It covers every block-scan game event, not just the honk.
+
+Tested on V3.2 (local dedicated server): unpatched, honking in a gyrocopter at Y 267 produced 1,906
+exceptions; patched, the same honks at Y 255-263 produced none, and honking at Trader Jen still
+opened the gate. (An XML `InPOI tags="trader"` guard was considered and rejected: no vanilla trader
+POI has a `trader` tag, so it would stop honking from opening any trader door.)
+
+**Server only**; players install nothing.
 
 ## Speedometer
 
