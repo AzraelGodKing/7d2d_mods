@@ -166,4 +166,6 @@ file, create `Directory.Build.local.props` (gitignored):
 <Mod>/src/   C# source + .csproj (code mods only); the built .dll is added to the shipped folder
 ```
 
-When bumping a version, update both `ModInfo.xml` and the `.csproj` `<Version>`.
+When bumping a version, update both `ModInfo.xml` and the `.csproj` `<Version>`, and the `version` field in that mod's `mod.json`.
+
+Each mod folder has a `mod.json` for the public mod website. It is not copied into the game.
