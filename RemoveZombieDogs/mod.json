@@ -1,0 +1,16 @@
+{
+  "slug": "remove-zombie-dogs",
+  "name": "Remove Zombie Dogs",
+  "game": "7-days-to-die",
+  "description": "Removes zombie dogs, coyotes, dire wolves and screamers from world spawns, POI sleepers, hordes, screamer heat spawns and Twitch spawn actions. Anything left without a spawn gets a random basic zombie instead. XML only, server side, EAC safe.",
+  "version": "1.1.1",
+  "screenshots": [],
+  "download": {
+    "file": "RemoveZombieDogs-1.1.1.zip"
+  },
+  "links": {
+    "steam": null,
+    "thunderstore": null,
+    "nexus": null
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "slug": "blood-moon-sound",
+  "name": "Blood Moon Sound",
+  "game": "7-days-to-die",
+  "description": "Plays your own sound clip when the blood moon horde starts (and/or as a warning earlier that day). Drop bloodmoon.ogg / .wav / .mp3 into this folder. Client-side only: the server does not need it.",
+  "version": "1.0.1",
+  "screenshots": [],
+  "download": {
+    "file": "BloodMoonSound-1.0.1.zip"
+  },
+  "links": {
+    "steam": null,
+    "thunderstore": null,
+    "nexus": null
+  }
+}

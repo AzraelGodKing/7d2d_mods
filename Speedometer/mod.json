@@ -1,0 +1,16 @@
+{
+  "slug": "speedometer",
+  "name": "Speedometer",
+  "game": "7-days-to-die",
+  "description": "Shows your speed on the HUD while driving. F5 shows/hides it, F2 switches MPH / KM/H (both changeable). Console (F1): speedo for all options. Only players need it; the server does not.",
+  "version": "1.1.1",
+  "screenshots": [],
+  "download": {
+    "file": "Speedometer-1.1.1.zip"
+  },
+  "links": {
+    "steam": null,
+    "thunderstore": null,
+    "nexus": null
+  }
+}
