@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <xml>
 	<Name value="AzraelRemoveZombieDogs" />
-	<DisplayName value="Remove Zombie Dogs, Coyotes, Dire Wolves and Screamers" />
-	<Description value="Removes zombie dogs, coyotes, dire wolves and screamers from world spawns, POI sleepers, hordes, screamer heat spawns and Twitch spawn actions. Anything left without a spawn gets a random basic zombie instead. XML only, server side, EAC safe." />
+	<DisplayName value="Remove Entities" />
+	<Description value="Server-side. Choose which creatures are allowed to spawn with the rement command. Dogs, coyotes, dire wolves and screamers are off until you turn them back on. Players do not install this mod." />
 	<Author value="Azrael" />
 	<Version value="1.1.1" />
 	<Website value="" />

@@ -13,3 +13,12 @@ WarningHour=21
 
 # 0.0 - 1.0. The game's Overall volume slider still applies on top of this.
 Volume=1.0
+
+# ---- SERVER ONLY (players can ignore everything below) ----
+# When the horde starts, the server tells every player's game to play one built-in game sound,
+# so EVERYONE hears something, even players without this mod.
+# Players who have this mod AND their own bloodmoon sound hear only their own sound instead.
+# HordeSound:      on / off
+# HordeSoundName:  any sound name from the game's Data\Config\sounds.xml
+HordeSound=on
+HordeSoundName=alarm1_oneshot

@@ -1,0 +1,12 @@
+<configs>
+	<!-- Crafted at a workbench. Pricier than the vanilla Combine Station (50 scrap iron + 100 wood)
+	     because this one raises quality. Change the ingredients here to rebalance. -->
+	<append xpath="/recipes">
+		<recipe name="azraelUpgradeBench" count="1" craft_area="workbench">
+			<ingredient name="resourceForgedIron" count="25" />
+			<ingredient name="resourceMechanicalParts" count="10" />
+			<ingredient name="resourceScrapIron" count="100" />
+			<ingredient name="resourceWood" count="100" />
+		</recipe>
+	</append>
+</configs>

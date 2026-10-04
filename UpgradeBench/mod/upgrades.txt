@@ -1,0 +1,69 @@
+# Upgrade Bench - mod upgrades
+#
+# Put TWO of the same mod below, at the SAME quality, in the Upgrade Bench. It shows the extra materials needed;
+# press the button and both mods plus the materials are used up, and ONE mod comes back a quality level higher
+# (up to Q6). The materials are taken from your backpack/toolbelt.
+#
+# This file is read by each PLAYER's game (the upgrade happens on their PC), so after changing it, give players
+# the updated mod folder. Restart the game after editing. Typos in item names are reported in the game log.
+#
+# Laid out like the "Upgradable weapon mods & potential upgrade costs" sheet:
+#
+#   <mod name> = <recipe item #1> or <#2> or <#3> : <item amounts> : <iron/steel amounts>
+#                  (columns D, E, F)                  (I, K, M, O, Q)  (J, L, N, P, R)
+#
+# Each upgrade costs: 2 of the mod (same quality), plus the item amount of ANY ONE of the recipe items
+# (whichever you have enough of), plus the iron/steel amount. Amounts are listed in order: Q1->2, Q2->3, Q3->4, Q4->5, Q5->6.
+#
+# Which metal (columns G and H):
+Iron  = resourceForgedIron     # upgrades to Q2 and Q3
+Steel = resourceForgedSteel    # upgrades to Q4, Q5 and Q6
+
+# ---- Ranged mods ----
+modGunMagazineExtender            = gunHandgunT1PistolParts or gunRifleT1HuntingRifleParts or gunMGT1AK47Parts : 4, 6, 8, 10, 12 : 10, 20, 30, 40, 50
+modGunMeleeTheHunter              = resourceLeather                        : 40, 60, 80, 100, 120 : 10, 20, 30, 40, 50
+modGunCrippleEm                   = gunHandgunT1PistolParts or gunRifleT1HuntingRifleParts or gunMGT1AK47Parts : 4, 6, 8, 10, 12 : 10, 20, 30, 40, 50
+modGunBowArrowRest                = gunBowT1WoodenBowParts                 : 4, 6, 8, 10, 12 : 10, 20, 30, 40, 50
+modGunShotgunTubeExtenderMagazine = gunShotgunT1DoubleBarrelParts          : 4, 6, 8, 10, 12 : 10, 20, 30, 40, 50
+modGunBowPolymerString            = gunBowT1WoodenBowParts                 : 4, 6, 8, 10, 12 : 10, 20, 30, 40, 50
+modGunDrumMagazineExtender        = gunHandgunT1PistolParts or gunRifleT1HuntingRifleParts or gunMGT1AK47Parts : 4, 6, 8, 10, 12 : 10, 20, 30, 40, 50
+modGunMeleeRadRemover             = resourceForgedIron                     : 10, 6, 8, 10, 12 : 10, 20, 30, 40, 50
+
+# ---- Melee mods ----
+modMeleeTemperedBlade     = meleeWpnBladeT3MacheteParts            : 4, 6, 8, 10, 12 : 10, 20, 30, 40, 50
+modMeleeSerratedBlade     = meleeWpnBladeT3MacheteParts            : 4, 6, 8, 10, 12 : 10, 20, 30, 40, 50
+modMeleeWeightedHead      = meleeWpnSledgeT3SteelSledgehammerParts : 4, 6, 8, 10, 12 : 10, 20, 30, 40, 50
+modMeleeStructuralBrace   = meleeWpnBatonT2StunBatonParts          : 4, 6, 8, 10, 12 : 10, 20, 30, 40, 50
+modMeleeErgonomicGrip     = resourceScrapPolymers                  : 40, 60, 80, 100, 120 : 10, 20, 30, 40, 50
+modMeleeFortifyingGrip    = resourceScrapPolymers                  : 40, 60, 80, 100, 120 : 10, 20, 30, 40, 50
+modMeleeClubBarbedWire    = resourceForgedIron                     : 10, 6, 8, 10, 12 : 10, 20, 30, 40, 50
+modMeleeClubMetalSpikes   = meleeWpnSpearT3SteelSpearParts         : 4, 6, 8, 10, 12 : 10, 20, 30, 40, 50
+modMeleeClubMetalChain    = resourceForgedIron                     : 10, 6, 8, 10, 12 : 10, 20, 30, 40, 50
+modMeleeClubBurningShaft  = ammoGasCan                             : 400, 600, 800, 1000, 1200 : 10, 20, 30, 40, 50
+modMeleeFiremansAxeMod    = meleeWpnBladeT3MacheteParts            : 4, 6, 8, 10, 12 : 10, 20, 30, 40, 50
+modMeleeGraveDigger       = resourceForgedIron                     : 10, 6, 8, 10, 12 : 10, 20, 30, 40, 50
+modMeleeBunkerBuster      = resourceForgedIron                     : 10, 6, 8, 10, 12 : 10, 20, 30, 40, 50
+modMeleeIronBreaker       = resourceForgedIron                     : 10, 6, 8, 10, 12 : 10, 20, 30, 40, 50
+modMeleeWoodSplitter      = resourceForgedIron                     : 10, 6, 8, 10, 12 : 10, 20, 30, 40, 50
+modMeleeDiamondTip        = resourceRawDiamond                     : 1, 2, 4, 6, 12 : 10, 20, 30, 40, 50
+# modMeleeStunBatonRepulsor has no quality levels in the game (it comes from the Electrocutioner perk), so it can't be upgraded.
+
+# ---- Motor tool mods ----
+modFuelTankSmall = resourceScrapPolymers : 40, 60, 80, 100, 120 : 10, 20, 30, 40, 50
+modFuelTankLarge = resourceScrapPolymers : 40, 60, 80, 100, 120 : 10, 20, 30, 40, 50
+
+# ---- Armor mods ----
+modArmorInsulatedLinerT1 = resourceCloth       : 40, 60, 80, 100, 120 : 10, 20, 30, 40, 50
+modArmorInsulatedLinerT2 = resourceCloth       : 40, 60, 80, 100, 120 : 10, 20, 30, 40, 50
+modArmorInsulatedLinerT3 = resourceCloth       : 40, 60, 80, 100, 120 : 10, 20, 30, 40, 50
+modArmorBandolier        = resourceLeather     : 40, 60, 80, 100, 120 : 10, 20, 30, 40, 50
+modArmorCigar            = resourceYuccaFibers : 40, 60, 80, 100, 120 : 10, 20, 30, 40, 50
+modArmorTreasureHunter   = casinoCoin          : 4000, 6000, 8000, 10000, 12000 : 10, 20, 30, 40, 50
+
+# ---- Vehicle mods ----
+modVehicleFuelSaver       = resourceScrapPolymers : 40, 60, 80, 100, 120 : 10, 20, 30, 40, 50
+modVehicleReserveFuelTank = resourceScrapPolymers : 40, 60, 80, 100, 120 : 10, 20, 30, 40, 50
+
+# ---- Drone mods ----
+# (The sheet says resourceElectricalParts; the game's name is resourceElectricParts.)
+modRoboticDroneStunWeaponMod = resourceElectricParts : 4, 6, 8, 10, 12 : 10, 20, 30, 40, 50

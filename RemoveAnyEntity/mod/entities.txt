@@ -1,0 +1,95 @@
+# ==============================================================================
+#   REMOVE ANY ENTITY - pick what should stop spawning
+# ==============================================================================
+#
+#   Every line below starts with  #  which means "off" (it spawns as normal).
+#   To REMOVE something from the game, delete the  #  at the start of its line.
+#
+#     #animalZombieDog        <- still spawns
+#     animalZombieDog         <- removed
+#
+#   Save the file, then restart the server (or your game in single player).
+#
+#   A name removes ALL its versions: "zombieScreamer" also removes the Feral,
+#   Radiated, Charged and Infernal screamers. To remove only one version, add its
+#   full name on its own line, e.g.  zombieScreamerRadiated
+#
+#   Names from other mods work too: add them on their own line.
+#   Type  rae  in the server console to see what was removed.
+#
+#   Only natural spawns change: biomes, buildings (sleepers), wandering hordes,
+#   blood moon hordes, screamer scouts and Twitch spawns. Things that are
+#   already in the world stay, and admins can still spawn anything by hand.
+
+
+# ---- EVERYDAY ZOMBIES ----------------------------------------------------------
+#zombieArlene
+#zombieMarlene
+#zombieDarlene
+#zombiePartyGirl
+#zombieNurse
+#zombieJoe
+#zombieSteve
+#zombieTomClark
+#zombieBusinessMan
+#zombieBoe
+#zombieMoe
+#zombieYo
+#zombieJanitor
+#zombieInmate
+#zombieLab
+#zombieUtilityWorker
+#zombieMaleHazmat
+#zombieSkateboarder
+#zombieSoldier
+#zombieBiker
+#zombieLumberjack
+#zombieFemaleFat
+#zombieFatHawaiian
+#zombieBowler
+#zombieSteveCrawler        crawler
+
+# ---- SPECIAL AND BIOME ZOMBIES -------------------------------------------------
+#zombieScreamer            screamer: calls more zombies
+#zombieSpider              spider zombie: jumps and climbs
+#zombieFatCop              cop
+#zombieWight               feral wight
+#zombieDemolition          demolisher (boss)
+#zombieMutated             mutated (wasteland)
+#zombieBurnt               burnt (burnt forest)
+#zombieRancher             rancher (desert)
+#zombiePlagueSpitter       plague spitter (desert)
+#zombieChuck               chuck (snow)
+#zombieFrostclaw           frostclaw (snow)
+
+# ---- ZOMBIE ANIMALS ------------------------------------------------------------
+#animalZombieDog           zombie dog
+#animalDireWolf            dire wolf
+#animalZombieBear          zombie bear
+#animalZombieVulture       zombie vulture
+#animalZombieBoar          zombie boar (boss)
+#animalBossGrace           Grace, the boss boar
+
+# ---- WILD ANIMALS (hostile) ----------------------------------------------------
+#animalWolf                wolf
+#animalCoyote              coyote (the 'jackals')
+#animalBear                bear
+#animalBearSmall           bear cub
+#animalMountainLion        mountain lion
+#animalBoar                boar
+#animalSnake               snake
+
+# ---- WILD ANIMALS (harmless, hunted for food) ----------------------------------
+#animalStag                stag
+#animalDoe                 doe
+#animalRabbit              rabbit
+#animalChicken             chicken
+
+
+# ==============================================================================
+#   REPLACEMENTS
+# ==============================================================================
+#   If removing things leaves a spawn spot with nothing at all to spawn, one of
+#   these is picked at random instead, so the game never breaks.
+#   Anything you removed above is skipped automatically.
+Replacement=zombieArlene, zombieBoe, zombieJoe, zombieMarlene, zombieMoe, zombieDarlene, zombieYo, zombieSteve, zombieBusinessMan, zombieJanitor

@@ -1,0 +1,71 @@
+# Blood Moon Discord settings (SERVER ONLY - players can ignore this file).
+#
+# On a dedicated server, Blood Moon Sound can post blood moon updates to a Discord channel.
+# To turn it on:
+#   1. In Discord: Channel settings > Integrations > Webhooks > New Webhook > Copy Webhook URL
+#   2. On the SERVER, copy this file to  discord.txt  (same folder) and paste the URL below
+#   3. Restart the server, or type  bmdiscord reload  in the server console
+#   4. Type  bmdiscord  to see the schedule, and  bmdiscord test  to check posting works
+#
+# Keep the webhook URL private: anyone who has it can post in that channel.
+# Don't put discord.txt in a mod zip you give to players.
+#
+# In every message you can use:
+#   {day}      the blood moon's day number
+#   {days}     days left until the blood moon (reminders and countdown)
+#   {players}  names of who's online       {count}  how many are online
+#   \n         a new line
+# Discord formatting works too: **bold**, *italics*, emoji.
+
+Webhook=
+
+# Name the messages are posted under.
+BotName=Blood Moon
+
+
+# ---- REMINDERS before the blood moon --------------------------------------------------
+# Add as many as you like, one per line:
+#
+#   Reminder = <days before> <hour> | <message>
+#
+#   days before:  0 = on blood moon day,  1 = the day before,  3 = three days before, ...
+#   hour:         in-game hour, 0-23 (the horde comes at 22:00 on a normal server)
+#
+# Delete a line to stop that reminder. To have no reminders at all, write:  Reminder=none
+# Examples you could add:
+#   Reminder = 3 8  | Blood Moon in **{days} days** (day {day}). Start stocking up!
+#   Reminder = 0 21 | ONE HOUR until the Blood Moon. Get inside!
+
+Reminder = 1 12 | ⚠️ Blood Moon **tomorrow night** (day {day}). Get your base ready!
+Reminder = 0 18 | 🔴 Blood Moon **tonight** (day {day}). The horde comes at dusk.
+
+
+# ---- DAILY COUNTDOWN (off unless you turn it on) --------------------------------------
+# One post every in-game day at CountdownHour, starting CountdownFromDays days before.
+# (It stops the day before blood moon day; use a Reminder for the day itself.)
+Countdown=off
+CountdownHour=8
+CountdownFromDays=7
+MsgCountdown=⏳ **{days} days** until the Blood Moon (day {day}).
+
+
+# ---- DURING THE BLOOD MOON --------------------------------------------------------------
+# When the horde starts:
+Start=on
+MsgStart=🌕 The Blood Moon has risen! Horde incoming. Online: {players}
+
+# Extra posts while the horde is on, every this many in-game hours (0 = off).
+UpdateEveryHours=0
+MsgUpdate=🩸 The Blood Moon rages on. Still standing: {players}
+
+# At dawn afterwards:
+End=on
+MsgEnd=🌅 Dawn! Blood Moon day {day} survived. Online: {players}
+
+
+# ---- OTHER ------------------------------------------------------------------------------
+# Skip the start / during / dawn posts when nobody is online.
+SkipEmptyServer=on
+
+# Allow @everyone / @role pings written in the messages above (off = never ping anyone).
+Mentions=off

@@ -1,0 +1,4 @@
+Key,File,Type,UsedInMainMenu,NoTranslate,english
+ttAzraelCfcBusy,UI,Tooltip,,,"Still getting materials from your chests - one moment."
+ttAzraelCfcNoRoom,UI,Tooltip,,,"Not enough room in your backpack. Crafting moves the missing materials from your chests into your backpack first - make some room and try again."
+ttAzraelCfcInUse,UI,Tooltip,,,"Someone else had one of your chests open, so not everything could be taken. Nothing was crafted. What was taken is in your backpack - try again in a moment."

@@ -1,14 +1,3 @@
 <configs>
-	<!-- Twitch integration actions that spawn these entities by class name.
-	     A comma list in these variables makes the game pick one at random. -->
-	<set xpath="//variable[@value='animalZombieDog']/@value">zombieArlene,zombieBoe,zombieJoe,zombieMarlene,zombieMoe,zombieDarlene,zombieYo,zombieSteve,zombieBusinessMan,zombieJanitor</set>
-	<set xpath="//variable[@value='animalCoyote']/@value">zombieArlene,zombieBoe,zombieJoe,zombieMarlene,zombieMoe,zombieDarlene,zombieYo,zombieSteve,zombieBusinessMan,zombieJanitor</set>
-	<set xpath="//variable[@value='animalDireWolf']/@value">zombieArlene,zombieBoe,zombieJoe,zombieMarlene,zombieMoe,zombieDarlene,zombieYo,zombieSteve,zombieBusinessMan,zombieJanitor</set>
-	<set xpath="//variable[@name='alertsound' and @value='zombiedogalert']/@value">zombiefemalealert</set>
-
-	<!-- Mixed animal lists: keep the other animals, drop the removed ones. -->
-	<set xpath="//variable[@value='animalCoyote,animalZombieDog,animalWolf,animalBoar']/@value">animalWolf,animalBoar</set>
-	<set xpath="//variable[@value='animalZombieDog,animalWolf,animalBoar,animalMountainLion,animalBear']/@value">animalWolf,animalBoar,animalMountainLion,animalBear</set>
-	<set xpath="//variable[@value='animalZombieVulture,animalZombieDog,animalWolf,animalBoar']/@value">animalZombieVulture,animalWolf,animalBoar</set>
-	<set xpath="//variable[@value='animalZombieVulture,animalZombieDog,animalWolf,animalBoar,animalMountainLion,animalBear']/@value">animalZombieVulture,animalWolf,animalBoar,animalMountainLion,animalBear</set>
+	<!-- Twitch and game-event spawns are filtered in code. See entitygroups.xml. -->
 </configs>

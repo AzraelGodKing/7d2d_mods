@@ -1,0 +1,23 @@
+Key,File,Type,UsedInMainMenu,NoTranslate,english
+azraelUpgradeBench,blocks,Block,,,Upgrade Bench
+azraelUpgradeBenchDesc,blocks,Block,,,"Raise the quality of a weapon, armor, tool or vehicle mod by one level.\nPut in TWO of the same mod at the SAME quality, plus the materials the bench shows. You get one mod back, one quality level higher. The materials come out of your backpack or toolbelt."
+xuiAzraelUpgradeBench,UI,XUI,,,Upgrade Bench
+ttAzraelUpgradeHeader,UI,Tooltip,,,"Combine 2 {0} (both Q{1}) into one at Q{2}. You also need:"
+ttAzraelUpgradeLine,UI,Tooltip,,,"- {0} {1} (you have {2})"
+ttAzraelUpgradeLineShort,UI,Tooltip,,,"- {0} {1} (you have {2}, need {3} more)"
+ttAzraelUpgradeAnyOf,UI,Tooltip,,,"- {0} of any ONE of these:"
+ttAzraelUpgradeAnyOfItem,UI,Tooltip,,,"     {0} (you have {1})"
+ttAzraelUpgradeReady,UI,Tooltip,,,"You have everything. Press the button to upgrade."
+ttAzraelUpgradeNotReady,UI,Tooltip,,,"Not enough materials yet. They need to be in your backpack or toolbelt."
+ttAzraelUpgradeMax,UI,Tooltip,,,"{0} is already Q{1}, the highest quality. It can't go any higher."
+ttAzraelUpgradeNotListed,UI,Tooltip,,,"{0} can't be upgraded at this bench. Only certain weapon, armor, tool and vehicle mods can."
+ttAzraelUpgradeNeedSecond,UI,Tooltip,,,"Add a second {0} that is also Q{1} to upgrade it."
+ttAzraelUpgradeDifferent,UI,Tooltip,,,"{0} and {1} are different mods. Put in two of the SAME mod."
+ttAzraelUpgradeDifferentQuality,UI,Tooltip,,,"These are Q{1} and Q{2}. Both {0} need to be the SAME quality."
+ttAzraelUpgradeDone,UI,Tooltip,,,"{0} upgraded to Q{1}!"
+ttAzraelPutInBackpack,UI,Tooltip,,,It's in your backpack.
+ttAzraelDroppedAtFeet,UI,Tooltip,,,"Your backpack was full, so it was dropped at your feet."
+xuiAzraelUpgradeOr,UI,XUI,,,or
+xuiAzraelUpgradeHeader,UI,XUI,,,Upgrade
+xuiAzraelUpgradeButton,UI,XUI,,,Upgrade
+xuiAzraelUpgradeHelp,UI,XUI,,,"[FFD24A]HOW THE UPGRADE BENCH WORKS[-]\n1. Put in [FFD24A]2 of the same mod[-] at the [FFD24A]same quality[-].\n2. The list next to the result shows what else it costs:\n    parts (any ONE of the listed kinds) + forged iron or steel.\n    [7FE37F]Green[-] = you have enough. [FF6060]Red[-] = you're short.\n3. Materials must be in your backpack or toolbelt.\n4. Press [FFD24A]Upgrade[-]: both mods + materials are used up,\n    and you get ONE mod back, one quality level higher (max Q6).\n[9A9A9A]Q2-Q3 use forged iron, Q4-Q6 use forged steel.[-]"
