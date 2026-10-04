@@ -31,9 +31,9 @@
     "modDir": "HonkDoorFix",
     "buildDir": "HonkDoorFix",
     "zipName": "HonkDoorFix",
-    "nexus": "",
-    "nexus_mod_id": "",
-    "nexus_file_id": ""
+    "nexus": "https://www.nexusmods.com/7daystodie/mods/12926",
+    "nexus_mod_id": "12926",
+    "nexus_file_id": "8082963"
   },
   {
     "modKey": "speedometer",

@@ -1,0 +1,16 @@
+{
+  "slug": "honk-door-fix",
+  "name": "Honk Door Fix",
+  "game": "7-days-to-die",
+  "description": "Fixes a vanilla bug where honking a vehicle near the top of the world makes the server throw the same error every tick. Honking at traders still opens the doors as normal. Server-side only: players install nothing.",
+  "version": "1.0.0",
+  "screenshots": [],
+  "download": {
+    "file": "HonkDoorFix-1.0.0.zip"
+  },
+  "links": {
+    "steam": null,
+    "thunderstore": null,
+    "nexus": "https://www.nexusmods.com/7daystodie/mods/12926"
+  }
+}
