@@ -12,12 +12,24 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
+
+# Website slugs follow the mod folder name, except this Sun Haven package.
+SLUG_OVERRIDES = {"SunHavenMuseumUtilityTracker": "smut"}
+
+
+def slug_from_mod_dir(mod_dir: str) -> str:
+    if mod_dir in SLUG_OVERRIDES:
+        return SLUG_OVERRIDES[mod_dir]
+    slug = re.sub(r"([a-z0-9])([A-Z])", r"\1-\2", mod_dir)
+    slug = re.sub(r"[^a-zA-Z0-9]+", "-", slug).strip("-").lower()
+    return slug
 
 BUCKET = "azraels-mods"
 MANIFEST_KEY = "downloads.json"
@@ -51,11 +63,16 @@ def wrangler(args: list[str]) -> subprocess.CompletedProcess[str]:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--game", required=True)
-    parser.add_argument("--slug", required=True)
+    parser.add_argument("--slug", default="")
+    parser.add_argument("--mod-dir", default="", help="Mod folder name. Used when --slug is omitted.")
     parser.add_argument("--version", required=True)
     parser.add_argument("--zip", required=True, dest="zip_path")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
+    slug = args.slug or slug_from_mod_dir(args.mod_dir)
+    if not slug:
+        print("Pass --slug or --mod-dir", file=sys.stderr)
+        return 1
 
     zip_path = Path(args.zip_path)
     if not zip_path.is_file():
@@ -64,7 +81,7 @@ def main() -> int:
 
     data = zip_path.read_bytes()
     sha256 = hashlib.sha256(data).hexdigest()
-    key = object_key(args.game, args.slug, args.version)
+    key = object_key(args.game, slug, args.version)
     uploaded_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
     print(f"{'would upload' if args.dry_run else 'uploading'} {BUCKET}/{key}")
     print(f"sha256 {sha256} ({len(data)} bytes)")
@@ -98,7 +115,7 @@ def main() -> int:
             manifest,
             {
                 "game": args.game,
-                "slug": args.slug,
+                "slug": slug,
                 "version": args.version,
                 "sha256": sha256,
                 "bytes": len(data),
@@ -107,7 +124,7 @@ def main() -> int:
         )
         manifest_path.write_text(json.dumps(nxt, indent=2) + "\n", encoding="utf-8")
         checksum_path = root / "file.sha256"
-        checksum_path.write_text(f"{sha256}  {file_name(args.slug, args.version)}\n", encoding="utf-8")
+        checksum_path.write_text(f"{sha256}  {file_name(slug, args.version)}\n", encoding="utf-8")
 
         uploads = [
             ["put", f"{BUCKET}/{key}", "--file", str(zip_path), "--remote", "--content-type", "application/zip"],
@@ -138,7 +155,7 @@ def main() -> int:
                 detail = (result.stdout + "\n" + result.stderr).strip()
                 print(detail or f"wrangler failed ({result.returncode})", file=sys.stderr)
                 return result.returncode or 1
-    print(f"recorded {args.game}/{args.slug} {args.version}")
+    print(f"recorded {args.game}/{slug} {args.version}")
     return 0
 
 
