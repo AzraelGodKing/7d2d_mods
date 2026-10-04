@@ -10,11 +10,17 @@ using UnityEngine;
 // While a crafting screen is open (backpack crafting, workbench, chemistry station, cement mixer, campfire - not the
 // forge, which has its own material slots), the recipe list, "have" counts and the craft button also count what's in
 // player-placed chests inside the land claim you're standing in (your claim, or an ally's).
+// The same chests cover two more cases that are not the craft button:
+//   - upgrading a block with a repair tool (wood, cobblestone, concrete, steel, ...)
+//   - the Upgrade Bench, when that mod is installed (its material cost, not the two mods themselves)
 //
-// When you press craft and your backpack is short, the missing materials are moved from those chests into your
-// backpack first, then the normal vanilla craft runs. On a multiplayer server the mod waits for the server to confirm
-// each chest change; if a chest was open by someone else the server refuses the change, so nothing is crafted and
-// whatever WAS taken is left in your backpack - items are never created or lost.
+// When the backpack is short, the missing materials are moved from those chests into the backpack first, then the
+// normal vanilla action runs. On a multiplayer server the mod waits for the server to confirm each chest change; if a
+// chest was open by someone else the server refuses the change, so nothing is crafted or upgraded and whatever WAS
+// taken is left in the backpack - items are never created or lost.
+//
+// A recipe that also needs a quality item (a gyro needs a small engine) still takes the stackable parts, such as
+// wheels, from chests. The quality item itself has to be in the backpack. Tools, weapons and armor are never taken.
 //
 // Runs only on players' PCs. The server needs nothing.
 
@@ -60,9 +66,13 @@ public static class Chests
 
     // ---- when chests count ----
     // Scope > 0 only inside the crafting UI methods we patch, so nothing else in the game sees chest items.
+    // Station is set while the Upgrade Bench screen is open (that screen is not a crafting window).
     public static int Scope;
+    public static bool Station;
     public static bool Suspend;   // our own code wants vanilla (backpack + toolbelt only) numbers
     public static bool Busy;      // a pull is waiting for the server
+    public static bool Replay;    // the pull finished; let the real craft / upgrade button run
+    public static bool SuppressMissing; // block upgrade is fetching materials; don't flash "you have none"
     static XUiC_CraftingWindowGroup scopeGroup;
 
     public static void Enter(XUiController ctrl)
@@ -77,7 +87,7 @@ public static class Chests
         if (Scope == 0) scopeGroup = null;
     }
 
-    public static bool Active => Enabled && !Suspend && Scope > 0 && GroupAllowed(scopeGroup);
+    public static bool Active => Enabled && !Suspend && ((Scope > 0 && GroupAllowed(scopeGroup)) || Station);
 
     static readonly Dictionary<XUiC_CraftingWindowGroup, bool> groupOk = new Dictionary<XUiC_CraftingWindowGroup, bool>();
 
@@ -118,8 +128,17 @@ public static class Chests
         catch (Exception e) { Log.Warning("[CraftFromChests] " + e.Message); }
     }
 
-    // Only plain stackable materials are taken from chests (never tools/weapons/armor with quality or mods).
-    static bool Usable(ItemStack st) => st != null && !st.IsEmpty() && !st.itemValue.HasQuality && !st.itemValue.HasMods();
+    // Stackable materials can come from a chest. A quality item that does not stack (tool, weapon, armor,
+    // small engine) cannot - it has to be the one in your backpack. Some stackable parts still report a quality
+    // flag; those are materials, and a gyro's wheels are the case players hit.
+    public static bool Material(ItemValue iv)
+    {
+        if (iv == null || iv.IsEmpty() || iv.HasMods()) return false;
+        if (!iv.HasQuality) return true;
+        return (iv.ItemClass?.Stacknumber?.Value ?? 1) > 1;
+    }
+
+    static bool Usable(ItemStack st) => st != null && !st.IsEmpty() && Material(st.itemValue);
 
     public static int Count(int type)
     {
@@ -197,7 +216,7 @@ public static class Chests
     }
 
     // ---- moving materials from chests into the backpack ----
-    public static IEnumerator Pull(XUi xui, Dictionary<int, int> need, Action onSuccess)
+    public static IEnumerator Pull(XUi xui, Dictionary<int, int> need, Action onSuccess, string failedKey = null)
     {
         Busy = true;
         Invalidate();
@@ -255,8 +274,8 @@ public static class Chests
         Invalidate();
         if (failed)
         {
-            GameManager.ShowTooltip(xui.playerUI.entityPlayer, Localization.Get("ttAzraelCfcInUse"), string.Empty, "ui_denied");
-            Log.Out("[CraftFromChests] A chest was in use by someone else; craft cancelled, taken materials left in backpack.");
+            GameManager.ShowTooltip(xui.playerUI.entityPlayer, Localization.Get(failedKey ?? "ttAzraelCfcInUse"), string.Empty, "ui_denied");
+            Log.Out("[CraftFromChests] A chest was in use by someone else; cancelled, taken materials left in backpack.");
         }
         else
         {
@@ -287,7 +306,7 @@ public static class Chests
         return took;
     }
 
-    static void GiveToBackpack(XUi xui, int type, int count)
+    public static void GiveToBackpack(XUi xui, int type, int count)
     {
         var iv = new ItemValue(type);
         int max = Math.Max(1, iv.ItemClass?.Stacknumber?.Value ?? 1);
@@ -302,5 +321,77 @@ public static class Chests
                 GameManager.Instance.ItemDropServer(stack, player.GetPosition(), Vector3.zero);
             }
         }
+    }
+
+    public static bool IsUpgradeBench(TEFeatureCombine te)
+    {
+        try
+        {
+            var world = GameManager.Instance != null ? GameManager.Instance.World : null;
+            if (world == null || te == null) return false;
+            var block = world.GetBlock(te.ToWorldPos()).Block;
+            return block != null && block.GetBlockName() == "azraelUpgradeBench";
+        }
+        catch { return false; }
+    }
+
+    // The repair tool asks "do you already have the whole upgrade cost in one pile?" before it will start.
+    // If the rest is in a claim chest, move that rest (and a partial hotbar stack) into the backpack and let the
+    // next swing run the vanilla upgrade. Tools and other quality items are not fetched.
+    public static void TryStageUpgrade(ItemActionRepair action, ItemInventoryData data, BlockValue blockValue)
+    {
+        if (!Enabled) return;
+        if (Busy) { SuppressMissing = true; return; }
+        var player = data?.holdingEntity as EntityPlayerLocal;
+        var block = blockValue.Block;
+        if (player == null || action == null || block == null) return;
+
+        string name = action.GetUpgradeItemName(block);
+        if (string.IsNullOrEmpty(name)) return;
+        if (action.allowedUpgradeItems != null && action.allowedUpgradeItems.Length > 0 && !action.allowedUpgradeItems.ContainsCaseInsensitive(name)) return;
+        if (action.restrictedUpgradeItems != null && action.restrictedUpgradeItems.Length > 0 && action.restrictedUpgradeItems.ContainsCaseInsensitive(name)) return;
+        if (!int.TryParse(block.Properties.GetString("UpgradeBlock", "UpgradeHitCount"), out _)) return;
+        if (!int.TryParse(block.Properties.GetString(Block.PropUpgradeBlockClass, Block.PropUpgradeBlockItemCount), out int need) || need <= 0) return;
+
+        var item = ItemClass.GetItem(name);
+        if (item == null || item.IsEmpty() || !Material(item)) return;
+
+        int onBar = data.holdingEntity.inventory.GetItemCount(item);
+        int inBag = data.holdingEntity.bag.GetItemCount(item);
+        if (onBar >= need || inBag >= need) return;
+        int inChest = Count(item.type);
+        if (onBar + inBag + inChest < need) return;
+
+        int shortfall = need - onBar - inBag;
+        if (shortfall <= 0) return;
+
+        var xui = LocalPlayerUI.GetUIForPlayer(player)?.xui;
+        if (xui == null) return;
+
+        int alsoMove = onBar > 0 ? onBar : 0;
+        Suspend = true;
+        int space;
+        try { space = xui.PlayerInventory.CountAvailableSpaceForItem(item, false); }
+        finally { Suspend = false; }
+        if (space < shortfall + alsoMove)
+        {
+            GameManager.ShowTooltip(player, Localization.Get("ttAzraelCfcNoRoom"), string.Empty, "ui_denied");
+            return;
+        }
+
+        SuppressMissing = true;
+        var held = data;
+        var iv = item;
+        int required = need;
+        GameManager.Instance.StartCoroutine(Pull(xui, new Dictionary<int, int> { { item.type, shortfall } }, () =>
+        {
+            // Vanilla spends the whole cost from the toolbelt first, and a partial stack there is removed even when
+            // the backpack has the rest. Empty the toolbelt into the backpack so one pile holds the full cost.
+            int stillOnBar = held.holdingEntity.inventory.GetItemCount(iv);
+            int nowInBag = held.holdingEntity.bag.GetItemCount(iv);
+            if (stillOnBar <= 0 || stillOnBar >= required || nowInBag >= required) return;
+            int moved = held.holdingEntity.inventory.DecItem(iv, Math.Min(stillOnBar, required - nowInBag));
+            if (moved > 0) GiveToBackpack(xui, iv.type, moved);
+        }, "ttAzraelCfcUpgradeHeld"));
     }
 }

@@ -9,7 +9,7 @@ Small mods for 7 Days to Die, built and tested on **V3.2 (b9/b10)**.
 | [Quest Disconnect Fix](#quest-disconnect-fix) | Code (Harmony) | Server only | 1.0.0 |
 | [Honk Door Fix](#honk-door-fix) | Code (Harmony) | Server only | 1.0.0 |
 | [Speedometer](#speedometer) | Code + UI | Server **and** every player | 1.1.0 |
-| [Craft From Chests](#craft-from-chests) | Code (Harmony) | Players only | 1.0.0 |
+| [Craft From Chests](#craft-from-chests) | Code (Harmony) | Players only | 1.1.0 |
 | [Upgrade Bench](#upgrade-bench) | Code + XML | Server **and** every player | 1.0.0 |
 | [Keep Backpacks](#keep-backpacks) | XML only | Server (clients get it automatically) | 1.2.0 |
 | [Blood Moon Sound](#blood-moon-sound) | Code (Harmony) | Players (own sound); server optional (sound for everyone, Discord posts) | 1.1.0 |
@@ -167,10 +167,18 @@ items in player-placed chests inside the land claim you are standing in. Covered
 workbench, chemistry station, cement mixer, and campfire. The forge is unchanged (it has its own
 material slots).
 
-If your backpack is short, pressing craft moves the missing materials from those chests into your
-backpack first, then the normal craft runs. On a multiplayer server the mod waits for the server to
+A recipe that also needs a quality item still takes the stackable parts from those chests. A gyro
+needs a small engine (that stays in your backpack) and wheels (those come from the chests). Tools,
+weapons, and armor are never taken.
+
+Upgrading a block with a repair tool uses the same chests for its material (wood, cobblestone,
+concrete, steel, and so on). With the Upgrade Bench mod installed, that bench's material cost comes
+from the same chests too. The two mods you put in the bench still have to be in the bench.
+
+If your backpack is short, the missing materials move from those chests into your backpack first,
+then the normal craft or upgrade runs. On a multiplayer server the mod waits for the server to
 confirm each chest change. If someone else has that chest open, the server refuses the change, nothing
-is crafted, and anything already taken stays in your backpack.
+is crafted or upgraded, and anything already taken stays in your backpack.
 
 `settings.txt` (each player's own copy; restart after editing): `Enabled=on`, `AllowAllies=on`
 (chests in an ally's claim count too), `BackpackCrafting=on`.
@@ -178,6 +186,7 @@ is crafted, and anything already taken stays in your backpack.
 **Only players need it; the server doesn't.** Players launch without EAC.
 
 **Changelog**
+- 1.1.0: gyro crafts take stackable parts such as wheels from chests even when the recipe also needs a quality item. Block upgrades, and the Upgrade Bench material cost, use those chests too.
 - 1.0.0: first version.
 
 ## Upgrade Bench
