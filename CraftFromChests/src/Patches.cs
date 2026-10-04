@@ -1,5 +1,7 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 using HarmonyLib;
 
 // ---- Scope: chest items only count inside these crafting-UI methods ----
@@ -45,7 +47,7 @@ public static class CfcCountByValue
 {
     static void Postfix(ItemValue _itemValue, ref int __result)
     {
-        if (Chests.Active && _itemValue != null && !_itemValue.HasQuality) __result += Chests.Count(_itemValue.type);
+        if (Chests.Active && Chests.Material(_itemValue)) __result += Chests.Count(_itemValue.type);
     }
 }
 
@@ -77,12 +79,20 @@ public static class CfcHasItems
         try
         {
             var need = new Dictionary<int, int>();
+            var gear = new Dictionary<int, int>();
             foreach (var st in _itemStacks)
             {
                 if (st == null || st.IsEmpty()) continue;
-                if (st.itemValue.HasQuality) return;          // quality items never come from chests
-                need[st.itemValue.type] = (need.TryGetValue(st.itemValue.type, out int n) ? n : 0) + st.count * _multiplier;
+                int want = st.count * _multiplier;
+                // A gyro needs wheels AND a small engine. The engine is a quality item and stays in the backpack;
+                // that must not make the mod ignore the wheels sitting in a chest.
+                if (!Chests.Material(st.itemValue))
+                    gear[st.itemValue.type] = (gear.TryGetValue(st.itemValue.type, out int g) ? g : 0) + want;
+                else
+                    need[st.itemValue.type] = (need.TryGetValue(st.itemValue.type, out int n) ? n : 0) + want;
             }
+            foreach (var kv in gear)
+                if (__instance.GetItemCount(new ItemValue(kv.Key)) < kv.Value) return;
             foreach (var kv in need)
             {
                 int have = __instance.GetItemCount(new ItemValue(kv.Key));   // backpack + toolbelt (suspended)
@@ -110,11 +120,9 @@ public static class CfcRemoveItemsGuard
 [HarmonyPatch(typeof(ItemActionEntryCraft), nameof(ItemActionEntryCraft.OnActivated))]
 public static class CfcCraftPatch
 {
-    public static bool Bypass;
-
     static bool Prefix(ItemActionEntryCraft __instance)
     {
-        if (Bypass) return true;
+        if (Chests.Replay) return true;
         var ctrl = __instance.ItemController;
         var xui = ctrl?.xui;
         var recipe = (ctrl as XUiC_RecipeEntry)?.Recipe;
@@ -144,7 +152,7 @@ public static class CfcCraftPatch
             var total = new Dictionary<int, int>();
             foreach (var st in __instance.tempIngredientList)
             {
-                if (st == null || st.IsEmpty() || st.itemValue.HasQuality) continue;
+                if (st == null || st.IsEmpty() || !Chests.Material(st.itemValue)) continue;
                 total[st.itemValue.type] = (total.TryGetValue(st.itemValue.type, out int n) ? n : 0) + st.count * mult;
             }
 
@@ -170,9 +178,9 @@ public static class CfcCraftPatch
             var entry = __instance;
             GameManager.Instance.StartCoroutine(Chests.Pull(xui, need, () =>
             {
-                Bypass = true;
+                Chests.Replay = true;
                 try { entry.OnActivated(); }
-                finally { Bypass = false; }
+                finally { Chests.Replay = false; }
             }));
             return false;
         }
@@ -182,5 +190,134 @@ public static class CfcCraftPatch
             return true;
         }
         finally { Chests.Exit(); }
+    }
+}
+
+// ---- Block upgrade: the repair tool is not a crafting screen, so it never entered Scope ----
+
+[HarmonyPatch(typeof(ItemActionRepair), nameof(ItemActionRepair.CanRemoveRequiredResource))]
+public static class CfcUpgradeCheck
+{
+    static void Postfix(ItemActionRepair __instance, ItemInventoryData data, BlockValue blockValue, ref bool __result)
+    {
+        if (__result || !Chests.Enabled) return;
+        try { Chests.TryStageUpgrade(__instance, data, blockValue); }
+        catch (Exception e) { Log.Warning("[CraftFromChests] " + e.Message); }
+    }
+}
+
+// While materials are on the way from a chest, vanilla would flash a "0" missing-item icon.
+[HarmonyPatch(typeof(EntityPlayerLocal), nameof(EntityPlayerLocal.AddUIHarvestingItem))]
+public static class CfcQuietUpgrade
+{
+    static bool Prefix(ItemStack itemStack)
+    {
+        if (!Chests.SuppressMissing || itemStack == null || itemStack.count != 0) return true;
+        Chests.SuppressMissing = false;
+        return false;
+    }
+}
+
+// ---- Upgrade Bench: its screen is the vanilla combine window, not a crafting window ----
+
+[HarmonyPatch(typeof(XUiC_CombineWindowGroup), nameof(XUiC_CombineWindowGroup.OnOpen))]
+public static class CfcBenchOpen
+{
+    static void Prefix(XUiC_CombineWindowGroup __instance) => Chests.Station = Chests.IsUpgradeBench(__instance.te);
+    static void Postfix(XUiC_CombineWindowGroup __instance) => Chests.Station = Chests.IsUpgradeBench(__instance.te);
+}
+
+[HarmonyPatch(typeof(XUiC_CombineWindowGroup), nameof(XUiC_CombineWindowGroup.OnClose))]
+public static class CfcBenchClose
+{
+    static void Prefix() => Chests.Station = false;
+}
+
+// Runs before the Upgrade Bench's own button patch. If the materials are only in a chest, move them into the
+// backpack, wait for the server, then press the button again so the bench pays from the backpack.
+[HarmonyPatch(typeof(XUiC_CombineGrid), nameof(XUiC_CombineGrid.BtnCombine_OnPressed))]
+[HarmonyPriority(Priority.First)]
+public static class CfcBenchPay
+{
+    static bool Prefix(XUiC_CombineGrid __instance, XUiController _sender, int _mouseButton)
+    {
+        if (Chests.Replay || !Chests.Station || !Chests.Enabled || __instance == null) return true;
+        var xui = __instance.xui;
+        if (xui == null) return true;
+        try
+        {
+            if (Chests.Busy)
+            {
+                GameManager.ShowTooltip(xui.playerUI.entityPlayer, Localization.Get("ttAzraelCfcBusy"));
+                return false;
+            }
+            var s1 = __instance.merge1.ItemStack;
+            var s2 = __instance.merge2.ItemStack;
+            if (s1.IsEmpty() || s2.IsEmpty()) return true;
+            if (s1.itemValue.type != s2.itemValue.type || s1.itemValue.Quality != s2.itemValue.Quality) return true;
+            if (!BenchCost(__instance, out var pay)) return true;
+
+            var need = new Dictionary<int, int>();
+            Chests.Suspend = true;
+            try
+            {
+                foreach (var kv in pay)
+                {
+                    var iv = new ItemValue(kv.Key);
+                    int shortBy = kv.Value - xui.PlayerInventory.GetItemCount(iv);
+                    if (shortBy <= 0) continue;
+                    if (xui.PlayerInventory.CountAvailableSpaceForItem(iv, false) < shortBy)
+                    {
+                        GameManager.ShowTooltip(xui.playerUI.entityPlayer, Localization.Get("ttAzraelCfcNoRoom"), string.Empty, "ui_denied");
+                        return false;
+                    }
+                    need[kv.Key] = shortBy;
+                }
+            }
+            finally { Chests.Suspend = false; }
+            if (need.Count == 0) return true;
+
+            var grid = __instance;
+            GameManager.Instance.StartCoroutine(Chests.Pull(xui, need, () =>
+            {
+                Chests.Replay = true;
+                try { grid.BtnCombine_OnPressed(_sender, _mouseButton); }
+                finally { Chests.Replay = false; }
+            }, "ttAzraelCfcUpgradeHeld"));
+            return false;
+        }
+        catch (Exception e)
+        {
+            Log.Warning("[CraftFromChests] " + e.Message);
+            return true;
+        }
+    }
+
+    // The Upgrade Bench mod works out the cost. We only read it; this mod still runs if that one is not installed.
+    static bool BenchCost(XUiC_CombineGrid grid, out Dictionary<int, int> pay)
+    {
+        pay = null;
+        Assembly asm = null;
+        foreach (var a in AppDomain.CurrentDomain.GetAssemblies())
+            if (a.GetName().Name == "AzraelUpgradeBench") { asm = a; break; }
+        var make = asm?.GetType("ModUpgrades")?.GetMethod("Make", BindingFlags.Public | BindingFlags.Static);
+        if (make == null) return false;
+        object plan = make.Invoke(null, new object[] { grid.merge1.ItemStack, grid.xui.PlayerInventory });
+        if (plan == null) return false;
+        var state = plan.GetType().GetField("State")?.GetValue(plan);
+        if (state == null || state.ToString() != "Ready") return false;
+        if (!(plan.GetType().GetField("Pay")?.GetValue(plan) is IEnumerable list)) return false;
+        pay = new Dictionary<int, int>();
+        foreach (var cost in list)
+        {
+            if (cost == null) continue;
+            var itemName = cost.GetType().GetField("Item")?.GetValue(cost) as string;
+            var countObj = cost.GetType().GetField("Count")?.GetValue(cost);
+            if (itemName == null || !(countObj is int count) || count <= 0) continue;
+            var iv = ItemClass.GetItem(itemName);
+            if (iv == null || iv.IsEmpty() || !Chests.Material(iv)) continue;
+            pay[iv.type] = (pay.TryGetValue(iv.type, out int n) ? n : 0) + count;
+        }
+        return pay.Count > 0;
     }
 }

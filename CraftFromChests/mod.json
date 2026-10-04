@@ -2,11 +2,11 @@
   "slug": "craft-from-chests",
   "name": "Craft From Chests",
   "game": "7-days-to-die",
-  "description": "Crafting (backpack, workbench, chemistry station, cement mixer, campfire) can use materials from your chests inside your land claim (or an ally's). Only the players who want it install it - the server needs nothing.",
-  "version": "1.0.0",
+  "description": "Crafting, block upgrades, and the Upgrade Bench can use materials from your chests inside your land claim (or an ally's). Only the players who want it install it - the server needs nothing.",
+  "version": "1.1.0",
   "screenshots": [],
   "download": {
-    "file": "CraftFromChests-1.0.0.zip"
+    "file": "CraftFromChests-1.1.0.zip"
   },
   "links": {
     "steam": null,
