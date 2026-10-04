@@ -1,0 +1,83 @@
+[
+  {
+    "modKey": "remove-zombie-dogs",
+    "modDir": "RemoveZombieDogs",
+    "buildDir": "RemoveZombieDogs",
+    "zipName": "RemoveZombieDogs",
+    "nexus": "https://www.nexusmods.com/7daystodie/mods/12841",
+    "nexus_mod_id": "12841",
+    "nexus_file_id": "8034981"
+  },
+  {
+    "modKey": "remove-any-entity",
+    "modDir": "RemoveAnyEntity",
+    "buildDir": "RemoveAnyEntity",
+    "zipName": "AzraelRemoveAnyEntity",
+    "nexus": "",
+    "nexus_mod_id": "",
+    "nexus_file_id": ""
+  },
+  {
+    "modKey": "quest-disconnect-fix",
+    "modDir": "QuestDisconnectFix",
+    "buildDir": "QuestDisconnectFix",
+    "zipName": "AzraelQuestDisconnectFix",
+    "nexus": "https://www.nexusmods.com/7daystodie/mods/12839",
+    "nexus_mod_id": "12839",
+    "nexus_file_id": "8034954"
+  },
+  {
+    "modKey": "honk-door-fix",
+    "modDir": "HonkDoorFix",
+    "buildDir": "HonkDoorFix",
+    "zipName": "HonkDoorFix",
+    "nexus": "",
+    "nexus_mod_id": "",
+    "nexus_file_id": ""
+  },
+  {
+    "modKey": "speedometer",
+    "modDir": "Speedometer",
+    "buildDir": "Speedometer",
+    "zipName": "AzraelSpeedometer",
+    "nexus": "https://www.nexusmods.com/7daystodie/mods/12840",
+    "nexus_mod_id": "12840",
+    "nexus_file_id": "8034963"
+  },
+  {
+    "modKey": "keep-backpacks",
+    "modDir": "KeepBackpacks",
+    "buildDir": "KeepBackpacks",
+    "zipName": "AzraelKeepBackpacks",
+    "nexus": "https://www.nexusmods.com/7daystodie/mods/12923",
+    "nexus_mod_id": "12923",
+    "nexus_file_id": "8079882"
+  },
+  {
+    "modKey": "craft-from-chests",
+    "modDir": "CraftFromChests",
+    "buildDir": "CraftFromChests",
+    "zipName": "AzraelCraftFromChests",
+    "nexus": "https://www.nexusmods.com/7daystodie/mods/12921",
+    "nexus_mod_id": "12921",
+    "nexus_file_id": "8079825"
+  },
+  {
+    "modKey": "upgrade-bench",
+    "modDir": "UpgradeBench",
+    "buildDir": "UpgradeBench",
+    "zipName": "AzraelUpgradeBench",
+    "nexus": "https://www.nexusmods.com/7daystodie/mods/12922",
+    "nexus_mod_id": "12922",
+    "nexus_file_id": "8079849"
+  },
+  {
+    "modKey": "blood-moon-sound",
+    "modDir": "BloodMoonSound",
+    "buildDir": "BloodMoonSound",
+    "zipName": "AzraelBloodMoonSound",
+    "nexus": "https://www.nexusmods.com/7daystodie/mods/12920",
+    "nexus_mod_id": "12920",
+    "nexus_file_id": "8079786"
+  }
+]
