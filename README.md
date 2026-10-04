@@ -359,3 +359,19 @@ file, create `Directory.Build.local.props` (gitignored):
 When bumping a version, update both `ModInfo.xml` and the `.csproj` `<Version>`, and the `version` field in that mod's `mod.json`.
 
 Each mod folder has a `mod.json` for the public mod website. It is not copied into the game.
+
+## Releasing
+
+Actions → **Release & Publish** builds one mod (or all of them) and can open a GitHub Release
+tagged `Name-vVERSION` and upload that zip to Nexus. The version is the `Version` in `ModInfo.xml`.
+A version that is already on GitHub or Nexus is skipped.
+
+The build job runs on a self-hosted Windows runner labeled `7d2d` (plus the default
+`self-hosted`, `Windows`, and `X64` labels). It needs a 7 Days to Die install, the same way the
+Sun Haven runners need the game mounted: GitHub-hosted runners do not have `Assembly-CSharp.dll`.
+The default path is in `Directory.Build.props`. A runner on another machine sets the repository
+variable `SEVEND2D_DIR`.
+
+Nexus uploads use the secret `NEXUSMODS_API_KEY` and the file id from the mod's Files tab
+(Advanced), stored as `nexus_file_id` in `scripts/matrix/mod-matrix.json`. Honk Door Fix and
+Remove Any Entity have no Nexus page yet, so they only get a GitHub Release.

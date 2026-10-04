@@ -1,0 +1,157 @@
+# =============================================================================
+# Release & Publish — 7 Days to Die mods (GitHub Releases + Nexus)
+# Publish path matches RimWorld (ubuntu: version gate, GitHub tag, Nexus upload).
+# The build matches Sun Haven: it runs on a self-hosted runner that can see the
+# game DLLs. GitHub-hosted runners do not have Assembly-CSharp.dll.
+#
+# Runner labels: self-hosted, Windows, X64, 7d2d
+# Game path: Directory.Build.props, or the SEVEND2D_DIR repository variable.
+# Version comes from each mod's ModInfo.xml Version.
+# Nexus uploads need nexus_file_id (Files tab → Advanced) in scripts/matrix/mod-matrix.json.
+# Secret: NEXUSMODS_API_KEY
+# =============================================================================
+name: Release & Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (build + zip artifact only; no GitHub Release or Nexus)"
+        required: true
+        type: boolean
+        default: false
+      mod:
+        description: "Which mod to release"
+        required: true
+        type: choice
+        options:
+          - all
+          - remove-zombie-dogs
+          - remove-any-entity
+          - quest-disconnect-fix
+          - honk-door-fix
+          - speedometer
+          - keep-backpacks
+          - craft-from-chests
+          - upgrade-bench
+          - blood-moon-sound
+      create_github_release:
+        description: "Create a versioned GitHub Release (tag Name-vVERSION, not marked latest)"
+        required: true
+        type: boolean
+        default: true
+      publish_nexus:
+        description: "Upload the zip to Nexus Mods (needs nexus_file_id; Changelog tab after a successful file)"
+        required: false
+        type: boolean
+        default: true
+      release_anyway:
+        description: "Ignore GitHub tag + Nexus version compare (re-publish even if this version is already up)"
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-mod-${{ github.event.inputs.mod }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  setup:
+    name: Mod matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set.outputs.matrix }}
+      has_mods: ${{ steps.set.outputs.has_mods }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: set
+        env:
+          NEXUS_API_KEY: ${{ secrets.NEXUSMODS_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          MOD="${{ github.event.inputs.mod }}"
+          if [ "$MOD" = "all" ]; then
+            KEYS="$(jq -r '[.[].modKey] | join(",")' scripts/matrix/mod-matrix.json)"
+          else
+            FOUND="$(jq -r --arg k "$MOD" '.[] | select(.modKey == $k) | .modKey' scripts/matrix/mod-matrix.json)"
+            if [ -z "$FOUND" ]; then
+              echo "::error::Unknown mod key $MOD"
+              exit 1
+            fi
+            KEYS="$MOD"
+          fi
+          python3 scripts/release_version_gate.py \
+            --select-new \
+            --keys "$KEYS" \
+            --repo "${{ github.repository }}" \
+            --api-url "${{ github.api_url }}" \
+            --create-github-release "${{ github.event.inputs.create_github_release }}" \
+            --publish-nexus "${{ github.event.inputs.publish_nexus }}" \
+            --dry-run "${{ github.event.inputs.dry_run }}" \
+            --release-anyway "${{ github.event.inputs.release_anyway }}" \
+            --github-output
+
+  build:
+    name: Build and pack
+    needs: setup
+    if: needs.setup.outputs.has_mods == 'true'
+    runs-on: [self-hosted, Windows, X64, 7d2d]
+    strategy:
+      fail-fast: false
+      matrix:
+        mod: ${{ fromJson(needs.setup.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Build one mod
+        shell: powershell
+        env:
+          SEVEND2D_DIR: ${{ vars.SEVEND2D_DIR }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $key = '${{ matrix.mod }}'
+          $row = @(Get-Content scripts/matrix/mod-matrix.json -Raw | ConvertFrom-Json) | Where-Object { $_.modKey -eq $key }
+          if (-not $row) { throw "Unknown mod key $key" }
+          $buildArgs = @{ Only = $row.buildDir }
+          if ($env:SEVEND2D_DIR) { $buildArgs.GameDir = $env:SEVEND2D_DIR }
+          & .\build.ps1 @buildArgs
+          $zip = Get-ChildItem dist -Filter "$($row.zipName)-v*.zip" |
+            Where-Object { $_.Name -notlike '*-with-sound.zip' } |
+            Select-Object -First 1
+          if (-not $zip) { throw "build.ps1 did not write dist\$($row.zipName)-v*.zip" }
+          New-Item -ItemType Directory -Force dist/pack | Out-Null
+          Copy-Item $zip.FullName "dist/pack/$($row.zipName).zip" -Force
+          Get-Item "dist/pack/$($row.zipName).zip" | Format-List Name, Length
+
+      - name: Upload packed zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: pack-${{ matrix.mod }}
+          path: dist/pack/*.zip
+          if-no-files-found: error
+
+  release:
+    name: Publish
+    needs: [setup, build]
+    if: needs.setup.outputs.has_mods == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        mod: ${{ fromJson(needs.setup.outputs.matrix) }}
+    uses: ./.github/workflows/reusable-release-mod.yml
+    with:
+      mod: ${{ matrix.mod }}
+      dry_run: ${{ github.event.inputs.dry_run }}
+      create_github_release: ${{ github.event.inputs.create_github_release }}
+      publish_nexus: ${{ github.event.inputs.publish_nexus }}
+      release_anyway: ${{ github.event.inputs.release_anyway }}
+    secrets:
+      NEXUSMODS_API_KEY: ${{ secrets.NEXUSMODS_API_KEY }}
