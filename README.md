@@ -377,3 +377,8 @@ variable `SEVEND2D_DIR`.
 Nexus uploads use the secret `NEXUSMODS_API_KEY` and the file id from the mod's Files tab
 (Advanced), stored as `nexus_file_id` in `scripts/matrix/mod-matrix.json`. Remove Any Entity
 has no Nexus page yet, so it only gets a GitHub Release.
+
+The same run publishes the zip to the mods website
+(`downloads.azraelsmods.com/7-days-to-die/<slug>/<version>/<slug>-<version>.zip`) and records
+that version in `downloads.json`. That needs `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`
+on this repo. Without them the release still continues and the website file stays unchanged.
