@@ -1,0 +1,16 @@
+{
+  "slug": "upgrade-bench",
+  "name": "Upgrade Bench",
+  "game": "7-days-to-die",
+  "description": "Adds an Upgrade Bench (crafted at a workbench): combine two of the same weapon, armor, tool or vehicle mod (same quality) plus materials into one mod a quality level higher. Costs are set in upgrades.txt. Install on the server AND every player's game.",
+  "version": "1.0.0",
+  "screenshots": [],
+  "download": {
+    "file": "UpgradeBench-1.0.0.zip"
+  },
+  "links": {
+    "steam": null,
+    "thunderstore": null,
+    "nexus": "https://www.nexusmods.com/7daystodie/mods/12922"
+  }
+}
