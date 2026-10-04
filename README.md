@@ -109,6 +109,8 @@ Server-side only; players install nothing.
 
 ## Honk Door Fix
 
+Nexus: https://www.nexusmods.com/7daystodie/mods/12926
+
 Fixes a vanilla bug that can put a dedicated server into an endless error loop.
 
 Vanilla bug: honking a vehicle horn fires the `honk_trader_doors` game event, whose `BlockDoorState`
@@ -373,5 +375,5 @@ The default path is in `Directory.Build.props`. A runner on another machine sets
 variable `SEVEND2D_DIR`.
 
 Nexus uploads use the secret `NEXUSMODS_API_KEY` and the file id from the mod's Files tab
-(Advanced), stored as `nexus_file_id` in `scripts/matrix/mod-matrix.json`. Honk Door Fix and
-Remove Any Entity have no Nexus page yet, so they only get a GitHub Release.
+(Advanced), stored as `nexus_file_id` in `scripts/matrix/mod-matrix.json`. Remove Any Entity
+has no Nexus page yet, so it only gets a GitHub Release.
