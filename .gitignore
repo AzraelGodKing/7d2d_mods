@@ -21,5 +21,11 @@ Directory.Build.local.props
 # personal sound clips (not ours to redistribute)
 BloodMoonSound/mod/bloodmoon.*
 
+# Discord webhook URL (secret). The repo ships discord.example.txt instead.
+BloodMoonSound/mod/discord.txt
+
+# server's removed-entity list (rement remove / rement add)
+RemoveZombieDogs/mod/removed.txt
+
 # Nexus page art (not needed to build or run the mods)
 media/

@@ -1,0 +1,12 @@
+# Craft From Chests settings (each player's own copy). Restart the game after changing.
+#
+# on / off for each line.
+
+# Turn the whole mod on or off.
+Enabled=on
+
+# Also use chests in land claims of players on your friends / ally list (not just your own claim).
+AllowAllies=on
+
+# Also pull from chests when crafting from the backpack (no workstation).
+BackpackCrafting=on

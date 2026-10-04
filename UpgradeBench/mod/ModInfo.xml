@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xml>
+	<Name value="AzraelUpgradeBench" />
+	<DisplayName value="Upgrade Bench" />
+	<Description value="Adds an Upgrade Bench (crafted at a workbench): combine two of the same weapon, armor, tool or vehicle mod (same quality) plus materials into one mod a quality level higher. Costs are set in upgrades.txt. Install on the server AND every player's game." />
+	<Author value="Azrael" />
+	<Version value="1.0.0" />
+	<Website value="https://github.com/AzraelGodKing/7d2d_mods" />
+</xml>

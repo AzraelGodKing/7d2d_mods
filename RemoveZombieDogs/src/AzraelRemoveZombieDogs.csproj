@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Shared settings and game references come from ../../Directory.Build.props -->
+  <PropertyGroup>
+    <AssemblyName>AzraelRemoveZombieDogs</AssemblyName>
+    <RootNamespace>AzraelRemoveZombieDogs</RootNamespace>
+    <Version>1.1.1</Version>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="0Harmony"><HintPath>$(HarmonyDir)\0Harmony.dll</HintPath><Private>false</Private></Reference>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xml>
+	<Name value="HonkDoorFix" />
+	<DisplayName value="Honk Door Fix" />
+	<Description value="Fixes a vanilla bug where honking a vehicle near the top of the world makes the server throw the same error every tick. Honking at traders still opens the doors as normal. Server-side only: players install nothing." />
+	<Author value="Azrael" />
+	<Version value="1.0.0" />
+	<Website value="https://github.com/AzraelGodKing/7d2d_mods" />
+</xml>

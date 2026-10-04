@@ -1,0 +1,12 @@
+<configs>
+	<!-- Upgrade Bench: same model and screen as the vanilla Combine Station. Put in two of the same mod (same
+	     quality) plus materials (upgrades.txt) to get one mod a quality level higher (see the mod's code). -->
+	<append xpath="/blocks">
+		<block name="azraelUpgradeBench">
+			<property name="Extends" value="combineStation" />
+			<property name="CustomIcon" value="combineStation" />
+			<property name="DescriptionKey" value="azraelUpgradeBenchDesc" />
+			<property name="EconomicValue" value="1000" />
+		</block>
+	</append>
+</configs>
