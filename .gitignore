@@ -13,6 +13,8 @@ Directory.Build.local.props
 .vscode/
 *.user
 *.suo
+__pycache__/
+*.pyc
 
 # never commit game assemblies
 *.dll
