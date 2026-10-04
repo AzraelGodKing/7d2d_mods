@@ -118,7 +118,7 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $key = '${{ matrix.mod }}'
-          $row = @(Get-Content scripts/matrix/mod-matrix.json -Raw | ConvertFrom-Json) | Where-Object { $_.modKey -eq $key }
+          $row = (Get-Content scripts/matrix/mod-matrix.json -Raw | ConvertFrom-Json) | Where-Object { $_.modKey -eq $key }
           if (-not $row) { throw "Unknown mod key $key" }
           $buildArgs = @{ Only = $row.buildDir }
           if ($env:SEVEND2D_DIR) { $buildArgs.GameDir = $env:SEVEND2D_DIR }
