@@ -29,5 +29,8 @@ BloodMoonSound/mod/discord.txt
 # server's removed-entity list (rement remove / rement add)
 RemoveZombieDogs/mod/removed.txt
 
+# clear-command password (set in-game with: kbags password)
+KeepBackpacks/mod/password.txt
+
 # Nexus page art (not needed to build or run the mods)
 media/

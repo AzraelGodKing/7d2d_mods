@@ -11,7 +11,7 @@ Small mods for 7 Days to Die, built and tested on **V3.2 (b9/b10)**.
 | [Speedometer](#speedometer) | Code + UI | Server **and** every player | 1.1.0 |
 | [Craft From Chests](#craft-from-chests) | Code (Harmony) | Players only | 1.1.0 |
 | [Upgrade Bench](#upgrade-bench) | Code + XML | Server **and** every player | 1.0.0 |
-| [Keep Backpacks](#keep-backpacks) | XML only | Server (clients get it automatically) | 1.2.0 |
+| [Keep Backpacks](#keep-backpacks) | Code | Server only | 1.2.1 |
 | [Blood Moon Sound](#blood-moon-sound) | Code (Harmony) | Players (own sound); server optional (sound for everyone, Discord posts) | 1.1.0 |
 
 Download the zips from the Releases page, unzip, and put the folder inside the game's `Mods` folder
@@ -294,29 +294,37 @@ Setup: copy `discord.example.txt` to `discord.txt` **on the server**, paste the 
 
 ## Keep Backpacks
 
-Death backpacks **never disappear**; other bags last **24 hours** (vanilla: everything 1 hour).
+Server only. Players install nothing and can leave EasyAntiCheat on. The server sends the bag times when they connect.
 
-| Bag | Vanilla | With this mod |
+Death backpacks **never disappear** by default; other bags last **24 hours** (vanilla: everything 1 hour). Change any of them in `settings.txt`.
+
+| Bag | settings.txt | Vanilla | Default |
+|---|---|---|---|
+| Player death backpack | `DeathBackpack` | 1 hour | permanent |
+| Items you drop on the ground | `DroppedItems` | 1 hour | 24 hours |
+| Vehicle storage bag (vehicle picked up/destroyed) | `VehicleBag` | 1 hour | 24 hours |
+| Zombie loot bags | `ZombieLoot` | 1 hour | 24 hours |
+
+A plain number is seconds. `24h`, `90m`, `3600s`, and `permanent` also work. `0` makes that bag vanish immediately. The game stores seconds ×20 in a 32-bit number, so anything above 107374182 seconds overflows and the bag vanishes. `permanent` is 100000000 seconds, about 3 years of that area being loaded.
+
+The timer only counts while a player is near enough to keep the bag's area loaded. Opened bags that are emptied still disappear, as in vanilla. Zombie loot stays finite on purpose: every zombie can drop one, so permanent bags would pile up and slow the server.
+
+| Command | Who | What it does |
 |---|---|---|
-| Player death backpack | 1 hour | permanent |
-| Items you drop on the ground | 1 hour | 24 hours |
-| Vehicle storage bag (vehicle picked up/destroyed) | 1 hour | 24 hours |
-| Zombie loot bags | 1 hour | 24 hours |
+| `kbags` | admin | Show the current times |
+| `kbags reload` | admin | Re-read `settings.txt` and apply it. No server restart. |
+| `kbags password <word>` | admin | Set the password `kbclear` requires. Saved in `password.txt` on the server. |
+| `kbclear <password>` | anyone with the password | Remove dropped-item bags and loose items on the ground |
 
-- "Permanent" is `TimeStayAfterDeath = 100000000` seconds. The game stores this ×20 in a 32-bit int, so
-  bigger values overflow and the bag vanishes instantly (and `0` also means instantly). 100M seconds is
-  ~3 years of the area being loaded, which is effectively forever.
-- The vanilla timer only counts while a player is near enough to keep the bag's area loaded.
-- Opened bags that are emptied still disappear, as in vanilla.
-- Zombie loot bags get 24 hours instead of permanent on purpose: every zombie can drop one, so
-  permanent bags would pile up by the thousands and slow the server.
+`kbclear` does not remove death backpacks, zombie loot bags, or vehicle storage bags. It only removes things in areas that are loaded right then. Bags in unloaded areas stay until someone goes there.
+
+People already connected keep the old times until they rejoin. Anyone who connects after `kbags reload` gets the new times. There is no command that reloads a mod DLL. Replacing this mod's code still needs a server restart. `kbags reload` only refreshes the bag times.
 
 **Changelog**
+- 1.2.1: works on game version 3.3 (3.3 removed the old backpack timer, which made the mod error at start-up). Times live in `settings.txt`; `kbags reload` applies them without a restart; `kbclear` removes dropped items in loaded areas.
 - 1.2.0: dropped items and vehicle storage bags last 24 hours (were permanent).
 - 1.1.0: zombie loot bags last 24 hours (was vanilla 1 hour).
 - 1.0.0: death backpacks, dropped items and vehicle storage bags never despawn.
-
-No `serverconfig.xml` setting controls this; the timers live in `entityclasses.xml`.
 
 ---
 

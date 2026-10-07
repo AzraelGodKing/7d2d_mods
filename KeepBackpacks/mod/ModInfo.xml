@@ -2,8 +2,8 @@
 <xml>
 	<Name value="AzraelKeepBackpacks" />
 	<DisplayName value="Keep Backpacks (No Despawn)" />
-	<Description value="Death backpacks never disappear (vanilla: 1 hour). Dropped items, vehicle storage bags and zombie loot bags last 24 hours. XML only, server-side, EAC safe." />
+	<Description value="Server-side. Death backpacks stay; other bag times come from settings.txt. kbags reload applies them without a restart. kbclear removes dropped items in loaded areas. Players do not install this mod." />
 	<Author value="Azrael" />
-	<Version value="1.2.0" />
+	<Version value="1.2.1" />
 	<Website value="https://github.com/AzraelGodKing/7d2d_mods" />
 </xml>

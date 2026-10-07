@@ -2,11 +2,11 @@
   "slug": "keep-backpacks",
   "name": "Keep Backpacks",
   "game": "7-days-to-die",
-  "description": "Death backpacks never disappear (vanilla: 1 hour). Dropped items, vehicle storage bags and zombie loot bags last 24 hours. XML only, server-side, EAC safe.",
-  "version": "1.2.0",
+  "description": "Death backpacks never disappear (vanilla: 1 hour). Other bag times are set in settings.txt and can be reloaded without a restart. Server only - players install nothing.",
+  "version": "1.2.1",
   "screenshots": [],
   "download": {
-    "file": "KeepBackpacks-1.2.0.zip"
+    "file": "KeepBackpacks-1.2.1.zip"
   },
   "links": {
     "steam": null,
