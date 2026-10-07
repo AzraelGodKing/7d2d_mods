@@ -1,10 +1,12 @@
 <configs>
 	<!--
+		The server rewrites these numbers from settings.txt on startup and on "kbags reload".
+		Edit settings.txt, not this file.
+
 		TimeStayAfterDeath is in seconds; the game multiplies it by 20 (ticks) and stores it in a
-		32-bit int. Anything above ~107,000,000 overflows to a negative number and the bag vanishes
-		instantly, and 0 also means "vanish now", so "forever" is done with 100,000,000 seconds:
-		about 3 years of the bag's area being loaded. The timer only runs while a player is near
-		enough to keep that area loaded.
+		32-bit int. Anything above 107374182 overflows and the bag vanishes instantly, and 0 also
+		means "vanish now", so "forever" is 100000000 seconds: about 3 years of the bag's area
+		being loaded. The timer only runs while a player is near enough to keep that area loaded.
 
 		Empty bags that have been opened still disappear, as in vanilla.
 	-->

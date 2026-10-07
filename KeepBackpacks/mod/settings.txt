@@ -1,0 +1,15 @@
+# Bag lifetimes. The server reads this at startup and when you run:  kbags reload
+# Players do not install this mod. After a reload, people already connected keep the
+# old times until they rejoin. New connections get the new times.
+#
+# A plain number is seconds. You can also write 24h, 90m, or 3600s.
+# permanent  = about 3 years while that area stays loaded (the longest safe value is a bit higher)
+# 0          = the bag vanishes immediately
+#
+# The game multiplies seconds by 20 and stores that in a 32-bit number, so anything
+# above 107374182 seconds overflows and the bag vanishes instantly.
+
+DeathBackpack=permanent
+DroppedItems=24h
+VehicleBag=24h
+ZombieLoot=24h

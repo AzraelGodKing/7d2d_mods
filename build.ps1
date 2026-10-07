@@ -26,7 +26,7 @@ $mods = @(
     @{ Dir = 'QuestDisconnectFix'; Name = 'AzraelQuestDisconnectFix'; Project = 'src\AzraelQuestDisconnectFix.csproj' },
     @{ Dir = 'HonkDoorFix';        Name = 'HonkDoorFix';              Project = 'src\HonkDoorFix.csproj' },
     @{ Dir = 'Speedometer';        Name = 'AzraelSpeedometer';        Project = 'src\AzraelSpeedometer.csproj' },
-    @{ Dir = 'KeepBackpacks';      Name = 'AzraelKeepBackpacks';      Project = $null },
+    @{ Dir = 'KeepBackpacks';      Name = 'AzraelKeepBackpacks';      Project = 'src\AzraelKeepBackpacks.csproj'; Exclude = @('password.txt') },
     @{ Dir = 'CraftFromChests';    Name = 'AzraelCraftFromChests';    Project = 'src\CraftFromChests.csproj' },
     @{ Dir = 'UpgradeBench';       Name = 'AzraelUpgradeBench';       Project = 'src\UpgradeBench.csproj' },
     # Private = gitignored files (e.g. a copyrighted sound clip) kept OUT of the public zip.

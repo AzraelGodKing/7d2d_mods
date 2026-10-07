@@ -1,0 +1,8 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Shared settings and game references come from ../../Directory.Build.props -->
+  <PropertyGroup>
+    <AssemblyName>AzraelKeepBackpacks</AssemblyName>
+    <RootNamespace>AzraelKeepBackpacks</RootNamespace>
+    <Version>1.2.1</Version>
+  </PropertyGroup>
+</Project>
