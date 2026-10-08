@@ -9,8 +9,8 @@ Small mods for 7 Days to Die, built and tested on **V3.2 (b9/b10)**.
 | [Quest Disconnect Fix](#quest-disconnect-fix) | Code (Harmony) | Server only | 1.0.0 |
 | [Honk Door Fix](#honk-door-fix) | Code (Harmony) | Server only | 1.0.0 |
 | [Speedometer](#speedometer) | Code + UI | Server **and** every player | 1.1.0 |
-| [Craft From Chests](#craft-from-chests) | Code (Harmony) | Players only | 1.1.0 |
-| [Upgrade Bench](#upgrade-bench) | Code + XML | Server **and** every player | 1.0.0 |
+| [Craft From Chests](#craft-from-chests) | Code (Harmony) | Players only | 1.1.1 |
+| [Upgrade Bench](#upgrade-bench) | Code + XML | Server **and** every player | 1.0.1 |
 | [Keep Backpacks](#keep-backpacks) | Code | Server only | 1.2.1 |
 | [Blood Moon Sound](#blood-moon-sound) | Code (Harmony) | Players (own sound); server optional (sound for everyone, Discord posts) | 1.1.0 |
 
@@ -188,6 +188,7 @@ is crafted or upgraded, and anything already taken stays in your backpack.
 **Only players need it; the server doesn't.** Players launch without EAC.
 
 **Changelog**
+- 1.1.1: 7 Days 3.3. Chest contents are read from ItemGrid, and item type is a property, so opening a workstation no longer throws and chest materials count again.
 - 1.1.0: gyro crafts take stackable parts such as wheels from chests even when the recipe also needs a quality item. Block upgrades, and the Upgrade Bench material cost, use those chests too.
 - 1.0.0: first version.
 
@@ -203,6 +204,7 @@ every player installs it too. Restart after editing `upgrades.txt`. Typos in ite
 the game log.
 
 **Changelog**
+- 1.0.1: 7 Days 3.3. The upgraded mod keeps its mod slots. ItemValue no longer has a public Modifications property.
 - 1.0.0: first version.
 
 ## Blood Moon Sound

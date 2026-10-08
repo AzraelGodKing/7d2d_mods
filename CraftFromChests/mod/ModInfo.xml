@@ -4,6 +4,6 @@
 	<DisplayName value="Craft From Chests" />
 	<Description value="Crafting, block upgrades, and the Upgrade Bench can use materials from your chests inside your land claim (or an ally's). Only the players who want it install it - the server needs nothing." />
 	<Author value="Azrael" />
-	<Version value="1.1.0" />
+	<Version value="1.1.1" />
 	<Website value="https://github.com/AzraelGodKing/7d2d_mods" />
 </xml>
