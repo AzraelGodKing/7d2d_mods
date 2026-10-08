@@ -121,9 +121,11 @@ public static class Chests
         {
             FindChests(chests);
             foreach (var s in chests)
-                foreach (var st in s.items)
+                EachSlot(s, st =>
+                {
                     if (Usable(st))
                         counts[st.itemValue.type] = (counts.TryGetValue(st.itemValue.type, out int n) ? n : 0) + st.count;
+                });
         }
         catch (Exception e) { Log.Warning("[CraftFromChests] " + e.Message); }
     }
@@ -283,25 +285,34 @@ public static class Chests
         }
     }
 
+    // 3.3 stores a chest as ItemGrid. The old ItemStack[] items getter is gone.
+    static void EachSlot(TEFeatureStorage s, Action<ItemStack> visit)
+    {
+        var grid = s?.ItemGrid;
+        if (grid == null) return;
+        for (int i = 0; i < grid.Length; i++) visit(grid[i]);
+    }
+
     static int CountIn(TEFeatureStorage s, int type)
     {
         int n = 0;
-        foreach (var st in s.items) if (Usable(st) && st.itemValue.type == type) n += st.count;
+        EachSlot(s, st => { if (Usable(st) && st.itemValue.type == type) n += st.count; });
         return n;
     }
 
     static int TakeFrom(TEFeatureStorage s, int type, int want)
     {
         int took = 0;
-        var items = s.items;
-        for (int i = 0; i < items.Length && took < want; i++)
+        var grid = s?.ItemGrid;
+        if (grid == null) return 0;
+        for (int i = 0; i < grid.Length && took < want; i++)
         {
-            var st = items[i];
+            var st = grid[i];
             if (!Usable(st) || st.itemValue.type != type) continue;
             int t = Math.Min(st.count, want - took);
             st.count -= t;
             took += t;
-            if (st.count <= 0) items[i] = ItemStack.Empty.Clone();
+            if (st.count <= 0) grid[i] = ItemStack.Empty.Clone();
         }
         return took;
     }

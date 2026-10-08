@@ -1,0 +1,23 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../mod-website"
+		},
+		{
+			"path": "../rimworld_mods"
+		},
+		{
+			"path": "../rimworld_mods-modjson"
+		},
+		{
+			"path": "../SunhavenMod"
+		},
+		{
+			"path": "../SunhavenMod-modjson"
+		}
+	],
+	"settings": {}
+}

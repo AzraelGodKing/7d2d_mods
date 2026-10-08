@@ -171,7 +171,11 @@ public static class ModUpgrades
 
         var result = stack.itemValue.Clone();
         result.Quality = (ushort)(q + 1);
-        if (result.Modifications != null) Array.Resize(ref result.Modifications, result.CalcModSlotCount());
+        // 3.3 dropped the public Modifications property. The slot array is modifications.
+        int slots = result.CalcModSlotCount();
+        if (slots <= 0) result.modifications = null;
+        else if (result.modifications == null) result.modifications = new ItemValue[slots];
+        else Array.Resize(ref result.modifications, slots);
         plan.Result = result;
 
         plan.State = short_ ? State.NotEnough : State.Ready;
