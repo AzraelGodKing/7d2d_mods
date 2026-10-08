@@ -12,7 +12,7 @@ Small mods for 7 Days to Die, built and tested on **V3.2 (b9/b10)**.
 | [Craft From Chests](#craft-from-chests) | Code (Harmony) | Players only | 1.1.1 |
 | [Upgrade Bench](#upgrade-bench) | Code + XML | Server **and** every player | 1.0.1 |
 | [Keep Backpacks](#keep-backpacks) | Code | Server only | 1.2.1 |
-| [Blood Moon Sound](#blood-moon-sound) | Code (Harmony) | Players (own sound); server optional (sound for everyone, Discord posts) | 1.1.0 |
+| [Blood Moon Sound](#blood-moon-sound) | Code (Harmony) | Players (own sound); server optional (sound for everyone, Discord posts) | 1.2.0 |
 
 Download the zips from the Releases page, unzip, and put the folder inside the game's `Mods` folder
 (or the server's `Mods` folder). Code that a player installs needs EasyAntiCheat turned off.
@@ -210,21 +210,31 @@ the game log.
 ## Blood Moon Sound
 
 Plays a sound clip of your choice when the blood moon horde starts (or as a warning beforehand).
-The mod ships **without** a sound: drop `bloodmoon.ogg`, `.wav` or `.mp3` into the mod folder.
+It can also play a clip when you enter the world, a morning bell at dawn, and a night bell at dusk.
+Dawn and dusk follow this world's day length, so a short day still rings at sunrise and sunset.
+The mod ships **without** sounds: drop `bloodmoon.ogg`, `.wav` or `.mp3` into the mod folder, and the
+same for `spawn`, `morning`, and `night`. A missing bell file means that bell stays quiet.
 
 | Command (F1 console) | What it does |
 |---|---|
 | `bmsound` | Show status (sound loaded, when it plays, next blood moon day) |
-| `bmsound test` | Play the sound now |
-| `bmsound reload` | Re-read `settings.txt` and the sound file |
+| `bmsound test` | Play the blood moon clip now |
+| `bmsound test spawn` | Play the clip that runs when you enter the world |
+| `bmsound test morning` | Play the morning bell |
+| `bmsound test night` | Play the night bell |
+| `bmsound reload` | Re-read `settings.txt` and the sound files |
 
-`settings.txt`: `PlayAt=horde|warning|both`, `WarningHour=21`, `Volume=1.0`.
-It won't play if you join in the middle of a blood moon, only when one starts while you're in game.
+`settings.txt`: `PlayAt=horde|warning|both`, `WarningHour=21`, `Volume=1.0`,
+`Spawn=on|off`, `Morning=on|off`, `Night=on|off`.
+The blood moon clip won't play if you join in the middle of a blood moon, only when one starts while
+you're in game. The spawn clip plays once each time you enter a world. Dying and respawning in the
+same session does not play it again.
 
 **Only players need it for the sound; the server doesn't.** Players launch without EAC.
 
-Any `bloodmoon.*` file in `BloodMoonSound/mod/` is gitignored. `build.ps1` leaves it out of the
-public zip and makes a second `-with-sound` zip (private, for your own group) which `-Install` uses.
+Any `bloodmoon.*`, `spawn.*`, `morning.*`, or `night.*` file in `BloodMoonSound/mod/` is gitignored.
+`build.ps1` leaves them out of the public zip and makes a second `-with-sound` zip (private, for your
+own group) which `-Install` uses.
 
 ### Horde sound for everyone (server only, on by default)
 
@@ -287,6 +297,8 @@ Setup: copy `discord.example.txt` to `discord.txt` **on the server**, paste the 
   leaves it out of **every** zip, including the private `-with-sound` one.
 
 **Changelog**
+- 1.2.0: optional clips for entering the world (`spawn`), dawn (`morning`), and dusk (`night`).
+  Dawn and dusk follow the world's day length. `bmsound test` can play each clip.
 - 1.1.0: server-side Discord posts with a fully custom schedule (any number of reminders, daily
   countdown, horde start, updates during the horde, dawn) and the `bmdiscord` console command.
   Server plays a vanilla horde sound (`alarm1_oneshot`) for every player; players with their own clip
