@@ -19,7 +19,7 @@ public class AzraelQuestDisconnectFix : IModApi
     {
         var harmony = new Harmony("azrael.questdisconnectfix");
         harmony.PatchAll(typeof(AzraelQuestDisconnectFix).Assembly);
-        Log.Out($"{Tag} Loaded. Patched QuestEventManager.QuestUnlockPOI and QuestEventManager.HandlePlayerDisconnect.");
+        Log.Out($"{Tag} Loaded. Patched QuestEventManager.QuestUnlockPOI, QuestEventManager.HandlePlayerDisconnect, and the drone party handlers.");
     }
 }
 
@@ -69,5 +69,54 @@ public static class Patch_HandlePlayerDisconnect
                         $"({__exception.GetType().Name}: {__exception.Message}). Continuing the logout so no ghost player is left behind.");
         }
         return null; // swallow so ConnectionManager.DisconnectClient can finish
+    }
+}
+
+// Fixes parties that stop working after a robotic drone unloads (vanilla 3.3 bug).
+//
+// A drone listens to its owner's party (PartyMemberAdded / PartyMemberRemoved). When the drone
+// unloads, EntityDrone.OnEntityUnload sets registeredPartyMembers to null, but it only stops
+// listening if it can still find its owner. When it can't, the party keeps calling the dead
+// drone. The next join hits registeredPartyMembers.Add and the next leave or logout hits
+// registeredPartyMembers.Remove, both on null. The NullReferenceException stops Party.AddPlayer
+// or Party.RemovePlayer halfway, before the party is sent to everyone, so players can't join
+// or leave that party until the server restarts.
+//
+// The fix: when a drone's list is gone, skip its handler and stop it listening to that party,
+// so the rest of the join or leave runs as normal. A live drone is untouched.
+[HarmonyPatch(typeof(EntityDrone), nameof(EntityDrone.onPartyMemberAdded))]
+public static class Patch_DronePartyMemberAdded
+{
+    public static bool Prefix(EntityDrone __instance, EntityPlayer player) => DroneParty.Live(__instance, player);
+}
+
+[HarmonyPatch(typeof(EntityDrone), nameof(EntityDrone.onPartyMemberRemoved))]
+public static class Patch_DronePartyMemberRemoved
+{
+    public static bool Prefix(EntityDrone __instance, EntityPlayer player) => DroneParty.Live(__instance, player);
+}
+
+public static class DroneParty
+{
+    // True when the drone's handler can run. False skips it and detaches the stale drone.
+    public static bool Live(EntityDrone drone, EntityPlayer player)
+    {
+        if (drone != null && drone.registeredPartyMembers != null) return true;
+        try
+        {
+            var party = player?.Party;
+            if (party != null && drone != null)
+            {
+                party.PartyMemberAdded -= drone.onPartyMemberAdded;
+                party.PartyMemberRemoved -= drone.onPartyMemberRemoved;
+            }
+        }
+        catch (Exception e)
+        {
+            Log.Warning($"{AzraelQuestDisconnectFix.Tag} Could not detach an unloaded drone from a party ({e.GetType().Name}: {e.Message}).");
+        }
+        Log.Warning($"{AzraelQuestDisconnectFix.Tag} Skipped an unloaded drone ({(drone != null ? drone.entityId.ToString() : "?")}) during a party change for entity " +
+                    $"{(player != null ? player.entityId.ToString() : "?")}. (This used to break the party.)");
+        return false;
     }
 }

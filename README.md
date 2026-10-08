@@ -5,7 +5,7 @@ Small mods for 7 Days to Die, built and tested on **V3.2 (b9/b10)**.
 | Mod | Type | Install on | Version |
 |---|---|---|---|
 | [Remove Any Entity](#remove-any-entity) | Code (Harmony) | Server only | 2.0.1 |
-| [Quest Disconnect Fix](#quest-disconnect-fix) | Code (Harmony) | Server only | 1.0.0 |
+| [Quest Disconnect Fix](#quest-disconnect-fix) | Code (Harmony) | Server only | 1.1.0 |
 | [Honk Door Fix](#honk-door-fix) | Code (Harmony) | Server only | 1.0.0 |
 | [Speedometer](#speedometer) | Code + UI | Server **and** every player | 1.1.0 |
 | [Craft From Chests](#craft-from-chests) | Code (Harmony) | Players only | 1.1.2 |
@@ -79,7 +79,22 @@ The mod:
 - skips the unlock when there's no POI at that position (logs a `[QuestDisconnectFix] Skipped POI unlock` warning), and
 - as a safety net, catches any other exception in the quest cleanup so the logout always finishes.
 
+It also fixes **parties that stop working** after a robotic drone unloads.
+
+Vanilla 3.3 bug: a drone listens to its owner's party. When it unloads, it clears its member list but
+only stops listening if it can still find its owner. When it can't, the next join or leave calls the
+dead drone, which throws a `NullReferenceException` in `EntityDrone.onPartyMemberAdded` or
+`onPartyMemberRemoved`. That stops `Party.AddPlayer` or `Party.RemovePlayer` halfway, before the party
+is sent to the players, so nobody can join or leave that party until a restart.
+
+The mod skips a drone whose list is gone, stops it listening to that party, and logs a
+`[QuestDisconnectFix] Skipped an unloaded drone` warning. A live drone works as before.
+
 Server-side only; players install nothing.
+
+**Changelog**
+- 1.1.0: fix parties breaking after a robotic drone unloads (3.3).
+- 1.0.0: first version.
 
 ## Honk Door Fix
 
