@@ -22,6 +22,9 @@ __pycache__/
 
 # personal sound clips (not ours to redistribute)
 BloodMoonSound/mod/bloodmoon.*
+BloodMoonSound/mod/spawn.*
+BloodMoonSound/mod/morning.*
+BloodMoonSound/mod/night.*
 
 # Discord webhook URL (secret). The repo ships discord.example.txt instead.
 BloodMoonSound/mod/discord.txt
