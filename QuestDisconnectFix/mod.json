@@ -2,11 +2,11 @@
   "slug": "quest-disconnect-fix",
   "name": "Quest Disconnect Fix",
   "game": "7-days-to-die",
-  "description": "Server-side fix for ghost players: stops a quest POI unlock crash that aborted player logouts, leaving players stuck in the world and blocking rejoins until a restart. Players do not need to install anything.",
-  "version": "1.0.0",
+  "description": "Server-side fixes for ghost players and broken parties: stops a quest POI unlock crash that aborted player logouts, and a robotic drone crash that stopped players joining or leaving parties. Players do not need to install anything.",
+  "version": "1.1.0",
   "screenshots": [],
   "download": {
-    "file": "QuestDisconnectFix-1.0.0.zip"
+    "file": "QuestDisconnectFix-1.1.0.zip"
   },
   "links": {
     "steam": null,
