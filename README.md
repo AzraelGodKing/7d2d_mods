@@ -297,7 +297,7 @@ Setup: copy `discord.example.txt` to `discord.txt` **on the server**, paste the 
   leaves it out of **every** zip, including the private `-with-sound` one.
 
 **Changelog**
-- 1.2.1: morning and night no longer play together when a world finishes loading. The enter-world clip waits until the clock has settled.
+- 1.2.1: morning and night no longer play together when a world finishes loading. The enter-world clip waits until the clock has settled. Dawn and dusk also play once per event day, and a second init keeps a single player or Discord object.
 - 1.2.0: optional clips for entering the world (`spawn`), dawn (`morning`), and dusk (`night`).
   Dawn and dusk follow the world's day length. `bmsound test` can play each clip.
 - 1.1.0: server-side Discord posts with a fully custom schedule (any number of reminders, daily
