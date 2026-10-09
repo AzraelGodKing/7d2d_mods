@@ -171,6 +171,9 @@ public class BmsPlayer : MonoBehaviour
     bool? lastBloodMoon;
     int lastDay = -1, lastHour = -1, lastHordeKey = -1, lastWarnDay = -1;
     float lastHordeEdgeAt = -999f; // realtime when this PC saw the blood moon begin
+    bool clockLatched;
+    bool spawnPlayed;
+    float clockLatchedAt;
 
     // How close (in game time) to the horde start the server's sound may be replaced.
     // 1000 world-time units = 1 game hour, so 250 = 15 game minutes either side.
@@ -309,7 +312,15 @@ public class BmsPlayer : MonoBehaviour
     void Tick()
     {
         var world = GameManager.Instance != null ? GameManager.Instance.World : null;
-        if (world == null) { lastBloodMoon = null; return; } // main menu: reset so joining never plays instantly
+        var player = world != null ? world.GetPrimaryPlayer() : null;
+        if (world == null || player == null)
+        {
+            // Main menu, or the world is still loading. Forget the clock so the next entry starts clean.
+            lastBloodMoon = null;
+            clockLatched = false;
+            spawnPlayed = false;
+            return;
+        }
 
         ulong t = world.worldTime;
         int bmDay = GameStats.GetInt(EnumGameStats.BloodMoonDay);
@@ -318,11 +329,30 @@ public class BmsPlayer : MonoBehaviour
         int day = GameUtils.WorldTimeToDays(t);
         int hour = GameUtils.WorldTimeToHours(t);
 
-        if (lastBloodMoon == null) // first tick in this world: remember state. Horde clip stays quiet if you joined mid-event.
+        if (!clockLatched)
+        {
+            // Remember the clock. Do not ring bells for the sample that merely says we arrived.
+            lastBloodMoon = bloodMoon; lastDay = day; lastHour = hour;
+            clockLatched = true;
+            clockLatchedAt = Time.realtimeSinceStartup;
+            return;
+        }
+
+        // Loading can show an empty clock for a moment, then jump to the save's real time.
+        // That jump is not dawn or dusk, so morning and night must stay quiet.
+        bool clockCatchup = Time.realtimeSinceStartup - clockLatchedAt < 5f
+            && (day != lastDay || Mathf.Abs(hour - lastHour) > 1);
+        if (clockCatchup)
         {
             lastBloodMoon = bloodMoon; lastDay = day; lastHour = hour;
-            if (BmsSettings.Spawn) PlayIfReady(Spawn);
+            clockLatchedAt = Time.realtimeSinceStartup;
             return;
+        }
+
+        if (!spawnPlayed)
+        {
+            spawnPlayed = true;
+            if (BmsSettings.Spawn) PlayIfReady(Spawn);
         }
 
         var mode = BmsSettings.PlayAt;

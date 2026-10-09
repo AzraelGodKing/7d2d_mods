@@ -4,6 +4,6 @@
 	<DisplayName value="Blood Moon Sound" />
 	<Description value="Plays your own sound clips: blood moon horde (and/or a warning earlier that day), when you enter the world, and morning and night bells at this world's dawn and dusk. Drop bloodmoon / spawn / morning / night as .ogg, .wav, or .mp3 into this folder. Players: the server does not need it. Server (optional): posts blood moon updates to Discord (see discord.example.txt); players do not need it for that." />
 	<Author value="Azrael" />
-	<Version value="1.2.0" />
+	<Version value="1.2.1" />
 	<Website value="https://github.com/AzraelGodKing/7d2d_mods" />
 </xml>
