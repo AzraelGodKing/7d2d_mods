@@ -12,7 +12,7 @@ Small mods for 7 Days to Die, built and tested on **V3.2 (b9/b10)**.
 | [Craft From Chests](#craft-from-chests) | Code (Harmony) | Players only | 1.1.1 |
 | [Upgrade Bench](#upgrade-bench) | Code + XML | Server **and** every player | 1.0.1 |
 | [Keep Backpacks](#keep-backpacks) | Code | Server only | 1.2.1 |
-| [Blood Moon Sound](#blood-moon-sound) | Code (Harmony) | Players (own sound); server optional (sound for everyone, Discord posts) | 1.2.0 |
+| [Blood Moon Sound](#blood-moon-sound) | Code (Harmony) | Players (own sound); server optional (sound for everyone, Discord posts) | 1.2.1 |
 
 Download the zips from the Releases page, unzip, and put the folder inside the game's `Mods` folder
 (or the server's `Mods` folder). Code that a player installs needs EasyAntiCheat turned off.
@@ -297,6 +297,7 @@ Setup: copy `discord.example.txt` to `discord.txt` **on the server**, paste the 
   leaves it out of **every** zip, including the private `-with-sound` one.
 
 **Changelog**
+- 1.2.1: morning and night no longer play together when a world finishes loading. The enter-world clip waits until the clock has settled.
 - 1.2.0: optional clips for entering the world (`spawn`), dawn (`morning`), and dusk (`night`).
   Dawn and dusk follow the world's day length. `bmsound test` can play each clip.
 - 1.1.0: server-side Discord posts with a fully custom schedule (any number of reminders, daily
