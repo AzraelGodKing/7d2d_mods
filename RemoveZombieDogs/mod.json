@@ -1,8 +1,8 @@
 {
   "slug": "remove-zombie-dogs",
-  "name": "Remove Zombie Dogs",
+  "name": "Remove Entities",
   "game": "7-days-to-die",
-  "description": "Removes zombie dogs, coyotes, dire wolves and screamers from world spawns, POI sleepers, hordes, screamer heat spawns and Twitch spawn actions. Anything left without a spawn gets a random basic zombie instead. XML only, server side, EAC safe.",
+  "description": "Server-side. Choose which creatures are allowed to spawn with the rement command. Dogs, coyotes, dire wolves and screamers are off until you turn them back on. Players do not install this mod.",
   "version": "1.1.1",
   "screenshots": [],
   "download": {
