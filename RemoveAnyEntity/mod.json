@@ -1,0 +1,16 @@
+{
+  "slug": "remove-any-entity",
+  "name": "Remove Any Entity",
+  "game": "7-days-to-die",
+  "description": "Server-side. Choose which zombies and animals stop spawning by uncommenting their names in entities.txt. Players do not install this mod.",
+  "version": "2.0.0",
+  "screenshots": [],
+  "download": {
+    "file": "RemoveAnyEntity-2.0.0.zip"
+  },
+  "links": {
+    "steam": null,
+    "thunderstore": null,
+    "nexus": null
+  }
+}
