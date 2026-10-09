@@ -269,7 +269,7 @@ The whole schedule is set in `discord.txt`:
 | `End` | on | At dawn afterwards |
 | `MsgCountdown`, `MsgStart`, `MsgUpdate`, `MsgEnd` | see file | Message text |
 
-Placeholders: `{day}` blood moon day, `{days}` days left, `{s}` plural "s" (`{days} day{s}`),
+Placeholders: `{day}` blood moon day, `{days}` days left,
 `{players}` who's online, `{count}` how many, `\n` new line.
 
 Reminders and the countdown follow the game's own "next blood moon day", so they work with any

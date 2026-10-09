@@ -53,7 +53,6 @@ jobs:
             exit 1
           fi
           echo "mod_dir=$(echo "$ROW" | jq -r '.modDir')" >> "$GITHUB_OUTPUT"
-          echo "dll_name=$(echo "$ROW" | jq -r '.dllName')" >> "$GITHUB_OUTPUT"
           echo "zip_name=$(echo "$ROW" | jq -r '.zipName')" >> "$GITHUB_OUTPUT"
           echo "nexus_url=$(echo "$ROW" | jq -r '.nexus // empty')" >> "$GITHUB_OUTPUT"
           echo "nexus_mod_id=$(echo "$ROW" | jq -r '.nexus_mod_id // empty')" >> "$GITHUB_OUTPUT"

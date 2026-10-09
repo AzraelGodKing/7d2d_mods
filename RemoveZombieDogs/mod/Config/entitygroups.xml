@@ -1,8 +1,0 @@
-<configs>
-	<!--
-		Spawn filtering is done by the mod when something is about to spawn, so
-		"rement remove" and "rement add" apply without a restart. This file is
-		intentionally empty: stripping groups here would make "rement add" unable
-		to put a creature back.
-	-->
-</configs>
