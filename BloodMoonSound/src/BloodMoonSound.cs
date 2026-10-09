@@ -18,10 +18,22 @@ public class AzraelBloodMoonSoundMod : IModApi
         if (GameManager.IsDedicatedServer)
         {
             Log.Out("[BloodMoonSound] Dedicated server: no sound here (it plays on players' PCs). Starting Discord posts.");
+            // AZR-361: InitMod can run more than once; keep a single Discord notifier.
+            if (BmdNotifier.Instance != null)
+            {
+                UnityEngine.Object.Destroy(BmdNotifier.Instance.gameObject);
+                BmdNotifier.Instance = null;
+            }
             var srv = new GameObject("AzraelBloodMoonDiscord");
             UnityEngine.Object.DontDestroyOnLoad(srv);
             BmdNotifier.Instance = srv.AddComponent<BmdNotifier>();
             return;
+        }
+        // AZR-361: destroy any leftover player so dawn/dusk never fire from two Update loops.
+        if (BmsPlayer.Instance != null)
+        {
+            UnityEngine.Object.Destroy(BmsPlayer.Instance.gameObject);
+            BmsPlayer.Instance = null;
         }
         var go = new GameObject("AzraelBloodMoonSound");
         UnityEngine.Object.DontDestroyOnLoad(go);
@@ -170,6 +182,8 @@ public class BmsPlayer : MonoBehaviour
     float timer;
     bool? lastBloodMoon;
     int lastDay = -1, lastHour = -1, lastHordeKey = -1, lastWarnDay = -1;
+    // AZR-361: once per dawn/dusk event day (same idea as lastWarnDay for the warning clip).
+    int lastMorningDay = -1, lastNightDay = -1;
     float lastHordeEdgeAt = -999f; // realtime when this PC saw the blood moon begin
     bool clockLatched;
     bool spawnPlayed;
@@ -319,6 +333,8 @@ public class BmsPlayer : MonoBehaviour
             lastBloodMoon = null;
             clockLatched = false;
             spawnPlayed = false;
+            lastMorningDay = -1;
+            lastNightDay = -1;
             return;
         }
 
@@ -371,10 +387,25 @@ public class BmsPlayer : MonoBehaviour
         }
 
         // Morning and night follow this world's dawn and dusk, which move with day length.
+        // AZR-361: latch per event day so a time rewind (or a second BmsPlayer) cannot overlap the same bell.
         if (lastDay >= 0 && BmsSettings.Morning && Crossed(lastDay, lastHour, day, hour, duskDawn.dawnHour))
-            PlayIfReady(Morning);
+        {
+            int eventDay = CrossingEventDay(lastDay, lastHour, day, hour, duskDawn.dawnHour);
+            if (lastMorningDay != eventDay)
+            {
+                lastMorningDay = eventDay;
+                PlayIfReady(Morning);
+            }
+        }
         if (lastDay >= 0 && BmsSettings.Night && Crossed(lastDay, lastHour, day, hour, duskDawn.duskHour))
-            PlayIfReady(Night);
+        {
+            int eventDay = CrossingEventDay(lastDay, lastHour, day, hour, duskDawn.duskHour);
+            if (lastNightDay != eventDay)
+            {
+                lastNightDay = eventDay;
+                PlayIfReady(Night);
+            }
+        }
 
         lastBloodMoon = bloodMoon; lastDay = day; lastHour = hour;
     }
@@ -386,6 +417,15 @@ public class BmsPlayer : MonoBehaviour
         if (toDay == fromDay) return fromHour < boundary && toHour >= boundary;
         if (toDay == fromDay + 1) return fromHour < boundary || toHour >= boundary;
         return true;
+    }
+
+    // Calendar day the crossed dawn/dusk belongs to (so an overnight skip can ring dusk of yesterday
+    // and still allow dusk tonight).
+    static int CrossingEventDay(int fromDay, int fromHour, int toDay, int toHour, int boundary)
+    {
+        if (toDay == fromDay) return toDay;
+        if (toDay == fromDay + 1) return fromHour < boundary ? fromDay : toDay;
+        return toDay;
     }
 }
 
