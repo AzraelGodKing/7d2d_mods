@@ -4,6 +4,6 @@
 	<DisplayName value="Remove Entities" />
 	<Description value="Server-side. Choose which creatures are allowed to spawn with the rement command. Dogs, coyotes, dire wolves and screamers are off until you turn them back on. Players do not install this mod." />
 	<Author value="Azrael" />
-	<Version value="1.1.1" />
+	<Version value="1.1.2" />
 	<Website value="" />
 </xml>

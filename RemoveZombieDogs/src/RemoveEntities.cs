@@ -74,13 +74,27 @@ public static class RemovedEntities
     public static void Load()
     {
         Removed.Clear();
+        bool expanded = false;
         try
         {
             if (!File.Exists(FilePath)) return;
+            bool classesLoaded = EntityClass.list?.Dict != null && EntityClass.list.Dict.Count > 0;
             foreach (var raw in File.ReadAllLines(FilePath))
             {
                 var line = raw.Trim();
                 if (line.Length == 0 || line[0] == '#') continue;
+                // A hand-written "name*" becomes the class names it matches, the same as rement remove name*.
+                // Before classes load it stays as typed; the next Load (first spawn or game start) expands it.
+                if (classesLoaded && line.EndsWith("*", StringComparison.Ordinal))
+                {
+                    var matches = Matching(line);
+                    int added = 0;
+                    foreach (var name in matches)
+                        if (!IsProtected(name) && Removed.Add(name)) added++;
+                    Log.Out($"{AzraelRemoveZombieDogs.Tag} removed.txt: {line} matches {added} entity class(es).");
+                    expanded = true;
+                    continue;
+                }
                 Removed.Add(line);
             }
         }
@@ -88,6 +102,7 @@ public static class RemovedEntities
         {
             Log.Warning($"{AzraelRemoveZombieDogs.Tag} Could not read removed.txt: {e.Message}");
         }
+        if (expanded) Save();
     }
 
     public static void SeedDefaults()
@@ -255,6 +270,9 @@ public static class RemovedEntities
         return !IsRemoved(ec.entityClassName) && entry.prob > 0f;
     }
 
+    static bool warnedNoFallback;
+
+    // 0 is the vanilla "none" entry: the group spawns nothing rather than handing the game an invalid id.
     static int FallbackId()
     {
         for (int i = 0; i < FallbackNames.Length; i++)
@@ -263,7 +281,12 @@ public static class RemovedEntities
             int id = EntityClass.GetId(FallbackNames[i]);
             if (id > 0) return id;
         }
-        return -1;
+        if (!warnedNoFallback)
+        {
+            warnedNoFallback = true;
+            Log.Warning($"{AzraelRemoveZombieDogs.Tag} Every fallback zombie is removed too, so emptied groups spawn nothing. rement add zombieJoe (or another basic zombie) gives them a replacement.");
+        }
+        return 0;
     }
 
     static void Save()
@@ -299,14 +322,16 @@ public static class Patch_GroupRoll
 }
 
 // Game events and Twitch actions that name a class (not a group) cache those ids.
-// Rebuild the cache each time the action runs so rement remove applies without a restart.
+// Rebuild the cache just before the action builds its spawn list so rement remove applies without a restart.
+// OnPerformAction runs every tick, so only the NeedSpawnEntries step pays for the class scan.
 [HarmonyPatch(typeof(ActionBaseSpawn), nameof(ActionBaseSpawn.OnPerformAction))]
 public static class Patch_EventSpawnRefresh
 {
     static void Prefix(ActionBaseSpawn __instance)
     {
-        if (!__instance.useEntityGroup)
-            __instance.SetupEntityIDs();
+        if (__instance.useEntityGroup || __instance.SpawnEntries != null) return;
+        if (__instance.CurrentState != ActionBaseSpawn.SpawnUpdateTypes.NeedSpawnEntries) return;
+        __instance.SetupEntityIDs();
     }
 }
 

@@ -3,7 +3,7 @@
   <PropertyGroup>
     <AssemblyName>AzraelRemoveAnyEntity</AssemblyName>
     <RootNamespace>AzraelRemoveAnyEntity</RootNamespace>
-    <Version>2.0.0</Version>
+    <Version>2.0.1</Version>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="0Harmony"><HintPath>$(HarmonyDir)\0Harmony.dll</HintPath><Private>false</Private></Reference>

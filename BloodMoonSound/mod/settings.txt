@@ -9,10 +9,20 @@
 PlayAt=horde
 
 # Hour (0-23) for the warning, e.g. 21 = one hour before a normal 22:00 horde.
+# If this is at or after the world's dusk, the warning plays one hour before dusk instead.
 WarningHour=21
 
 # 0.0 - 1.0. The game's Overall volume slider still applies on top of this.
 Volume=1.0
+
+# Extra clips (on / off). Each needs its own file in this folder: spawn, morning or night
+# (.ogg, .wav or .mp3). A missing file means that one stays quiet.
+#   Spawn    = when you enter a world
+#   Morning  = at dawn. Replaces the game's own dawn sound while the file is loaded.
+#   Night    = at dusk. Replaces the game's own dusk sound while the file is loaded.
+Spawn=on
+Morning=on
+Night=on
 
 # ---- SERVER ONLY (players can ignore everything below) ----
 # When the horde starts, the server tells every player's game to play one built-in game sound,
