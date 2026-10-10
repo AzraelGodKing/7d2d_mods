@@ -5,7 +5,7 @@ Small mods for 7 Days to Die, built and tested on **V3.2 (b9/b10)**.
 | Mod | Type | Install on | Version |
 |---|---|---|---|
 | [Remove Entities](#remove-entities) | Code | Server only | 1.1.2 |
-| [Remove Any Entity](#remove-any-entity) | Code (Harmony) | Server only | 2.0.0 |
+| [Remove Any Entity](#remove-any-entity) | Code (Harmony) | Server only | 2.0.1 |
 | [Quest Disconnect Fix](#quest-disconnect-fix) | Code (Harmony) | Server only | 1.0.0 |
 | [Honk Door Fix](#honk-door-fix) | Code (Harmony) | Server only | 1.0.0 |
 | [Speedometer](#speedometer) | Code + UI | Server **and** every player | 1.1.0 |
@@ -22,7 +22,7 @@ Server-only mods do not.
 
 ## Remove Entities
 
-Uploaded as the existing Remove Zombie Dogs mod. The folder is still `RemoveZombieDogs` and the mod id is still `AzraelRemoveZombieDogs`, so it updates that install. In the game's mod list the name is **Remove Entities**.
+Remove Entities is the mod that used to be called Remove Zombie Dogs, and it updates that install. The folder is still `RemoveZombieDogs` and the mod id is still `AzraelRemoveZombieDogs`.
 
 Server only. Players install nothing and can leave EasyAntiCheat on.
 
@@ -47,7 +47,7 @@ Creatures already alive are not deleted. Ones saved in the world stay that creat
 
 ## Remove Any Entity
 
-(Formerly **Remove Zombie Dogs**.) Pick which zombies and animals stop spawning. `entities.txt` in the
+An alternative to **Remove Entities**. Pick which zombies and animals stop spawning. `entities.txt` in the
 mod folder lists every vanilla entity that spawns naturally, all commented out; remove the `#` in front
 of a name to take it out of the game, then restart.
 
@@ -76,7 +76,7 @@ goes in your own Mods folder.
 | `rae` | What's removed, how many groups changed, typos in `entities.txt` |
 | `rae group <name>` | What a spawn group can spawn now, with chances (partial names are suggested) |
 
-Upgrading from Remove Zombie Dogs: delete the old `RemoveZombieDogs` folder, install this one, and
+Switching from Remove Entities: delete the old `RemoveZombieDogs` folder, install this one, and
 uncomment `animalZombieDog`, `animalCoyote`, `animalDireWolf` and `zombieScreamer` for the same result.
 
 Known side effect: challenges that need a removed creature (e.g. "Kill 50 coyotes") can't be completed.
@@ -85,6 +85,7 @@ This is a separate mod from Remove Entities. Remove Entities changes the list in
 and keeps the old mod id. Remove Any Entity reads `entities.txt` and uses its own mod id.
 
 **Changelog**
+- 2.0.1: a Twitch spawn whose creatures are all removed, with no usable `Replacement=`, is left unchanged (with one warning), the same as an emptied spawn group. It used to end up empty, which made the action rebuild its list every tick and never finish.
 - 2.0.0: renamed to Remove Any Entity. Now a code mod driven by `entities.txt` (any entity, all tiers,
   other mods' entities), with `rae` / `rae group` console commands and typo warnings.
 - 1.1.1: fix `IsEnemyGroup` NRE spam from `EnemyAnimalsSnowNight` (only `none` left after removal).

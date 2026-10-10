@@ -230,15 +230,29 @@ public static class RaeLoadDonePatch
 [HarmonyLib.HarmonyPatch(typeof(GameEvent.SequenceActions.ActionBaseSpawn), nameof(GameEvent.SequenceActions.ActionBaseSpawn.SetupEntityIDs))]
 public static class RaeTwitchPatch
 {
+    static bool warnedNoReplacement;
+
     static void Postfix(GameEvent.SequenceActions.ActionBaseSpawn __instance)
     {
         try
         {
             if (RaeSettings.Removed.Count == 0 || __instance.entityIDs == null || __instance.entityIDs.Count == 0) return;
-            int before = __instance.entityIDs.Count;
-            __instance.entityIDs.RemoveAll(id => RaeSettings.IsRemoved(RaeUtil.ClassName(id)));
-            if (__instance.entityIDs.Count == before) return;
-            if (__instance.entityIDs.Count == 0) __instance.entityIDs.AddRange(RaeStats.ReplacementIds);
+            var kept = __instance.entityIDs.Where(id => !RaeSettings.IsRemoved(RaeUtil.ClassName(id))).ToList();
+            if (kept.Count == __instance.entityIDs.Count) return;
+            if (kept.Count == 0) kept.AddRange(RaeStats.ReplacementIds);
+            // An empty list makes the action call SetupEntityIDs again every tick and never finish,
+            // so with nothing usable to put in, leave it as it was (same as an emptied spawn group).
+            if (kept.Count == 0)
+            {
+                if (!warnedNoReplacement)
+                {
+                    warnedNoReplacement = true;
+                    Log.Warning("[RemoveAnyEntity] A Twitch spawn would be empty and there's no usable Replacement; left unchanged.");
+                }
+                return;
+            }
+            __instance.entityIDs.Clear();
+            __instance.entityIDs.AddRange(kept);
         }
         catch (Exception e) { Log.Warning("[RemoveAnyEntity] twitch patch: " + e.Message); }
     }
