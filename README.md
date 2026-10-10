@@ -4,15 +4,15 @@ Small mods for 7 Days to Die, built and tested on **V3.2 (b9/b10)**.
 
 | Mod | Type | Install on | Version |
 |---|---|---|---|
-| [Remove Entities](#remove-entities) | Code | Server only | 1.1.1 |
+| [Remove Entities](#remove-entities) | Code | Server only | 1.1.2 |
 | [Remove Any Entity](#remove-any-entity) | Code (Harmony) | Server only | 2.0.0 |
 | [Quest Disconnect Fix](#quest-disconnect-fix) | Code (Harmony) | Server only | 1.0.0 |
 | [Honk Door Fix](#honk-door-fix) | Code (Harmony) | Server only | 1.0.0 |
 | [Speedometer](#speedometer) | Code + UI | Server **and** every player | 1.1.0 |
-| [Craft From Chests](#craft-from-chests) | Code (Harmony) | Players only | 1.1.1 |
-| [Upgrade Bench](#upgrade-bench) | Code + XML | Server **and** every player | 1.0.1 |
-| [Keep Backpacks](#keep-backpacks) | Code | Server only | 1.2.1 |
-| [Blood Moon Sound](#blood-moon-sound) | Code (Harmony) | Players (own sound); server optional (sound for everyone, Discord posts) | 1.2.1 |
+| [Craft From Chests](#craft-from-chests) | Code (Harmony) | Players only | 1.1.2 |
+| [Upgrade Bench](#upgrade-bench) | Code + XML | Server **and** every player | 1.0.2 |
+| [Keep Backpacks](#keep-backpacks) | Code | Server only | 1.2.2 |
+| [Blood Moon Sound](#blood-moon-sound) | Code (Harmony) | Players (own sound); server optional (sound for everyone, Discord posts) | 1.2.2 |
 
 Download the zips from the Releases page, unzip, and put the folder inside the game's `Mods` folder
 (or the server's `Mods` folder). Code that a player installs needs EasyAntiCheat turned off.
@@ -40,7 +40,7 @@ A group that no longer has anything left spawns one of 10 basic zombies (Arlene,
 Creatures already alive are not deleted. Ones saved in the world stay that creature. The "Kill 50 coyotes" challenge cannot be finished while coyotes are removed.
 
 **Changelog**
-- Next: commands to remove or restore any creature without a restart. In-game name is Remove Entities.
+- 1.1.2: commands to remove or restore any creature without a restart. In-game name is Remove Entities. A `name*` line typed into `removed.txt` by hand now works like `rement remove name*` (it's expanded to the matching classes when the game starts). Game events and Twitch spawns only rebuild their creature list when they're about to spawn, not every tick. If every fallback zombie is removed too, an emptied group spawns nothing instead of passing the game an invalid id.
 - 1.1.1: fix `IsEnemyGroup` NRE spam from `EnemyAnimalsSnowNight` (only `none` left after removal).
 - 1.1.0: also remove coyotes, dire wolves, screamers; random zombie replacements.
 - 1.0.0: remove zombie dogs (rewrite of CraftManiac's old CSV-based mod for the new `<e n=... p=...>` format).
@@ -180,7 +180,9 @@ from the same chests too. The two mods you put in the bench still have to be in 
 If your backpack is short, the missing materials move from those chests into your backpack first,
 then the normal craft or upgrade runs. On a multiplayer server the mod waits for the server to
 confirm each chest change. If someone else has that chest open, the server refuses the change, nothing
-is crafted or upgraded, and anything already taken stays in your backpack.
+is crafted or upgraded, and anything already taken stays in your backpack. If the server is slow to
+answer (more than 10 seconds), those materials aren't handed out yet; they arrive in your backpack
+once the server confirms the take.
 
 `settings.txt` (each player's own copy; restart after editing): `Enabled=on`, `AllowAllies=on`
 (chests in an ally's claim count too), `BackpackCrafting=on`.
@@ -188,6 +190,7 @@ is crafted or upgraded, and anything already taken stays in your backpack.
 **Only players need it; the server doesn't.** Players launch without EAC.
 
 **Changelog**
+- 1.1.2: fixed items duplicating on a laggy server. The mod used to stop waiting for the server after 3 seconds and hand out the materials anyway; if the server then refused, the chest got them back too. It now waits up to 10 seconds, and materials from a chest the server still hasn't answered arrive only once the server accepts.
 - 1.1.1: 7 Days 3.3. Chest contents are read from ItemGrid, and item type is a property, so opening a workstation no longer throws and chest materials count again.
 - 1.1.0: gyro crafts take stackable parts such as wheels from chests even when the recipe also needs a quality item. Block upgrades, and the Upgrade Bench material cost, use those chests too.
 - 1.0.0: first version.
@@ -204,6 +207,7 @@ every player installs it too. Restart after editing `upgrades.txt`. Typos in ite
 the game log.
 
 **Changelog**
+- 1.0.2: forged-iron mods (Rad Remover, Barbed Wire, Metal Chain, Grave Digger, Bunker Buster, Iron Breaker, Wood Splitter) cost 4 iron for Q1→Q2, not 10, matching the other steps (4, 6, 8, 10, 12).
 - 1.0.1: 7 Days 3.3. The upgraded mod keeps its mod slots. ItemValue no longer has a public Modifications property.
 - 1.0.0: first version.
 
@@ -226,6 +230,8 @@ same for `spawn`, `morning`, and `night`. A missing bell file means that bell st
 
 `settings.txt`: `PlayAt=horde|warning|both`, `WarningHour=21`, `Volume=1.0`,
 `Spawn=on|off`, `Morning=on|off`, `Night=on|off`.
+While a morning or night bell is on and loaded, the game's own dawn or dusk sound stays quiet so
+only the bell plays. A `WarningHour` at or after dusk plays one hour before dusk.
 The blood moon clip won't play if you join in the middle of a blood moon, only when one starts while
 you're in game. The spawn clip plays once each time you enter a world. Dying and respawning in the
 same session does not play it again.
@@ -297,6 +303,7 @@ Setup: copy `discord.example.txt` to `discord.txt` **on the server**, paste the 
   leaves it out of **every** zip, including the private `-with-sound` one.
 
 **Changelog**
+- 1.2.2: the morning and night bells replace the game's own dawn and dusk sounds instead of playing on top of them (only while that bell is on and its file is loaded). If `WarningHour` is at or after this world's dusk, the warning plays one hour before dusk instead of never, and the log and `bmsound` say so. `settings.txt` now lists `Spawn`, `Morning` and `Night`.
 - 1.2.1: morning and night no longer play together when a world finishes loading. The enter-world clip waits until the clock has settled. Dawn and dusk also play once per event day, and a second init keeps a single player or Discord object.
 - 1.2.0: optional clips for entering the world (`spawn`), dawn (`morning`), and dusk (`night`).
   Dawn and dusk follow the world's day length. `bmsound test` can play each clip.
@@ -329,13 +336,14 @@ The timer only counts while a player is near enough to keep the bag's area loade
 | `kbags` | admin | Show the current times |
 | `kbags reload` | admin | Re-read `settings.txt` and apply it. No server restart. |
 | `kbags password <word>` | admin | Set the password `kbclear` requires. Saved in `password.txt` on the server. |
-| `kbclear <password>` | anyone with the password | Remove dropped-item bags and loose items on the ground |
+| `kbclear <password>` | admin, with the password | Remove dropped-item bags and loose items on the ground |
 
 `kbclear` does not remove death backpacks, zombie loot bags, or vehicle storage bags. It only removes things in areas that are loaded right then. Bags in unloaded areas stay until someone goes there.
 
 People already connected keep the old times until they rejoin. Anyone who connects after `kbags reload` gets the new times. There is no command that reloads a mod DLL. Replacing this mod's code still needs a server restart. `kbags reload` only refreshes the bag times.
 
 **Changelog**
+- 1.2.2: `kbclear` is admin-only (permission 0) and still asks for the password. It used to be open to every player with only the password guarding it. A server that set its own permission for `kbclear` in `serveradmin.xml` keeps that setting.
 - 1.2.1: works on game version 3.3 (3.3 removed the old backpack timer, which made the mod error at start-up). Times live in `settings.txt`; `kbags reload` applies them without a restart; `kbclear` removes dropped items in loaded areas.
 - 1.2.0: dropped items and vehicle storage bags last 24 hours (were permanent).
 - 1.1.0: zombie loot bags last 24 hours (was vanilla 1 hour).

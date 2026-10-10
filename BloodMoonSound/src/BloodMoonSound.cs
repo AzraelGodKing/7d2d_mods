@@ -108,6 +108,40 @@ public static class BmsHordeSoundPatch
     }
 }
 
+// The game has its own dawn and dusk sounds. When this mod's morning or night bell is on and loaded,
+// keep the game's one quiet so only the bell plays at that moment.
+[HarmonyLib.HarmonyPatch(typeof(AudioObject), nameof(AudioObject.PlayConditionPasses))]
+public static class BmsGameBellPatch
+{
+    static bool Prefix(AudioObject __instance, ref bool __result)
+    {
+        try
+        {
+            var p = BmsPlayer.Instance;
+            if (p == null) return true;
+            bool mute;
+            switch (__instance.trigger)
+            {
+                case AudioObject.Trigger.Dawn:
+                case AudioObject.Trigger.Day8Dawn:
+                    mute = BmsSettings.Morning && p.Morning.Ready; break;
+                case AudioObject.Trigger.Dusk:
+                case AudioObject.Trigger.Day7Dusk:
+                    mute = BmsSettings.Night && p.Night.Ready; break;
+                default: return true;
+            }
+            if (!mute) return true;
+            __result = false;
+            return false;
+        }
+        catch (Exception e)
+        {
+            Log.Warning("[BloodMoonSound] game bell patch: " + e.Message);
+            return true;
+        }
+    }
+}
+
 public static class BmsSettings
 {
     public enum Trigger { Horde, Warning, Both }
@@ -184,6 +218,7 @@ public class BmsPlayer : MonoBehaviour
     int lastDay = -1, lastHour = -1, lastHordeKey = -1, lastWarnDay = -1;
     // AZR-361: once per dawn/dusk event day (same idea as lastWarnDay for the warning clip).
     int lastMorningDay = -1, lastNightDay = -1;
+    int loggedWarnHour = -1;
     float lastHordeEdgeAt = -999f; // realtime when this PC saw the blood moon begin
     bool clockLatched;
     bool spawnPlayed;
@@ -287,12 +322,25 @@ public class BmsPlayer : MonoBehaviour
                 : "no " + key + ".ogg / .wav / .mp3 found in " + BmsSettings.ModPath;
     }
 
+    // The warning must come before dusk: from dusk on it's already blood moon time.
+    public static int WarningHourFor(int duskHour) => Mathf.Min(BmsSettings.WarningHour, Mathf.Max(0, duskHour - 1));
+
+    static int CurrentWarningHour()
+    {
+        if (GameManager.Instance == null || GameManager.Instance.World == null) return BmsSettings.WarningHour;
+        int len = GameStats.GetInt(EnumGameStats.DayLightLength);
+        if (len <= 0) return BmsSettings.WarningHour;
+        return WarningHourFor(GameUtils.CalcDuskDawnHours(len).duskHour);
+    }
+
     public static string Describe()
     {
+        int h = CurrentWarningHour();
+        string at = h == BmsSettings.WarningHour ? $"{h:00}:00" : $"{h:00}:00 (WarningHour {BmsSettings.WarningHour} is after this world's dusk)";
         switch (BmsSettings.PlayAt)
         {
-            case BmsSettings.Trigger.Warning: return $"{BmsSettings.WarningHour:00}:00 on blood moon day";
-            case BmsSettings.Trigger.Both: return $"{BmsSettings.WarningHour:00}:00 on blood moon day and when the horde starts";
+            case BmsSettings.Trigger.Warning: return $"{at} on blood moon day";
+            case BmsSettings.Trigger.Both: return $"{at} on blood moon day and when the horde starts";
             default: return "when the blood moon horde starts";
         }
     }
@@ -378,9 +426,16 @@ public class BmsPlayer : MonoBehaviour
             if (BmsSettings.PlaysAtHorde) TryPlayHorde(bmDay);
         }
 
+        int warnHour = WarningHourFor(duskDawn.duskHour);
+        if (mode != BmsSettings.Trigger.Horde && warnHour != BmsSettings.WarningHour && loggedWarnHour != warnHour)
+        {
+            loggedWarnHour = warnHour;
+            Log.Out($"[BloodMoonSound] WarningHour={BmsSettings.WarningHour} is at or after this world's dusk ({duskDawn.duskHour:00}:00). The warning plays at {warnHour:00}:00 instead.");
+        }
+
         if ((mode == BmsSettings.Trigger.Warning || mode == BmsSettings.Trigger.Both)
-            && day == bmDay && !bloodMoon && hour >= BmsSettings.WarningHour
-            && !(lastDay == day && lastHour >= BmsSettings.WarningHour) && lastWarnDay != day)
+            && day == bmDay && !bloodMoon && hour >= warnHour
+            && !(lastDay == day && lastHour >= warnHour) && lastWarnDay != day)
         {
             lastWarnDay = day;
             Play();

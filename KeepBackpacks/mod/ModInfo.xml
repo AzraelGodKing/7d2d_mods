@@ -4,6 +4,6 @@
 	<DisplayName value="Keep Backpacks (No Despawn)" />
 	<Description value="Server-side. Death backpacks stay; other bag times come from settings.txt. kbags reload applies them without a restart. kbclear removes dropped items in loaded areas. Players do not install this mod." />
 	<Author value="Azrael" />
-	<Version value="1.2.1" />
+	<Version value="1.2.2" />
 	<Website value="https://github.com/AzraelGodKing/7d2d_mods" />
 </xml>

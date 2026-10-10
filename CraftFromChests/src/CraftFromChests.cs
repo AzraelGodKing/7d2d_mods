@@ -246,20 +246,24 @@ public static class Chests
         foreach (var s in changed) s.SetModified();
 
         // Wait for the server to answer each changed chest (instant in single player / when hosting).
-        float until = Time.unscaledTime + 3f;
-        while (Time.unscaledTime < until)
-        {
-            bool waiting = false;
-            foreach (var s in changed)
-                if (s.Parent != null && s.Parent.bWaitingForServerResponse) { waiting = true; break; }
-            if (!waiting) break;
+        float until = Time.unscaledTime + AnswerWaitSeconds;
+        while (Time.unscaledTime < until && AnyWaiting(changed))
             yield return null;
-        }
 
         // If the server refused a change (chest open by someone else), its real contents came back: don't count those.
+        // A chest the server still hasn't answered is not counted either. Until the answer arrives the local count
+        // only shows our own edit, and handing those items out now would duplicate them if the server then refuses.
         bool failed = false;
+        var late = new List<(TEFeatureStorage s, int type, int expected, int took)>();
         foreach (var t in touched)
         {
+            if (Waiting(t.s))
+            {
+                taken[t.type] -= t.took;
+                late.Add(t);
+                failed = true;
+                continue;
+            }
             int now = CountIn(t.s, t.type);
             if (now > t.expected)
             {
@@ -267,6 +271,11 @@ public static class Chests
                 taken[t.type] -= notTaken;
                 failed = true;
             }
+        }
+        if (late.Count > 0)
+        {
+            Log.Out($"[CraftFromChests] The server hasn't answered for {late.Count} chest change(s) yet; those materials come later if it accepts.");
+            GameManager.Instance.StartCoroutine(DeliverLate(xui, late));
         }
 
         foreach (var kv in taken)
@@ -283,6 +292,40 @@ public static class Chests
         {
             try { onSuccess(); } catch (Exception e) { Log.Warning("[CraftFromChests] " + e); }
         }
+    }
+
+    const float AnswerWaitSeconds = 10f;
+    const float LateAnswerWaitSeconds = 120f;
+
+    static bool Waiting(TEFeatureStorage s) => s.Parent != null && s.Parent.bWaitingForServerResponse;
+
+    static bool AnyWaiting(IEnumerable<TEFeatureStorage> chests)
+    {
+        foreach (var s in chests)
+            if (Waiting(s)) return true;
+        return false;
+    }
+
+    // Gives the materials from a slow chest once the server answers, and only what it actually let us take.
+    static IEnumerator DeliverLate(XUi xui, List<(TEFeatureStorage s, int type, int expected, int took)> late)
+    {
+        float until = Time.unscaledTime + LateAnswerWaitSeconds;
+        while (late.Count > 0 && Time.unscaledTime < until)
+        {
+            for (int i = late.Count - 1; i >= 0; i--)
+            {
+                var t = late[i];
+                if (Waiting(t.s)) continue;
+                late.RemoveAt(i);
+                int now = CountIn(t.s, t.type);
+                int got = now > t.expected ? t.took - Math.Min(t.took, now - t.expected) : t.took;
+                if (got > 0 && xui?.playerUI?.entityPlayer != null) GiveToBackpack(xui, t.type, got);
+            }
+            if (late.Count > 0) yield return null;
+        }
+        if (late.Count > 0)
+            Log.Warning($"[CraftFromChests] No server answer for {late.Count} chest change(s) after {LateAnswerWaitSeconds:0}s; those materials were not handed out.");
+        Invalidate();
     }
 
     // 3.3 stores a chest as ItemGrid. The old ItemStack[] items getter is gone.

@@ -27,7 +27,7 @@ modGunBowArrowRest                = gunBowT1WoodenBowParts                 : 4, 
 modGunShotgunTubeExtenderMagazine = gunShotgunT1DoubleBarrelParts          : 4, 6, 8, 10, 12 : 10, 20, 30, 40, 50
 modGunBowPolymerString            = gunBowT1WoodenBowParts                 : 4, 6, 8, 10, 12 : 10, 20, 30, 40, 50
 modGunDrumMagazineExtender        = gunHandgunT1PistolParts or gunRifleT1HuntingRifleParts or gunMGT1AK47Parts : 4, 6, 8, 10, 12 : 10, 20, 30, 40, 50
-modGunMeleeRadRemover             = resourceForgedIron                     : 10, 6, 8, 10, 12 : 10, 20, 30, 40, 50
+modGunMeleeRadRemover             = resourceForgedIron                     :  4, 6, 8, 10, 12 : 10, 20, 30, 40, 50
 
 # ---- Melee mods ----
 modMeleeTemperedBlade     = meleeWpnBladeT3MacheteParts            : 4, 6, 8, 10, 12 : 10, 20, 30, 40, 50
@@ -36,15 +36,15 @@ modMeleeWeightedHead      = meleeWpnSledgeT3SteelSledgehammerParts : 4, 6, 8, 10
 modMeleeStructuralBrace   = meleeWpnBatonT2StunBatonParts          : 4, 6, 8, 10, 12 : 10, 20, 30, 40, 50
 modMeleeErgonomicGrip     = resourceScrapPolymers                  : 40, 60, 80, 100, 120 : 10, 20, 30, 40, 50
 modMeleeFortifyingGrip    = resourceScrapPolymers                  : 40, 60, 80, 100, 120 : 10, 20, 30, 40, 50
-modMeleeClubBarbedWire    = resourceForgedIron                     : 10, 6, 8, 10, 12 : 10, 20, 30, 40, 50
+modMeleeClubBarbedWire    = resourceForgedIron                     :  4, 6, 8, 10, 12 : 10, 20, 30, 40, 50
 modMeleeClubMetalSpikes   = meleeWpnSpearT3SteelSpearParts         : 4, 6, 8, 10, 12 : 10, 20, 30, 40, 50
-modMeleeClubMetalChain    = resourceForgedIron                     : 10, 6, 8, 10, 12 : 10, 20, 30, 40, 50
+modMeleeClubMetalChain    = resourceForgedIron                     :  4, 6, 8, 10, 12 : 10, 20, 30, 40, 50
 modMeleeClubBurningShaft  = ammoGasCan                             : 400, 600, 800, 1000, 1200 : 10, 20, 30, 40, 50
 modMeleeFiremansAxeMod    = meleeWpnBladeT3MacheteParts            : 4, 6, 8, 10, 12 : 10, 20, 30, 40, 50
-modMeleeGraveDigger       = resourceForgedIron                     : 10, 6, 8, 10, 12 : 10, 20, 30, 40, 50
-modMeleeBunkerBuster      = resourceForgedIron                     : 10, 6, 8, 10, 12 : 10, 20, 30, 40, 50
-modMeleeIronBreaker       = resourceForgedIron                     : 10, 6, 8, 10, 12 : 10, 20, 30, 40, 50
-modMeleeWoodSplitter      = resourceForgedIron                     : 10, 6, 8, 10, 12 : 10, 20, 30, 40, 50
+modMeleeGraveDigger       = resourceForgedIron                     :  4, 6, 8, 10, 12 : 10, 20, 30, 40, 50
+modMeleeBunkerBuster      = resourceForgedIron                     :  4, 6, 8, 10, 12 : 10, 20, 30, 40, 50
+modMeleeIronBreaker       = resourceForgedIron                     :  4, 6, 8, 10, 12 : 10, 20, 30, 40, 50
+modMeleeWoodSplitter      = resourceForgedIron                     :  4, 6, 8, 10, 12 : 10, 20, 30, 40, 50
 modMeleeDiamondTip        = resourceRawDiamond                     : 1, 2, 4, 6, 12 : 10, 20, 30, 40, 50
 # modMeleeStunBatonRepulsor has no quality levels in the game (it comes from the Electrocutioner perk), so it can't be upgraded.
 

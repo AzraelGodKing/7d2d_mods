@@ -333,10 +333,10 @@ public class ConsoleCmdKbags : ConsoleCmdAbstract
     }
 }
 
-// Anyone can run it; the password is the lock. Does not remove death backpacks or zombie loot.
+// Admins only (permission 0); the password is a second check. Does not remove death backpacks or zombie loot.
 public class ConsoleCmdKbClear : ConsoleCmdAbstract
 {
-    public override int DefaultPermissionLevel => 1000;
+    public override int DefaultPermissionLevel => 0;
     public override string[] getCommands() => new[] { "kbclear" };
     public override string getDescription() => "Remove dropped items in loaded areas. Needs the password from kbags password.";
     public override string getHelp() =>
