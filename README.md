@@ -4,7 +4,6 @@ Small mods for 7 Days to Die, built and tested on **V3.2 (b9/b10)**.
 
 | Mod | Type | Install on | Version |
 |---|---|---|---|
-| [Remove Entities](#remove-entities) | Code | Server only | 1.1.2 |
 | [Remove Any Entity](#remove-any-entity) | Code (Harmony) | Server only | 2.0.1 |
 | [Quest Disconnect Fix](#quest-disconnect-fix) | Code (Harmony) | Server only | 1.0.0 |
 | [Honk Door Fix](#honk-door-fix) | Code (Harmony) | Server only | 1.0.0 |
@@ -20,34 +19,9 @@ Server-only mods do not.
 
 ---
 
-## Remove Entities
-
-Remove Entities is the mod that used to be called Remove Zombie Dogs, and it updates that install. The folder is still `RemoveZombieDogs` and the mod id is still `AzraelRemoveZombieDogs`.
-
-Server only. Players install nothing and can leave EasyAntiCheat on.
-
-The first time it runs, zombie dogs, coyotes, dire wolves and screamers stop spawning. After that, an admin chooses the list. The choice is saved in `removed.txt` on the server and applies on the next spawn, with no restart.
-
-| Command | What it does |
-|---|---|
-| `rement` | Show what is currently removed |
-| `rement list` | Every creature class. `rement list dog` narrows it. `rement list all` is every entity class |
-| `rement remove <name>` | Stop that class from spawning. `zombieScreamer*` stops every name that starts with that |
-| `rement add <name>` | Let it spawn again |
-
-A group that no longer has anything left spawns one of 10 basic zombies (Arlene, Boe, Joe, Marlene, Moe, Darlene, Yo, Steve, Businessman, Janitor). A group that still has a `none` entry keeps that roll, so rare animal groups stay rare. `playerMale`, `playerFemale` and `item` cannot be removed.
-
-Creatures already alive are not deleted. Ones saved in the world stay that creature. The "Kill 50 coyotes" challenge cannot be finished while coyotes are removed.
-
-**Changelog**
-- 1.1.2: commands to remove or restore any creature without a restart. In-game name is Remove Entities. A `name*` line typed into `removed.txt` by hand now works like `rement remove name*` (it's expanded to the matching classes when the game starts). Game events and Twitch spawns only rebuild their creature list when they're about to spawn, not every tick. If every fallback zombie is removed too, an emptied group spawns nothing instead of passing the game an invalid id.
-- 1.1.1: fix `IsEnemyGroup` NRE spam from `EnemyAnimalsSnowNight` (only `none` left after removal).
-- 1.1.0: also remove coyotes, dire wolves, screamers; random zombie replacements.
-- 1.0.0: remove zombie dogs (rewrite of CraftManiac's old CSV-based mod for the new `<e n=... p=...>` format).
-
 ## Remove Any Entity
 
-An alternative to **Remove Entities**. Pick which zombies and animals stop spawning. `entities.txt` in the
+Formerly **Remove Zombie Dogs** (later **Remove Entities**), and the same Nexus page. Pick which zombies and animals stop spawning. `entities.txt` in the
 mod folder lists every vanilla entity that spawns naturally, all commented out; remove the `#` in front
 of a name to take it out of the game, then restart.
 
@@ -76,16 +50,15 @@ goes in your own Mods folder.
 | `rae` | What's removed, how many groups changed, typos in `entities.txt` |
 | `rae group <name>` | What a spawn group can spawn now, with chances (partial names are suggested) |
 
-Switching from Remove Entities: delete the old `RemoveZombieDogs` folder, install this one, and
-uncomment `animalZombieDog`, `animalCoyote`, `animalDireWolf` and `zombieScreamer` for the same result.
+Upgrading from Remove Zombie Dogs / Remove Entities: this version has its own mod id, so delete the
+old `RemoveZombieDogs` folder from `Mods` first (running both would remove creatures twice). The old
+`removed.txt` / `rement` list doesn't carry over: uncomment the same names in `entities.txt`
+(`animalZombieDog`, `animalCoyote`, `animalDireWolf` and `zombieScreamer` match the old defaults).
 
 Known side effect: challenges that need a removed creature (e.g. "Kill 50 coyotes") can't be completed.
 
-This is a separate mod from Remove Entities. Remove Entities changes the list in game with `rement`
-and keeps the old mod id. Remove Any Entity reads `entities.txt` and uses its own mod id.
-
 **Changelog**
-- 2.0.1: a Twitch spawn whose creatures are all removed, with no usable `Replacement=`, is left unchanged (with one warning), the same as an emptied spawn group. It used to end up empty, which made the action rebuild its list every tick and never finish.
+- 2.0.1: replaces Remove Zombie Dogs / Remove Entities on its Nexus page (the `rement` version is retired). A Twitch spawn whose creatures are all removed, with no usable `Replacement=`, is left unchanged (with one warning), the same as an emptied spawn group. It used to end up empty, which made the action rebuild its list every tick and never finish.
 - 2.0.0: renamed to Remove Any Entity. Now a code mod driven by `entities.txt` (any entity, all tiers,
   other mods' entities), with `rae` / `rae group` console commands and typo warnings.
 - 1.1.1: fix `IsEnemyGroup` NRE spam from `EnemyAnimalsSnowNight` (only `none` left after removal).
@@ -408,7 +381,7 @@ variable `SEVEND2D_DIR`.
 
 Nexus uploads use the secret `NEXUSMODS_API_KEY` and the file id from the mod's Files tab
 (Advanced), stored as `nexus_file_id` in `scripts/matrix/mod-matrix.json`. Remove Any Entity
-has no Nexus page yet, so it only gets a GitHub Release.
+uploads to the old Remove Zombie Dogs page (12841) and file.
 
 The same run publishes the zip to the mods website
 (`downloads.azraelsmods.com/7-days-to-die/<slug>/<version>/<slug>-<version>.zip`) and records

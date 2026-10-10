@@ -26,7 +26,6 @@ on:
         type: choice
         options:
           - all
-          - remove-zombie-dogs
           - remove-any-entity
           - quest-disconnect-fix
           - honk-door-fix
