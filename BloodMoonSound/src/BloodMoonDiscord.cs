@@ -7,18 +7,6 @@ using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.Networking;
 
-// Blood Moon Discord: the server-side half of Blood Moon Sound.
-//
-// Runs ONLY on a dedicated server, and only posts if discord.txt (next to ModInfo.xml) has a webhook URL.
-// Players never need this part: the server does the posting. And the sound half never needs the server.
-// So the one mod works in both places without either side requiring the other.
-//
-// Everything about WHEN and WHAT gets posted is set in discord.txt: any number of reminders before
-// the blood moon, an optional daily countdown, and the start / during / dawn messages.
-//
-// The webhook URL is a secret (anyone with it can post to the channel): discord.txt is gitignored
-// and build.ps1 leaves it out of every zip. The repo ships discord.example.txt instead.
-
 public class BmdReminder
 {
     public int DaysBefore;   // 0 = on blood moon day, 1 = the day before, ...

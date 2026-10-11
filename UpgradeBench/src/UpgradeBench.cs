@@ -2,9 +2,6 @@ using System;
 using System.Linq;
 using UnityEngine;
 
-// Upgrade Bench: put TWO of the same listed mod, at the SAME quality, in the bench and pay the materials listed
-// in upgrades.txt; both are used up and ONE comes back a quality level higher. The costs and the list live in ModUpgrades.cs / upgrades.txt.
-//
 // It reuses the vanilla Combine Station's tile entity and screen (TEFeatureCombine / "combine" window group);
 // the patches only change behaviour when the screen was opened from an azraelUpgradeBench block, so the vanilla
 // Combine Station keeps working exactly as before.

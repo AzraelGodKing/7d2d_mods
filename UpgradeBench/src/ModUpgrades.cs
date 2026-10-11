@@ -4,10 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-// Mod upgrades (upgrades.txt): two of the same listed mod at the same quality + the listed materials from your
-// backpack/toolbelt = one mod a quality level higher. This file works out the materials; UpgradeBench.cs checks
-// the two mods.
-//
 // upgrades.txt follows the requester's sheet, one row per item:
 //   <item> = <recipe item #1> or <#2> or <#3> : <item amounts 1->2 .. 5->6> : <metal amounts 1->2 .. 5->6>
 // The metal is Iron (sheet column G) for upgrades to Q2/Q3 and Steel (column H) for upgrades to Q4/Q5/Q6.

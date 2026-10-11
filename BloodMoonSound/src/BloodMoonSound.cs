@@ -5,11 +5,6 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.Networking;
 
-// Blood Moon Sound: plays a user-supplied clip when the blood moon horde starts (and/or as a warning).
-// The sound is client-side only: it reads the world clock the client already has and needs nothing
-// from the server. On a dedicated server the same mod posts blood moon updates to Discord instead
-// (see BloodMoonDiscord.cs); players don't need the mod for that.
-
 public class AzraelBloodMoonSoundMod : IModApi
 {
     public void InitMod(Mod _modInstance)
@@ -80,8 +75,6 @@ public static class BmsConsolePatch
 
 // The server's horde sound (see BmdNotifier.BroadcastHordeSound) arrives as "AzraelBloodMoon/<name>".
 // Players WITHOUT this mod: the game drops the "folder" part of sound names and plays <name>.
-// Players WITH this mod and their own clip: around horde start, skip it and play their own clip
-// instead, so nobody hears two sounds. Any other time, or with no clip loaded, it plays normally.
 [HarmonyLib.HarmonyPatch(typeof(NetPackageAudioPlayInHead), nameof(NetPackageAudioPlayInHead.ProcessPackage))]
 public static class BmsHordeSoundPatch
 {
@@ -108,8 +101,6 @@ public static class BmsHordeSoundPatch
     }
 }
 
-// The game has its own dawn and dusk sounds. When this mod's morning or night bell is on and loaded,
-// keep the game's one quiet so only the bell plays at that moment.
 [HarmonyLib.HarmonyPatch(typeof(AudioObject), nameof(AudioObject.PlayConditionPasses))]
 public static class BmsGameBellPatch
 {

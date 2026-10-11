@@ -4,17 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Xml.Linq;
 
-// Remove Any Entity: stops chosen entities from spawning naturally.
-//
-// The list lives in entities.txt next to ModInfo.xml (every vanilla spawnable entity is listed there,
-// commented out). Uncommented names are taken out of every entity group as the game loads
-// entitygroups.xml, and out of Twitch spawn actions. Groups left with nothing real to spawn get a
-// random pick from the Replacement list, and "none" entries never end up first (that crashes
-// EntityGroups.IsEnemyGroup).
-//
-// Spawning is decided by the server, so on a multiplayer server only the server needs this mod.
-// In single player it goes in the player's own Mods folder.
-
 public class AzraelRemoveAnyEntityMod : IModApi
 {
     public void InitMod(Mod _modInstance)

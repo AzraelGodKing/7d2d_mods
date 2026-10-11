@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 
-// Server-side only. Players do not install this mod.
-//
 // settings.txt is the source of truth for how long each bag stays. Those numbers are written
 // into Config/entityclasses.xml before the game loads configs, so the server sends the same
 // times to clients when they connect. kbags reload does that again without a process restart.
