@@ -230,7 +230,6 @@ def evaluate_mod(
         "nexus_page_version": page_v,
         "nexus_file_version": file_v,
         "nexus_unchanged": "true" if nexus_hit else "false",
-        "upstream_nexus_version": nexus_ver,
         "version_match_sources": ",".join(sources),
         "has_work": "true" if github_work or nexus_work else "false",
         "display_name": str(row.get("zipName") or mod_key),
