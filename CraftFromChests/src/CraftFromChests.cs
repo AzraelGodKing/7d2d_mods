@@ -25,6 +25,8 @@ public static class Chests
 {
     // ---- settings ----
     public static bool Enabled = true, AllowAllies = true, BackpackCrafting = true;
+    // Off by default: block upgrades (repair tool) and the Upgrade Bench's material cost only use chests when on.
+    public static bool UpgradeFromChests = false;
 
     public static void LoadSettings(string path)
     {
@@ -42,8 +44,9 @@ public static class Chests
             if (key.Equals("Enabled", StringComparison.OrdinalIgnoreCase)) Enabled = on;
             else if (key.Equals("AllowAllies", StringComparison.OrdinalIgnoreCase)) AllowAllies = on;
             else if (key.Equals("BackpackCrafting", StringComparison.OrdinalIgnoreCase)) BackpackCrafting = on;
+            else if (key.Equals("UpgradeFromChests", StringComparison.OrdinalIgnoreCase)) UpgradeFromChests = on;
         }
-        Log.Out($"[CraftFromChests] Settings: Enabled={Enabled}, AllowAllies={AllowAllies}, BackpackCrafting={BackpackCrafting}");
+        Log.Out($"[CraftFromChests] Settings: Enabled={Enabled}, AllowAllies={AllowAllies}, BackpackCrafting={BackpackCrafting}, UpgradeFromChests={UpgradeFromChests}");
     }
 
     // ---- when chests count ----
@@ -376,7 +379,7 @@ public static class Chests
     // next swing run the vanilla upgrade. Tools and other quality items are not fetched.
     public static void TryStageUpgrade(ItemActionRepair action, ItemInventoryData data, BlockValue blockValue)
     {
-        if (!Enabled) return;
+        if (!Enabled || !UpgradeFromChests) return;
         if (Busy) { SuppressMissing = true; return; }
         var player = data?.holdingEntity as EntityPlayerLocal;
         var block = blockValue.Block;
