@@ -94,14 +94,14 @@ public static class RaeSettings
 // What happened during the last entitygroups load, for the 'rae' console command.
 public static class RaeStats
 {
-    public static int GroupsChanged, EntriesRemoved, GroupsRefilled, GroupsLeftAlone;
+    public static int GroupsChanged, EntriesRemoved, GroupsRefilled;
     public static readonly List<int> ReplacementIds = new List<int>();
     public static readonly List<string> UnknownNames = new List<string>();
     public static readonly HashSet<string> ClassesRemoved = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
     public static void Reset()
     {
-        GroupsChanged = EntriesRemoved = GroupsRefilled = GroupsLeftAlone = 0;
+        GroupsChanged = EntriesRemoved = GroupsRefilled = 0;
         ReplacementIds.Clear(); UnknownNames.Clear(); ClassesRemoved.Clear();
     }
 }
@@ -184,7 +184,6 @@ public static class RaeGroupPatch
                 if (RaeStats.ReplacementIds.Count == 0)
                 {
                     // Nothing valid to put in: leave this group as it was rather than break it.
-                    RaeStats.GroupsLeftAlone++;
                     Log.Warning($"[RemoveAnyEntity] Group '{name}' would be empty and there's no usable Replacement; left unchanged.");
                     return;
                 }
