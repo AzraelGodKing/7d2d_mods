@@ -6,24 +6,6 @@ using HarmonyLib;
 using Platform;
 using UnityEngine;
 
-// Craft From Chests (client-only).
-// While a crafting screen is open (backpack crafting, workbench, chemistry station, cement mixer, campfire - not the
-// forge, which has its own material slots), the recipe list, "have" counts and the craft button also count what's in
-// player-placed chests inside the land claim you're standing in (your claim, or an ally's).
-// The same chests cover two more cases that are not the craft button:
-//   - upgrading a block with a repair tool (wood, cobblestone, concrete, steel, ...)
-//   - the Upgrade Bench, when that mod is installed (its material cost, not the two mods themselves)
-//
-// When the backpack is short, the missing materials are moved from those chests into the backpack first, then the
-// normal vanilla action runs. On a multiplayer server the mod waits for the server to confirm each chest change; if a
-// chest was open by someone else the server refuses the change, so nothing is crafted or upgraded and whatever WAS
-// taken is left in the backpack - items are never created or lost.
-//
-// A recipe that also needs a quality item (a gyro needs a small engine) still takes the stackable parts, such as
-// wheels, from chests. The quality item itself has to be in the backpack. Tools, weapons and armor are never taken.
-//
-// Runs only on players' PCs. The server needs nothing.
-
 public class AzraelCraftFromChestsMod : IModApi
 {
     public void InitMod(Mod _modInstance)

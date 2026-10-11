@@ -2,12 +2,9 @@ using System;
 using GameEvent.SequenceActions;
 using UnityEngine;
 
-// Honk Door Fix (code version): fixes the root cause instead of restricting the event.
-//
 // ActionBaseBlockAction.OnPerformAction scans startPoint + [minOffset..maxOffset] and skips y < 0,
 // but never checks the top of the world (255), so any block-scan game event started near the top
 // (e.g. honk_trader_doors at Y 253+) calls Chunk.GetBlockNoDamage out of range and throws every tick.
-// This trims the scan to the world height; honking behaves exactly as vanilla everywhere else.
 
 public class HonkDoorFixCodeMod : IModApi
 {

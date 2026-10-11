@@ -2,15 +2,6 @@ using System;
 using HarmonyLib;
 using UnityEngine;
 
-// Fixes "ghost players" on dedicated servers.
-//
-// Vanilla bug: when a player logs out, QuestEventManager.HandlePlayerDisconnect calls
-// Quest.HandleUnlockPOI for every in-progress quest, which calls QuestUnlockPOI(entityId, pos).
-// QuestUnlockPOI looks up the POI at that position and dereferences it without a null check.
-// If a quest's saved POI position does not match any POI, it throws a NullReferenceException,
-// ConnectionManager.DisconnectClient aborts halfway, and the player is never removed:
-// they stay in the world, the server keeps pinging them, and rejoining fails with
-// "Duplicate player ID" until the server restarts.
 public class AzraelQuestDisconnectFix : IModApi
 {
     public const string Tag = "[QuestDisconnectFix]";
@@ -72,18 +63,11 @@ public static class Patch_HandlePlayerDisconnect
     }
 }
 
-// Fixes parties that stop working after a robotic drone unloads (vanilla 3.3 bug).
-//
 // A drone listens to its owner's party (PartyMemberAdded / PartyMemberRemoved). When the drone
 // unloads, EntityDrone.OnEntityUnload sets registeredPartyMembers to null, but it only stops
 // listening if it can still find its owner. When it can't, the party keeps calling the dead
 // drone. The next join hits registeredPartyMembers.Add and the next leave or logout hits
-// registeredPartyMembers.Remove, both on null. The NullReferenceException stops Party.AddPlayer
-// or Party.RemovePlayer halfway, before the party is sent to everyone, so players can't join
-// or leave that party until the server restarts.
-//
-// The fix: when a drone's list is gone, skip its handler and stop it listening to that party,
-// so the rest of the join or leave runs as normal. A live drone is untouched.
+// registeredPartyMembers.Remove, both on null.
 [HarmonyPatch(typeof(EntityDrone), nameof(EntityDrone.onPartyMemberAdded))]
 public static class Patch_DronePartyMemberAdded
 {
