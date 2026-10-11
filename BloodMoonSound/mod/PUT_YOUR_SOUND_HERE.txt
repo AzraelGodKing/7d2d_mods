@@ -4,4 +4,6 @@ Put your sound file in this folder and name it:
     bloodmoon.wav
     bloodmoon.mp3
 
+Same for spawn, morning, and night (.ogg, .wav or .mp3).
+
 Then start the game. In the F1 console, type  bmsound test  to hear it right away.

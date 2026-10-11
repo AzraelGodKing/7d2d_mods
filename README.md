@@ -1,13 +1,13 @@
 # 7 Days to Die mods
 
-Small mods for 7 Days to Die, built and tested on **V3.2 (b9/b10)**.
+Small mods for 7 Days to Die, built and tested on **V3.3**.
 
 | Mod | Type | Install on | Version |
 |---|---|---|---|
 | [Remove Any Entity](#remove-any-entity) | Code (Harmony) | Server only | 2.0.1 |
 | [Quest Disconnect Fix](#quest-disconnect-fix) | Code (Harmony) | Server only | 1.1.0 |
 | [Honk Door Fix](#honk-door-fix) | Code (Harmony) | Server only | 1.0.0 |
-| [Speedometer](#speedometer) | Code + UI | Server **and** every player | 1.1.0 |
+| [Speedometer](#speedometer) | Code + UI | Players only | 1.1.1 |
 | [Craft From Chests](#craft-from-chests) | Code (Harmony) | Players only | 1.1.2 |
 | [Upgrade Bench](#upgrade-bench) | Code + XML | Server **and** every player | 1.0.2 |
 | [Keep Backpacks](#keep-backpacks) | Code | Server only | 1.2.2 |
@@ -147,7 +147,7 @@ works for drivers, passengers and on foot, and ignores teleports. Settings are s
 **Only players need it; the server doesn't.** Players launch without EAC.
 
 **Changelog**
-- 1.1.1: `speedo` now works on multiplayer servers that don't have the mod (runs on the player's PC).
+- 1.1.1: `speedo` now works on multiplayer servers that don't have the mod (runs on the player's PC). DisplayName is `Speedometer (MPH and KMH)` so Nexus will accept the zip (it rejects a slash in the file name).
 - 1.1.0: F5/F2 hotkeys (rebindable), on-screen confirmation, moved above the vehicle gauges.
 - 1.0.0: first version.
 
@@ -292,7 +292,7 @@ Setup: copy `discord.example.txt` to `discord.txt` **on the server**, paste the 
   leaves it out of **every** zip, including the private `-with-sound` one.
 
 **Changelog**
-- 1.2.2: the morning and night bells replace the game's own dawn and dusk sounds instead of playing on top of them (only while that bell is on and its file is loaded). If `WarningHour` is at or after this world's dusk, the warning plays one hour before dusk instead of never, and the log and `bmsound` say so. `settings.txt` now lists `Spawn`, `Morning` and `Night`.
+- 1.2.2: the morning and night bells replace the game's own dawn and dusk sounds instead of playing on top of them (only while that bell is on and its file is loaded). If `WarningHour` is at or after this world's dusk, the warning plays one hour before dusk instead of never, and the log and `bmsound` say so. `settings.txt` now lists `Spawn`, `Morning` and `Night`. `PUT_YOUR_SOUND_HERE.txt` names those clips too.
 - 1.2.1: morning and night no longer play together when a world finishes loading. The enter-world clip waits until the clock has settled. Dawn and dusk also play once per event day, and a second init keeps a single player or Discord object.
 - 1.2.0: optional clips for entering the world (`spawn`), dawn (`morning`), and dusk (`night`).
   Dawn and dusk follow the world's day length. `bmsound test` can play each clip.
@@ -388,11 +388,11 @@ Actions → **Release & Publish** builds one mod (or all of them) and can open a
 tagged `Name-vVERSION` and upload that zip to Nexus. The version is the `Version` in `ModInfo.xml`.
 A version that is already on GitHub or Nexus is skipped.
 
-The build job runs on a self-hosted Windows runner labeled `7d2d` (plus the default
-`self-hosted`, `Windows`, and `X64` labels). It needs a 7 Days to Die install, the same way the
-Sun Haven runners need the game mounted: GitHub-hosted runners do not have `Assembly-CSharp.dll`.
-The default path is in `Directory.Build.props`. A runner on another machine sets the repository
-variable `SEVEND2D_DIR`.
+The build job runs on a self-hosted Linux runner labeled `[self-hosted, linux, 7d2d]`.
+It needs a 7 Days to Die install, the same way the Sun Haven runners need the game
+mounted: GitHub-hosted runners do not have `Assembly-CSharp.dll`.
+The default path is in `Directory.Build.props`. The Docker runner sets
+`RUNNER_7D2D_GAMEDIR`; otherwise the repository variable `SEVEND2D_DIR` is used.
 
 Nexus uploads use the secret `NEXUSMODS_API_KEY` and the file id from the mod's Files tab
 (Advanced), stored as `nexus_file_id` in `scripts/matrix/mod-matrix.json`. Remove Any Entity
