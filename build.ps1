@@ -21,17 +21,17 @@ $dist = Join-Path $root 'dist'
 
 # Folder in repo -> folder name in Mods\ (and the .csproj, if the mod has code)
 $mods = @(
-    @{ Dir = 'RemoveAnyEntity';    Name = 'AzraelRemoveAnyEntity';    Project = 'src\AzraelRemoveAnyEntity.csproj' },
-    @{ Dir = 'QuestDisconnectFix'; Name = 'AzraelQuestDisconnectFix'; Project = 'src\AzraelQuestDisconnectFix.csproj' },
-    @{ Dir = 'HonkDoorFix';        Name = 'HonkDoorFix';              Project = 'src\HonkDoorFix.csproj' },
-    @{ Dir = 'Speedometer';        Name = 'AzraelSpeedometer';        Project = 'src\AzraelSpeedometer.csproj' },
-    @{ Dir = 'KeepBackpacks';      Name = 'AzraelKeepBackpacks';      Project = 'src\AzraelKeepBackpacks.csproj'; Exclude = @('password.txt') },
-    @{ Dir = 'CraftFromChests';    Name = 'AzraelCraftFromChests';    Project = 'src\CraftFromChests.csproj' },
-    @{ Dir = 'UpgradeBench';       Name = 'AzraelUpgradeBench';       Project = 'src\UpgradeBench.csproj' },
+    @{ Dir = 'RemoveAnyEntity';    Name = 'AzraelRemoveAnyEntity';    Project = 'src/AzraelRemoveAnyEntity.csproj' },
+    @{ Dir = 'QuestDisconnectFix'; Name = 'AzraelQuestDisconnectFix'; Project = 'src/AzraelQuestDisconnectFix.csproj' },
+    @{ Dir = 'HonkDoorFix';        Name = 'HonkDoorFix';              Project = 'src/HonkDoorFix.csproj' },
+    @{ Dir = 'Speedometer';        Name = 'AzraelSpeedometer';        Project = 'src/AzraelSpeedometer.csproj' },
+    @{ Dir = 'KeepBackpacks';      Name = 'AzraelKeepBackpacks';      Project = 'src/AzraelKeepBackpacks.csproj'; Exclude = @('password.txt') },
+    @{ Dir = 'CraftFromChests';    Name = 'AzraelCraftFromChests';    Project = 'src/CraftFromChests.csproj' },
+    @{ Dir = 'UpgradeBench';       Name = 'AzraelUpgradeBench';       Project = 'src/UpgradeBench.csproj' },
     # Private = gitignored files (e.g. a copyrighted sound clip) kept OUT of the public zip.
     # If present, a second "-with-sound" zip is made and -Install uses that version.
     # Exclude = gitignored files kept out of EVERY zip (e.g. discord.txt holds a secret webhook URL).
-    @{ Dir = 'BloodMoonSound';     Name = 'AzraelBloodMoonSound';     Project = 'src\AzraelBloodMoonSound.csproj'; Private = @('bloodmoon.*', 'spawn.*', 'morning.*', 'night.*'); Exclude = @('discord.txt') }
+    @{ Dir = 'BloodMoonSound';     Name = 'AzraelBloodMoonSound';     Project = 'src/AzraelBloodMoonSound.csproj'; Private = @('bloodmoon.*', 'spawn.*', 'morning.*', 'night.*'); Exclude = @('discord.txt') }
 )
 if ($Only) { $mods = $mods | Where-Object { $Only -contains $_.Dir -or $Only -contains $_.Name } }
 
@@ -51,7 +51,7 @@ New-Item -ItemType Directory -Force $dist | Out-Null
 foreach ($m in $mods) {
     $out = Join-Path $dist $m.Name
     if (Test-Path $out) { Remove-Item $out -Recurse -Force }
-    $modSrc = Join-Path $root "$($m.Dir)\mod"
+    $modSrc = Join-Path $root "$($m.Dir)/mod"
     Copy-Item $modSrc $out -Recurse
 
     # Secrets never ship, not even in the private zip
@@ -67,7 +67,7 @@ foreach ($m in $mods) {
     }
 
     if ($m.Project) {
-        $a = @('build', (Join-Path $root "$($m.Dir)\$($m.Project)"), '-c', 'Release', '-o', $out, '--nologo', '-v', 'quiet')
+        $a = @('build', (Join-Path $root "$($m.Dir)/$($m.Project)"), '-c', 'Release', '-o', $out, '--nologo', '-v', 'quiet')
         if ($GameDir) { $a += "-p:GameDir=$GameDir" }
         Write-Host "Building $($m.Name)..." -ForegroundColor Cyan
         & dotnet @a
@@ -94,7 +94,7 @@ foreach ($m in $mods) {
 
     if ($Install) {
         $gd = if ($GameDir) { $GameDir } else { 'E:\SteamLibrary\steamapps\common\7 Days To Die' }
-        $target = Join-Path $gd "Mods\$($m.Name)"
+        $target = Join-Path $gd "Mods/$($m.Name)"
         if (Test-Path $target) { Remove-Item $target -Recurse -Force }
         Copy-Item $installFrom $target -Recurse
         Write-Host "  -> installed to $target" -ForegroundColor Green
