@@ -10,3 +10,7 @@ AllowAllies=on
 
 # Also pull from chests when crafting from the backpack (no workstation).
 BackpackCrafting=on
+
+# Also use claim chests for upgrades: block upgrades with the repair tool and the
+# Upgrade Bench's material cost. Off by default.
+UpgradeFromChests=off

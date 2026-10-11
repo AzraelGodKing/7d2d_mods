@@ -200,7 +200,7 @@ public static class CfcUpgradeCheck
 {
     static void Postfix(ItemActionRepair __instance, ItemInventoryData data, BlockValue blockValue, ref bool __result)
     {
-        if (__result || !Chests.Enabled) return;
+        if (__result || !Chests.Enabled || !Chests.UpgradeFromChests) return;
         try { Chests.TryStageUpgrade(__instance, data, blockValue); }
         catch (Exception e) { Log.Warning("[CraftFromChests] " + e.Message); }
     }
@@ -223,8 +223,8 @@ public static class CfcQuietUpgrade
 [HarmonyPatch(typeof(XUiC_CombineWindowGroup), nameof(XUiC_CombineWindowGroup.OnOpen))]
 public static class CfcBenchOpen
 {
-    static void Prefix(XUiC_CombineWindowGroup __instance) => Chests.Station = Chests.IsUpgradeBench(__instance.te);
-    static void Postfix(XUiC_CombineWindowGroup __instance) => Chests.Station = Chests.IsUpgradeBench(__instance.te);
+    static void Prefix(XUiC_CombineWindowGroup __instance) => Chests.Station = Chests.UpgradeFromChests && Chests.IsUpgradeBench(__instance.te);
+    static void Postfix(XUiC_CombineWindowGroup __instance) => Chests.Station = Chests.UpgradeFromChests && Chests.IsUpgradeBench(__instance.te);
 }
 
 [HarmonyPatch(typeof(XUiC_CombineWindowGroup), nameof(XUiC_CombineWindowGroup.OnClose))]
