@@ -403,3 +403,6 @@ The same run publishes the zip to the mods website
 (`downloads.azraelsmods.com/7-days-to-die/<slug>/<version>/<slug>-<version>.zip`) and records
 that version in `downloads.json`. That needs `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`
 on this repo. Without them the release still continues and the website file stays unchanged.
+Releases that run at the same time each rewrite `downloads.json`, so the script reads it back
+after a pause and writes its entry again until it stays (AZR-453). If the file cannot be read,
+it is left alone rather than replaced.
