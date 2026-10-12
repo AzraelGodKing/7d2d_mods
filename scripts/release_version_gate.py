@@ -346,7 +346,7 @@ def main() -> int:
         info["github_unchanged"] = "false"
         info["nexus_unchanged"] = "false"
         info["has_work"] = "true"
-    dump(info)
+    dump({k: v for k, v in info.items() if k not in ("has_work", "display_name", "mod_key")})
     print(
         f"ModInfo={info['about_version']} GitHub={info['github_version']} "
         f"Nexus={info['nexus_version']} (page {info['nexus_page_version']}, file {info['nexus_file_version']})",
