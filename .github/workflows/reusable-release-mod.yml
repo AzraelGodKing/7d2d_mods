@@ -54,7 +54,6 @@ jobs:
           fi
           echo "mod_dir=$(echo "$ROW" | jq -r '.modDir')" >> "$GITHUB_OUTPUT"
           echo "zip_name=$(echo "$ROW" | jq -r '.zipName')" >> "$GITHUB_OUTPUT"
-          echo "nexus_url=$(echo "$ROW" | jq -r '.nexus // empty')" >> "$GITHUB_OUTPUT"
           echo "nexus_mod_id=$(echo "$ROW" | jq -r '.nexus_mod_id // empty')" >> "$GITHUB_OUTPUT"
           echo "nexus_file_id=$(echo "$ROW" | jq -r '.nexus_file_id // empty')" >> "$GITHUB_OUTPUT"
           echo "nexus_publish=$(echo "$ROW" | jq -r 'if .nexus_publish == false then "false" else "true" end')" >> "$GITHUB_OUTPUT"

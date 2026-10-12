@@ -35,6 +35,18 @@ $mods = @(
 )
 if ($Only) { $mods = $mods | Where-Object { $Only -contains $_.Dir -or $Only -contains $_.Name } }
 
+# Same GameDir the build uses: -GameDir, else Directory.Build.local.props, else Directory.Build.props.
+if ($Install -and -not $GameDir) {
+    $localProps = Join-Path $root 'Directory.Build.local.props'
+    if (Test-Path $localProps) {
+        $n = ([xml](Get-Content $localProps -Raw)).SelectSingleNode('//GameDir')
+        if ($n) { $GameDir = $n.InnerText.Trim() }
+    }
+    if (-not $GameDir) {
+        $GameDir = ([xml](Get-Content (Join-Path $root 'Directory.Build.props') -Raw)).SelectSingleNode('//GameDir').InnerText.Trim()
+    }
+}
+
 function New-ModZip([string]$sourceDir, [string]$zipPath, [string]$folderName) {
     # Forward-slash entry names so the zip unpacks correctly on Linux servers too.
     if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
@@ -93,8 +105,7 @@ foreach ($m in $mods) {
     }
 
     if ($Install) {
-        $gd = if ($GameDir) { $GameDir } else { 'E:\SteamLibrary\steamapps\common\7 Days To Die' }
-        $target = Join-Path $gd "Mods/$($m.Name)"
+        $target = Join-Path $GameDir "Mods/$($m.Name)"
         if (Test-Path $target) { Remove-Item $target -Recurse -Force }
         Copy-Item $installFrom $target -Recurse
         Write-Host "  -> installed to $target" -ForegroundColor Green

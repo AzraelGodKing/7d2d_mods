@@ -2,7 +2,7 @@
   "slug": "craft-from-chests",
   "name": "Craft From Chests",
   "game": "7-days-to-die",
-  "description": "Crafting, block upgrades, and the Upgrade Bench can use materials from your chests inside your land claim (or an ally's). Only the players who want it install it - the server needs nothing.",
+  "description": "Crafting pulls materials from your chests inside your land claim (or an ally's). Block upgrades and the Upgrade Bench do the same only when UpgradeFromChests is on (off by default). Only the players who want it install it - the server needs nothing.",
   "version": "1.2.0",
   "screenshots": [],
   "download": {

@@ -4,7 +4,6 @@
     "modDir": "RemoveAnyEntity",
     "buildDir": "RemoveAnyEntity",
     "zipName": "AzraelRemoveAnyEntity",
-    "nexus": "https://www.nexusmods.com/7daystodie/mods/12841",
     "nexus_mod_id": "12841",
     "nexus_file_id": "8034981"
   },
@@ -13,7 +12,6 @@
     "modDir": "QuestDisconnectFix",
     "buildDir": "QuestDisconnectFix",
     "zipName": "AzraelQuestDisconnectFix",
-    "nexus": "https://www.nexusmods.com/7daystodie/mods/12839",
     "nexus_mod_id": "12839",
     "nexus_file_id": "8034954"
   },
@@ -22,7 +20,6 @@
     "modDir": "HonkDoorFix",
     "buildDir": "HonkDoorFix",
     "zipName": "HonkDoorFix",
-    "nexus": "https://www.nexusmods.com/7daystodie/mods/12926",
     "nexus_mod_id": "12926",
     "nexus_file_id": "8082963"
   },
@@ -31,7 +28,6 @@
     "modDir": "Speedometer",
     "buildDir": "Speedometer",
     "zipName": "AzraelSpeedometer",
-    "nexus": "https://www.nexusmods.com/7daystodie/mods/12840",
     "nexus_mod_id": "12840",
     "nexus_file_id": "8034963"
   },
@@ -40,7 +36,6 @@
     "modDir": "KeepBackpacks",
     "buildDir": "KeepBackpacks",
     "zipName": "AzraelKeepBackpacks",
-    "nexus": "https://www.nexusmods.com/7daystodie/mods/12923",
     "nexus_mod_id": "12923",
     "nexus_file_id": "8079882"
   },
@@ -49,7 +44,6 @@
     "modDir": "CraftFromChests",
     "buildDir": "CraftFromChests",
     "zipName": "AzraelCraftFromChests",
-    "nexus": "https://www.nexusmods.com/7daystodie/mods/12921",
     "nexus_mod_id": "12921",
     "nexus_file_id": "8079825"
   },
@@ -58,7 +52,6 @@
     "modDir": "UpgradeBench",
     "buildDir": "UpgradeBench",
     "zipName": "AzraelUpgradeBench",
-    "nexus": "https://www.nexusmods.com/7daystodie/mods/12922",
     "nexus_mod_id": "12922",
     "nexus_file_id": "8079849"
   },
@@ -67,7 +60,6 @@
     "modDir": "BloodMoonSound",
     "buildDir": "BloodMoonSound",
     "zipName": "AzraelBloodMoonSound",
-    "nexus": "https://www.nexusmods.com/7daystodie/mods/12920",
     "nexus_mod_id": "12920",
     "nexus_file_id": "8079786"
   }
