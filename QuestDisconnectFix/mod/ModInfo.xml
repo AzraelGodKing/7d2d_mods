@@ -5,5 +5,5 @@
 	<Description value="Server-side fixes for ghost players and broken parties: stops a quest POI unlock crash that aborted player logouts, and a robotic drone crash that stopped players joining or leaving parties. Players do not need to install anything." />
 	<Author value="Azrael" />
 	<Version value="1.1.0" />
-	<Website value="" />
+	<Website value="https://github.com/AzraelGodKing/7d2d_mods" />
 </xml>
