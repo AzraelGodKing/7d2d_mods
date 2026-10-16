@@ -119,7 +119,7 @@ jobs:
           $key = '${{ matrix.mod }}'
           $row = (Get-Content scripts/matrix/mod-matrix.json -Raw | ConvertFrom-Json) | Where-Object { $_.modKey -eq $key }
           if (-not $row) { throw "Unknown mod key $key" }
-          $buildArgs = @{ Only = $row.buildDir }
+          $buildArgs = @{ Only = $row.modDir }
           # The Docker runner sets RUNNER_7D2D_GAMEDIR (game DLLs mounted read-only); else the repo variable.
           $gameDir = if ($env:RUNNER_7D2D_GAMEDIR) { $env:RUNNER_7D2D_GAMEDIR } else { $env:SEVEND2D_DIR }
           if ($gameDir) { $buildArgs.GameDir = $gameDir }
