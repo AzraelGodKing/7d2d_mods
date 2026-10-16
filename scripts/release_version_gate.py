@@ -203,18 +203,17 @@ def evaluate_mod(
     github_ver = github_latest_version(api_url, repo, zip_name, github_token)
     github_hit = github_tag_exists(api_url, repo, tag, github_token)
 
-    nexus_publish = row.get("nexus_publish") is not False
     mod_id = str(row.get("nexus_mod_id") or "")
     file_id = str(row.get("nexus_file_id") or "")
     page_v = nexus_page_version(mod_id, nexus_key) if mod_id else NONE
     file_v = nexus_file_version(mod_id, file_id, nexus_key) if mod_id else NONE
     nexus_ver = page_v if page_v not in {NONE, UNFETCHED} else file_v
     nexus_hit = False
-    if nexus_publish and mod_id:
+    if mod_id:
         nexus_hit = already_published(about, page_v) or already_published(about, file_v)
 
     github_work = create_github and not github_hit
-    nexus_work = publish_nexus and nexus_publish and bool(file_id) and not nexus_hit
+    nexus_work = publish_nexus and bool(file_id) and not nexus_hit
     sources = []
     if github_hit:
         sources.append("github")
