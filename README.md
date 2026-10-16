@@ -162,9 +162,10 @@ A recipe that also needs a quality item still takes the stackable parts from tho
 needs a small engine (that stays in your backpack) and wheels (those come from the chests). Tools,
 weapons, and armor are never taken.
 
-Upgrading a block with a repair tool uses the same chests for its material (wood, cobblestone,
-concrete, steel, and so on). With the Upgrade Bench mod installed, that bench's material cost comes
-from the same chests too. The two mods you put in the bench still have to be in the bench.
+When `UpgradeFromChests` is on, upgrading a block with a repair tool uses the same chests for its
+material (wood, cobblestone, concrete, steel, and so on). With the Upgrade Bench mod installed, that
+bench's material cost comes from the same chests too. The two mods you put in the bench still have
+to be in the bench. That setting is **off by default**.
 
 If your backpack is short, the missing materials move from those chests into your backpack first,
 then the normal craft or upgrade runs. On a multiplayer server the mod waits for the server to
@@ -179,7 +180,7 @@ once the server confirms the take.
 **Only players need it; the server doesn't.** Players launch without EAC.
 
 **Changelog**
-- 1.2.0: using chests for block upgrades and the Upgrade Bench is now a setting, `UpgradeFromChests`, and it is **off by default**. Set it to `on` in `settings.txt` to get the 1.1.x behavior back. ModInfo and site descriptions match: crafting uses claim chests; upgrades only when that setting is on.
+- 1.2.0: using chests for block upgrades and the Upgrade Bench is now a setting, `UpgradeFromChests`, and it is **off by default**. Set it to `on` in `settings.txt` to get the 1.1.x behavior back. ModInfo, site descriptions, and the README how-it-works paragraph match: crafting uses claim chests; upgrades only when that setting is on.
 - 1.1.2: fixed items duplicating on a laggy server. The mod used to stop waiting for the server after 3 seconds and hand out the materials anyway; if the server then refused, the chest got them back too. It now waits up to 10 seconds, and materials from a chest the server still hasn't answered arrive only once the server accepts.
 - 1.1.1: 7 Days 3.3. Chest contents are read from ItemGrid, and item type is a property, so opening a workstation no longer throws and chest materials count again.
 - 1.1.0: gyro crafts take stackable parts such as wheels from chests even when the recipe also needs a quality item. Block upgrades, and the Upgrade Bench material cost, use those chests too.
