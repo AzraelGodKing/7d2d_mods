@@ -279,7 +279,6 @@ public static class KbConfig
     }
 }
 
-// Admin / server console. Permission 0.
 public class ConsoleCmdKbags : ConsoleCmdAbstract
 {
     public override int DefaultPermissionLevel => 0;

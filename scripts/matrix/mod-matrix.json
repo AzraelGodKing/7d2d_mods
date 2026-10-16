@@ -2,7 +2,6 @@
   {
     "modKey": "remove-any-entity",
     "modDir": "RemoveAnyEntity",
-    "buildDir": "RemoveAnyEntity",
     "zipName": "AzraelRemoveAnyEntity",
     "nexus_mod_id": "12841",
     "nexus_file_id": "8034981"
@@ -10,7 +9,6 @@
   {
     "modKey": "quest-disconnect-fix",
     "modDir": "QuestDisconnectFix",
-    "buildDir": "QuestDisconnectFix",
     "zipName": "AzraelQuestDisconnectFix",
     "nexus_mod_id": "12839",
     "nexus_file_id": "8034954"
@@ -18,7 +16,6 @@
   {
     "modKey": "honk-door-fix",
     "modDir": "HonkDoorFix",
-    "buildDir": "HonkDoorFix",
     "zipName": "HonkDoorFix",
     "nexus_mod_id": "12926",
     "nexus_file_id": "8082963"
@@ -26,7 +23,6 @@
   {
     "modKey": "speedometer",
     "modDir": "Speedometer",
-    "buildDir": "Speedometer",
     "zipName": "AzraelSpeedometer",
     "nexus_mod_id": "12840",
     "nexus_file_id": "8034963"
@@ -34,7 +30,6 @@
   {
     "modKey": "keep-backpacks",
     "modDir": "KeepBackpacks",
-    "buildDir": "KeepBackpacks",
     "zipName": "AzraelKeepBackpacks",
     "nexus_mod_id": "12923",
     "nexus_file_id": "8079882"
@@ -42,7 +37,6 @@
   {
     "modKey": "craft-from-chests",
     "modDir": "CraftFromChests",
-    "buildDir": "CraftFromChests",
     "zipName": "AzraelCraftFromChests",
     "nexus_mod_id": "12921",
     "nexus_file_id": "8079825"
@@ -50,7 +44,6 @@
   {
     "modKey": "upgrade-bench",
     "modDir": "UpgradeBench",
-    "buildDir": "UpgradeBench",
     "zipName": "AzraelUpgradeBench",
     "nexus_mod_id": "12922",
     "nexus_file_id": "8079849"
@@ -58,7 +51,6 @@
   {
     "modKey": "blood-moon-sound",
     "modDir": "BloodMoonSound",
-    "buildDir": "BloodMoonSound",
     "zipName": "AzraelBloodMoonSound",
     "nexus_mod_id": "12920",
     "nexus_file_id": "8079786"
