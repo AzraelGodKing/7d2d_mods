@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <xml>
 	<Name value="AzraelQuestDisconnectFix" />
-	<DisplayName value="Quest Disconnect Fix (No Ghost Players, No Broken Parties)" />
+	<DisplayName value="Quest Disconnect Fix (No Ghost Players and No Broken Parties)" />
 	<Description value="Server-side fixes for ghost players and broken parties: stops a quest POI unlock crash that aborted player logouts, and a robotic drone crash that stopped players joining or leaving parties. Players do not need to install anything." />
 	<Author value="Azrael" />
 	<Version value="1.1.0" />
