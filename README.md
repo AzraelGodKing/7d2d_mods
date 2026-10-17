@@ -93,7 +93,7 @@ The mod skips a drone whose list is gone, stops it listening to that party, and 
 Server-side only; players install nothing.
 
 **Changelog**
-- 1.1.0: fix parties breaking after a robotic drone unloads (3.3). Website is the GitHub repo, matching the other mods.
+- 1.1.0: fix parties breaking after a robotic drone unloads (3.3). Website is the GitHub repo, matching the other mods. DisplayName is `Quest Disconnect Fix (No Ghost Players and No Broken Parties)` so Nexus will accept the zip (it rejects a comma in the file name).
 - 1.0.0: first version.
 
 ## Honk Door Fix
