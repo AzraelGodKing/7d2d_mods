@@ -218,13 +218,13 @@ public static partial class Thralls
             int hp = Mathf.CeilToInt(best.Stats.Health.Value);
             bool changed = st.Target != best.entityId;
             if (!changed && now - st.At < (hp != st.Hp ? 4f : 10f)) continue;
-            if (!NotifyLow(p.entityId, LookText(best, hp))) continue;
+            if (!NotifyLow(p.entityId, LookText(best, hp, KeyOf(p)))) continue;
             st.Target = best.entityId; st.At = now; st.Hp = hp;
             Dbg("look: #" + p.entityId + " -> " + best.EntityName + " " + hp);
         }
     }
 
-    static string LookText(EntityAlive e, int hp)
+    static string LookText(EntityAlive e, int hp, string viewerKey)
     {
         string name;
         LiveThrall lt;
@@ -233,7 +233,7 @@ public static partial class Thralls
         name = rec != null ? Label(rec) : Pretty(ClassName(e)) + (lvl > 0 ? " Lv" + lvl : "");
         float max = e.GetMaxHealth();
         int n = Mathf.RoundToInt(Mathf.Clamp01(max <= 0f ? 0f : hp / max) * 10f);
-        return name + "  " + new string('#', n) + new string('-', 10 - n) + "  " + hp + "/" + Mathf.RoundToInt(max) + (rec != null ? "  (yours)" : "");
+        return name + "  " + new string('#', n) + new string('-', 10 - n) + "  " + hp + "/" + Mathf.RoundToInt(max) + (rec == null ? "" : rec.OwnerKey == viewerKey ? "  (yours)" : "  (owned by " + NameOfKey(rec.OwnerKey) + ")");
     }
     static string NameOfKey(string key)
     {
