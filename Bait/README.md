@@ -36,3 +36,5 @@ Animals tame the same way (3 meals by default) and follow you. **Daycare:** stan
 **Toasts (2.5.0):** events (meals, taming, level-ups, low health, perk and pack changes, falls) show as the game's own on-screen toast, so players need nothing installed. Command replies stay in chat. `UseToasts=false` puts everything back in chat.
 
 The commands work from chat (/thrall ...) and from the console (F1, `thrall ...`). Every command is logged as `[Bait] command from #id: ...`.
+
+**Look-at HP (2.6.0):** aim at one of your thralls, or any wild zombie or animal, and a toast shows its name, level and HP (up to 25 m, `LookHp`, `LookHpWild`, `LookHpRange`, `LookHpAngle`). Server side only, no client mod. It is a toast under the crosshair area, not a floating bar.

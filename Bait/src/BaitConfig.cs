@@ -52,6 +52,10 @@ public static class BaitConfig
     public static bool TetherRespectClaims = true; // no tethers inside someone else's land claim
     public static int PackSlotsPerAnimal = 4;   // bag slots each animal thrall that follows you adds (0 = off)
     public static int PackSlotsMax = 48;        // cap on the total bonus
+    public static bool LookHp = true;           // aim at a thrall (or a wild zombie/animal) to see its name, level and HP as a toast
+    public static bool LookHpWild = true;       // include wild zombies and animals, not just your thralls
+    public static float LookHpRange = 25f;
+    public static float LookHpAngle = 6f;       // degrees of aim tolerance
     public static bool UseToasts = true;        // events (fed, tamed, level up, alerts) show as an on-screen toast instead of chat
     public static bool HealthAlerts = true;     // whisper the owner when a thrall drops below 50%, 25%, 10%
     public static bool Debug = false;

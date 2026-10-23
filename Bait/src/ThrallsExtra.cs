@@ -112,6 +112,57 @@ public static partial class Thralls
         lastPack[p.entityId] = slots;
     }
 
+    // ------------------------------------------------------------------ look at it to see its HP (server side toast)
+    static float nextLook;
+    class LookState { public int Target; public float At; public int Hp; }
+    static readonly Dictionary<int, LookState> looks = new Dictionary<int, LookState>();
+    static readonly List<Entity> lookTmp = new List<Entity>();
+
+    static void LookHp(World world, float now)
+    {
+        if (!BaitConfig.LookHp) return;
+        foreach (var p in world.GetPlayers())
+        {
+            if (p == null || p.IsDead()) continue;
+            Vector3 head = p.getHeadPosition();
+            Vector3 fwd = Quaternion.Euler(p.rotation.x, p.rotation.y, 0f) * Vector3.forward;
+            float r = BaitConfig.LookHpRange;
+            world.GetEntitiesInBounds(typeof(EntityAlive), new Bounds(head, new Vector3(r * 2f, r * 2f, r * 2f)), lookTmp);
+            EntityAlive best = null; float bestAngle = BaitConfig.LookHpAngle;
+            foreach (var o in lookTmp)
+            {
+                var e = o as EntityAlive;
+                if (e == null || e == p || e is EntityPlayer || e.IsDead()) continue;
+                bool mine = Live.ContainsKey(e.entityId);
+                if (!mine && (!BaitConfig.LookHpWild || !(e is EntityZombie || e is EntityAnimal))) continue;
+                Vector3 to = e.position + Vector3.up * (e.height * 0.5f) - head;
+                if (to.magnitude > r || to.magnitude < 0.5f) continue;
+                float ang = Vector3.Angle(fwd, to);
+                if (ang < bestAngle) { bestAngle = ang; best = e; }
+            }
+            lookTmp.Clear();
+            LookState st;
+            if (!looks.TryGetValue(p.entityId, out st)) { st = new LookState(); looks[p.entityId] = st; }
+            if (best == null) { st.Target = 0; continue; }
+            int hp = Mathf.CeilToInt(best.Stats.Health.Value);
+            bool changed = st.Target != best.entityId;
+            if (!changed && now - st.At < (hp != st.Hp ? 1.5f : 3.5f)) continue;
+            st.Target = best.entityId; st.At = now; st.Hp = hp;
+            Notify(p.entityId, LookText(best, hp));
+        }
+    }
+
+    static string LookText(EntityAlive e, int hp)
+    {
+        string name;
+        LiveThrall lt;
+        ThrallRecord rec = Live.TryGetValue(e.entityId, out lt) ? Find(lt.RecordId) : null;
+        int lvl = rec != null ? rec.Level : LevelOf(e.entityId);
+        name = rec != null ? Label(rec) : Pretty(ClassName(e)) + (lvl > 0 ? " Lv" + lvl : "");
+        float max = e.GetMaxHealth();
+        int n = Mathf.RoundToInt(Mathf.Clamp01(max <= 0f ? 0f : hp / max) * 10f);
+        return name + "  " + new string('#', n) + new string('-', 10 - n) + "  " + hp + "/" + Mathf.RoundToInt(max) + (rec != null ? "  (yours)" : "");
+    }
     static string NameOfKey(string key)
     {
         try
