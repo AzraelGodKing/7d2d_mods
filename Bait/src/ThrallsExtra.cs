@@ -119,6 +119,39 @@ public static partial class Thralls
     static readonly Dictionary<int, LookState> looks = new Dictionary<int, LookState>();
     static readonly List<Entity> lookTmp = new List<Entity>();
 
+    class GrabItem { public int PlayerId; public string Item; public float At; }
+    static readonly List<GrabItem> grabItems = new List<GrabItem>();
+
+    // The item the player got for grabbing a thrall is taken back, so the creature is one thing: a stowed thrall.
+    static void ProcessGrabs()
+    {
+        if (grabItems.Count == 0) return;
+        for (int i = grabItems.Count - 1; i >= 0; i--)
+        {
+            var g = grabItems[i];
+            float age = Time.time - g.At;
+            if (age < 1.5f) continue;
+            bool done = age > 30f;
+            try
+            {
+                var p = W != null ? W.GetEntity(g.PlayerId) as EntityPlayer : null;
+                var iv = ItemClass.GetItem(g.Item);
+                if (p != null && iv != null && p.inventory != null && p.bag != null)
+                {
+                    if (p.inventory.GetItemCount(iv) + p.bag.GetItemCount(iv) > 0)
+                    {
+                        int left = 1 - p.inventory.DecItem(iv, 1);
+                        if (left > 0) p.bag.DecItem(iv, left);
+                        done = true;
+                    }
+                }
+                else done = true;
+            }
+            catch (Exception ex) { Dbg("grab item: " + ex.Message); done = true; }
+            if (done) grabItems.RemoveAt(i);
+        }
+    }
+
     // A thrall that gets picked up (a chicken can be grabbed) leaves the roster, so it is not respawned as a copy.
     public static void OnGrabbed(Entity e, int playerId)
     {
@@ -129,9 +162,12 @@ public static partial class Thralls
             var rec = Find(lt.RecordId);
             ForgetLive(e.entityId);
             if (rec == null) return;
-            RosterOf(rec.OwnerKey).Remove(rec);
-            dirty = true;
-            if (lt.OwnerEntityId >= 0) Notify(lt.OwnerEntityId, Label(rec) + " was picked up, so it is no longer one of your thralls.");
+            // Picking it up stows it: it stays on the roster (still tamed, with its level and name), inactive.
+            rec.Active = false; rec.Tether = false; dirty = true;
+            var ec = e as EntityAlive;
+            string item = ec != null && ec.EntityClass != null ? ec.EntityClass.PickupItem : null;
+            if (!string.IsNullOrEmpty(item)) grabItems.Add(new GrabItem { PlayerId = playerId, Item = item, At = Time.time });
+            if (lt.OwnerEntityId >= 0) Notify(lt.OwnerEntityId, Label(rec) + " is stowed. Bring it back with /thrall call " + (RosterOf(rec.OwnerKey).IndexOf(rec) + 1));
         }
         catch (Exception ex) { Dbg("grab: " + ex.Message); }
     }

@@ -59,4 +59,4 @@ Set the meal counts with `RichBaitMeals` and `FeastBaitMeals`. `giveself azraelB
 
 **Spawn caps:** live thralls are not counted against `MaxSpawnedZombies` / `MaxSpawnedAnimals`, so tamed creatures do not shrink how many wild ones the server can spawn (`ThrallsCountTowardSpawnCap=true` counts them again).
 
-**Grabbing:** a thrall that is picked up (a chicken, with an empty hand) is removed from your roster. Before, the roster respawned it and you ended up with a copy.
+**Grabbing:** picking up a thrall (a chicken, with an empty hand) stows it. It stays tamed on your roster, inactive, and the item you got is taken back. Bring it back with `/thrall call <n>`. Before, the roster respawned it and you ended up with a copy.
