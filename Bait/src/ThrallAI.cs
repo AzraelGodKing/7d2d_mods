@@ -55,3 +55,53 @@ public class EAIFollowMaster : EAIBase
 
     public override void Reset() { theEntity.navigator?.clearPath(); }
 }
+
+// Daycare task: stay inside a circle around a fixed point. Wanders to random spots inside it, walks back when
+// it strays or after a fight, and snaps back if it gets far out. Lets go while it has an attack target.
+public class EAITether : EAIBase
+{
+    readonly Vector3 center;
+    readonly float radius;
+    float nextMove, nextRepath;
+    Vector3 goal;
+    bool returning;
+
+    public EAITether(Vector3 center, float radius) { this.center = center; this.radius = Mathf.Max(2f, radius); MutexBits = 3; }
+
+    float FlatDist() { var d = theEntity.position - center; d.y = 0f; return d.magnitude; }
+
+    public override bool CanExecute() { return theEntity.GetAttackTarget() == null; }
+    public override bool Continue() { return theEntity.GetAttackTarget() == null; }
+    public override void Start() { nextMove = Time.time + UnityEngine.Random.Range(1f, 4f); returning = false; }
+
+    public override void Update()
+    {
+        float d = FlatDist();
+        if (d > radius * 4f + 10f)
+        {
+            theEntity.SetPosition(center + new Vector3(0f, 0.5f, 0f));
+            return;
+        }
+        float now = Time.time;
+        if (d > radius)
+        {
+            if (!returning || now >= nextRepath)
+            {
+                returning = true;
+                nextRepath = now + 2f;
+                theEntity.FindPath(center, theEntity.GetMoveSpeedPanic(), false, this);
+            }
+            return;
+        }
+        returning = false;
+        if (now >= nextMove)
+        {
+            nextMove = now + UnityEngine.Random.Range(4f, 10f);
+            Vector2 c = UnityEngine.Random.insideUnitCircle * (radius * 0.8f);
+            goal = new Vector3(center.x + c.x, center.y, center.z + c.y);
+            theEntity.FindPath(goal, theEntity.GetMoveSpeedPanic() * 0.5f, false, this);
+        }
+    }
+
+    public override void Reset() { theEntity.navigator?.clearPath(); }
+}

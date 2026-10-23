@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using HarmonyLib;
 
-// Harmony patches that make thralls behave. All server side.
+// Harmony patches that make thralls behave and levels count. All server side.
 [HarmonyPatch(typeof(EAIApproachDistraction), "Update")]
 public static class ThrallFeedPatch
 {
@@ -14,6 +14,7 @@ public static class ThrallFeedPatch
 }
 
 // Zombie vs zombie damage is blocked by the Zombie flag; lift it for the length of one hit that involves a thrall.
+// Also scales damage by level: leveled attackers hit harder, leveled victims take less.
 [HarmonyPatch]
 public static class ThrallDamagePatch
 {
@@ -26,10 +27,10 @@ public static class ThrallDamagePatch
         }
     }
 
-    static bool Prefix(EntityAlive __instance, DamageSource _damageSource, ref int __result, ref object __state)
+    static bool Prefix(EntityAlive __instance, DamageSource _damageSource, ref int _strength, ref int __result, ref object __state)
     {
         __state = null;
-        if (!Thralls.IsServer || Thralls.Live.Count == 0) return true;
+        if (!Thralls.IsServer) return true;
         var world = __instance.world;
         var attacker = world != null ? world.GetEntity(_damageSource.getEntityId()) as EntityAlive : null;
         bool victimThrall = Thralls.IsThrall(__instance.entityId);
@@ -41,7 +42,18 @@ public static class ThrallDamagePatch
         if (victimThrall && !BaitConfig.OwnerCanHurtThralls && attacker != null && Thralls.OwnedBy(__instance.entityId, attacker.entityId)
             && _damageSource.damageType != EnumDamageTypes.Suicide) { __result = -1; return false; }
 
-        if ((attackerThrall || victimThrall) && attacker != null && (attacker.entityFlags & EntityFlags.Zombie) != 0)
+        // levels
+        if (_damageSource.damageType != EnumDamageTypes.Suicide && _strength > 0)
+        {
+            int la = attacker != null && attacker != __instance ? Thralls.LevelOf(attacker.entityId) : 0;
+            int lv = Thralls.LevelOf(__instance.entityId);
+            if (la > 0 && !(__instance is EntityPlayer && attackerThrall))
+                _strength = (int)(_strength * (1f + BaitConfig.LevelDamagePct * la / 100f) + 0.5f);
+            if (lv > 0)
+                _strength = Math.Max(1, (int)(_strength / (1f + BaitConfig.LevelToughPct * lv / 100f) + 0.5f));
+        }
+
+        if (Thralls.Live.Count > 0 && (attackerThrall || victimThrall) && attacker != null && (attacker.entityFlags & EntityFlags.Zombie) != 0)
         {
             __state = attacker;
             attacker.entityFlags &= ~EntityFlags.Zombie;
@@ -77,6 +89,15 @@ public static class ThrallTargetPatch
 public static class ThrallNoSave
 {
     static void Postfix(EntityEnemy __instance, ref bool __result)
+    {
+        if (__result && Thralls.IsThrall(__instance.entityId)) __result = false;
+    }
+}
+
+[HarmonyPatch(typeof(EntityAnimal), "get_IsSavedToFile")]
+public static class ThrallNoSaveAnimal
+{
+    static void Postfix(EntityAnimal __instance, ref bool __result)
     {
         if (__result && Thralls.IsThrall(__instance.entityId)) __result = false;
     }
