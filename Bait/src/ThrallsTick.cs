@@ -146,7 +146,7 @@ public static partial class Thralls
             if (stage > prev)
             {
                 alertStage[lt.EntityId] = stage;
-                Tell(lt.OwnerEntityId, Label(rec) + " is at " + Mathf.RoundToInt(f * 100f) + "% health. " + Bar(f));
+                Notify(lt.OwnerEntityId, Label(rec) + " is at " + Mathf.RoundToInt(f * 100f) + "% health. " + Bar(f));
             }
         }
         if (alertStage.Count > 300) alertStage.Clear();
@@ -180,7 +180,7 @@ public static partial class Thralls
         }
         int prev;
         if (lastTier.TryGetValue(p.entityId, out prev) && prev != tier)
-            Tell(p.entityId, tier == 0 ? "Your thrall perk faded: you no longer hold enough tamed creatures."
+            Notify(p.entityId, tier == 0 ? "Your thrall perk faded: you no longer hold enough tamed creatures."
                                        : "Perk: " + TierName[tier - 1] + " (thrall power " + power + ").");
         lastTier[p.entityId] = tier;
     }

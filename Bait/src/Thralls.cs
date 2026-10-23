@@ -106,6 +106,22 @@ public static partial class Thralls
         catch { return null; }
     }
 
+    // Events show as a vanilla on-screen toast (the client already knows how to show it, no mod needed there).
+    // Command replies stay in chat. Falls back to chat if the toast cannot be sent.
+    public static void Notify(int entityId, string msg)
+    {
+        if (entityId < 0) return;
+        if (BaitConfig.UseToasts)
+        {
+            try
+            {
+                var p = W != null ? W.GetEntity(entityId) as EntityPlayer : null;
+                if (p != null) { GameManager.ShowTooltipMP(p, msg); return; }
+            }
+            catch (Exception e) { Dbg("toast failed: " + e.Message); }
+        }
+        Tell(entityId, msg);
+    }
     public static void Tell(int entityId, string msg)
     {
         if (entityId < 0) return;
@@ -270,7 +286,7 @@ public static partial class Thralls
         if (!feeds.TryGetValue(z.entityId, out f) || f.Owner != ownerId) { f = new Feed { Owner = ownerId }; feeds[z.entityId] = f; }
         f.Count++;
         int need = FeedsNeeded(cls, LevelOf(z.entityId));
-        if (f.Count < need) { Tell(ownerId, Pretty(cls) + " fed " + f.Count + "/" + need + "."); return; }
+        if (f.Count < need) { Notify(ownerId, Pretty(cls) + " fed " + f.Count + "/" + need + "."); return; }
 
         string key = KeyOf(owner);
         if (key == null) return;
@@ -278,7 +294,7 @@ public static partial class Thralls
         if (list.Count >= MaxOwnedFor(key))
         {
             f.Count = need - 1;
-            Tell(ownerId, "You already hold " + list.Count + " thralls (limit " + MaxOwnedFor(key) + "). Release one first: /thrall release <number>");
+            Notify(ownerId, "You already hold " + list.Count + " thralls (limit " + MaxOwnedFor(key) + "). Release one first: /thrall release <number>");
             return;
         }
         var rec = new ThrallRecord { Id = NewId(), OwnerKey = key, ClassName = cls, Level = LevelOf(z.entityId), Active = ActiveCount(key) < MaxActiveFor(key) };
@@ -290,12 +306,12 @@ public static partial class Thralls
         if (rec.Active)
         {
             MakeLive(z, rec, owner);
-            Tell(ownerId, Label(rec) + " is yours now. /thrall help");
+            Notify(ownerId, Label(rec) + " is yours now. /thrall help");
         }
         else
         {
             RemoveFromWorld(z);
-            Tell(ownerId, Label(rec) + " is yours, but you already have " + MaxActiveFor(key) + " out, so it is stowed. /thrall call " + list.Count);
+            Notify(ownerId, Label(rec) + " is yours, but you already have " + MaxActiveFor(key) + " out, so it is stowed. /thrall call " + list.Count);
         }
         Flush();
     }
@@ -470,13 +486,13 @@ public static partial class Thralls
                 {
                     rec.ReviveAt = NowSec() + BaitConfig.ReviveSeconds;
                     nextSpawn.Remove(rec.Id);
-                    Tell(lt.OwnerEntityId, Label(rec) + " fell. It rises again in " + BaitConfig.ReviveSeconds + "s, or /thrall revive "
+                    Notify(lt.OwnerEntityId, Label(rec) + " fell. It rises again in " + BaitConfig.ReviveSeconds + "s, or /thrall revive "
                         + (RosterOf(rec.OwnerKey).IndexOf(rec) + 1) + " (" + BaitConfig.ReviveBaitCost + " bait).");
                 }
                 else
                 {
                     RosterOf(rec.OwnerKey).Remove(rec);
-                    Tell(lt.OwnerEntityId, Label(rec) + " fell and is gone for good.");
+                    Notify(lt.OwnerEntityId, Label(rec) + " fell and is gone for good.");
                 }
                 dirty = true;
                 Flush();
@@ -496,7 +512,7 @@ public static partial class Thralls
         {
             rec.Level++;
             levels[killer.entityId] = rec.Level;
-            Tell(lt.OwnerEntityId, Pretty(rec.ClassName) + " reached level " + rec.Level + ".");
+            Notify(lt.OwnerEntityId, Pretty(rec.ClassName) + " reached level " + rec.Level + ".");
         }
     }
 }

@@ -108,7 +108,7 @@ public static partial class Thralls
         if (slots > 0 && !has) p.Buffs.AddBuff("azraelPackPerk");
         else if (slots == 0 && has) p.Buffs.RemoveBuff("azraelPackPerk");
         if (lastPack.TryGetValue(p.entityId, out prev) && prev != slots)
-            Tell(p.entityId, slots > 0 ? "Your pack animals carry for you: +" + slots + " bag slots." : "No pack animals with you, so the extra bag slots are gone.");
+            Notify(p.entityId, slots > 0 ? "Your pack animals carry for you: +" + slots + " bag slots." : "No pack animals with you, so the extra bag slots are gone.");
         lastPack[p.entityId] = slots;
     }
 
