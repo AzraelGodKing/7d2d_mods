@@ -125,7 +125,8 @@ public static partial class Thralls
         {
             if (p == null || p.IsDead()) continue;
             Vector3 head = p.getHeadPosition();
-            Vector3 fwd = Quaternion.Euler(p.rotation.x, p.rotation.y, 0f) * Vector3.forward;
+            Vector3 fwd = p.GetLookVector();
+            if (fwd.sqrMagnitude < 0.01f) fwd = Quaternion.Euler(p.rotation.x, p.rotation.y, 0f) * Vector3.forward;
             float r = BaitConfig.LookHpRange;
             world.GetEntitiesInBounds(typeof(EntityAlive), new Bounds(head, new Vector3(r * 2f, r * 2f, r * 2f)), lookTmp);
             EntityAlive best = null; float bestAngle = BaitConfig.LookHpAngle;
@@ -148,6 +149,7 @@ public static partial class Thralls
             bool changed = st.Target != best.entityId;
             if (!changed && now - st.At < (hp != st.Hp ? 1.5f : 3.5f)) continue;
             st.Target = best.entityId; st.At = now; st.Hp = hp;
+            Dbg("look: #" + p.entityId + " -> " + best.EntityName + " " + hp);
             Notify(p.entityId, LookText(best, hp));
         }
     }
