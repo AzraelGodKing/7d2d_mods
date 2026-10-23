@@ -13,7 +13,12 @@ public class AzraelBaitMod : IModApi
 {
     public void InitMod(Mod _modInstance)
     {
+        BaitConfig.Load(_modInstance.Path);
         new Harmony("azrael.bait").PatchAll(typeof(AzraelBaitMod).Assembly);
+        ModEvents.GameStartDone.RegisterHandler(Thralls.OnGameStart);
+        ModEvents.GameShutdown.RegisterHandler(Thralls.OnShutdown);
+        ModEvents.GameUpdate.RegisterHandler(Thralls.OnUpdate);
+        ModEvents.EntityKilled.RegisterHandler(Thralls.OnEntityKilled);
         Log.Out("[Bait] Loaded: creatures going for Zombie and Animal Bait are only hurt by the player who threw it.");
     }
 }
