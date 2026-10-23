@@ -108,9 +108,22 @@ public static partial class Thralls
 
     // Events show as a vanilla on-screen toast (the client already knows how to show it, no mod needed there).
     // Command replies stay in chat. Falls back to chat if the toast cannot be sent.
+    // Toasts are shown one after another by the client (a few seconds each), so a burst of them queues up and arrives late.
+    // Low-priority ones (look-at HP) are dropped when a toast went to that player a moment ago.
+    static readonly Dictionary<int, float> lastToast = new Dictionary<int, float>();
+    public static bool NotifyLow(int entityId, string msg)
+    {
+        float last;
+        if (lastToast.TryGetValue(entityId, out last) && Time.time - last < 4f) return false;
+        Notify(entityId, msg);
+        return true;
+    }
+
     public static void Notify(int entityId, string msg)
     {
         if (entityId < 0) return;
+        lastToast[entityId] = Time.time;
+        Dbg("toast #" + entityId + ": " + msg);
         if (BaitConfig.UseToasts)
         {
             try

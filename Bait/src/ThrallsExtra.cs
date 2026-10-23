@@ -147,10 +147,10 @@ public static partial class Thralls
             if (best == null) { st.Target = 0; continue; }
             int hp = Mathf.CeilToInt(best.Stats.Health.Value);
             bool changed = st.Target != best.entityId;
-            if (!changed && now - st.At < (hp != st.Hp ? 1.5f : 3.5f)) continue;
+            if (!changed && now - st.At < (hp != st.Hp ? 4f : 10f)) continue;
+            if (!NotifyLow(p.entityId, LookText(best, hp))) continue;
             st.Target = best.entityId; st.At = now; st.Hp = hp;
             Dbg("look: #" + p.entityId + " -> " + best.EntityName + " " + hp);
-            Notify(p.entityId, LookText(best, hp));
         }
     }
 
