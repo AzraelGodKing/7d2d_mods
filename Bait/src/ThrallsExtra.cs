@@ -119,6 +119,23 @@ public static partial class Thralls
     static readonly Dictionary<int, LookState> looks = new Dictionary<int, LookState>();
     static readonly List<Entity> lookTmp = new List<Entity>();
 
+    // A thrall that gets picked up (a chicken can be grabbed) leaves the roster, so it is not respawned as a copy.
+    public static void OnGrabbed(Entity e, int playerId)
+    {
+        try
+        {
+            LiveThrall lt;
+            if (e == null || !Live.TryGetValue(e.entityId, out lt)) return;
+            var rec = Find(lt.RecordId);
+            ForgetLive(e.entityId);
+            if (rec == null) return;
+            RosterOf(rec.OwnerKey).Remove(rec);
+            dirty = true;
+            if (lt.OwnerEntityId >= 0) Notify(lt.OwnerEntityId, Label(rec) + " was picked up, so it is no longer one of your thralls.");
+        }
+        catch (Exception ex) { Dbg("grab: " + ex.Message); }
+    }
+
     // Live thralls by kind, so the spawn caps can ignore them.
     public static void CountLive(out int enemies, out int animals)
     {

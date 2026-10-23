@@ -58,3 +58,5 @@ Set the meal counts with `RichBaitMeals` and `FeastBaitMeals`. `giveself azraelB
 - While you ride a vehicle your active, non-tethered thralls go inactive, and they are called back when you get off (`AutoStowInVehicle=false` turns it off).
 
 **Spawn caps:** live thralls are not counted against `MaxSpawnedZombies` / `MaxSpawnedAnimals`, so tamed creatures do not shrink how many wild ones the server can spawn (`ThrallsCountTowardSpawnCap=true` counts them again).
+
+**Grabbing:** a thrall that is picked up (a chicken, with an empty hand) is removed from your roster. Before, the roster respawned it and you ended up with a copy.

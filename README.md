@@ -5,14 +5,14 @@ Small mods for 7 Days to Die, built and tested on **V3.3**.
 | Mod | Type | Install on | Version |
 |---|---|---|---|
 | [Remove Any Entity](#remove-any-entity) | Code (Harmony) | Server only | 2.0.1 |
-| [Quest Disconnect Fix](#quest-disconnect-fix) | Code (Harmony) | Server only | 1.2.2 |
-| [Honk Door Fix](#honk-door-fix) | Code (Harmony) | Server only | 1.2.2 |
+| [Quest Disconnect Fix](#quest-disconnect-fix) | Code (Harmony) | Server only | 1.2.3 |
+| [Honk Door Fix](#honk-door-fix) | Code (Harmony) | Server only | 1.2.3 |
 | [Speedometer](#speedometer) | Code + UI | Players only | 1.1.1 |
 | [Craft From Chests](#craft-from-chests) | Code (Harmony) | Players only | 1.2.0 |
 | [Upgrade Bench](#upgrade-bench) | Code + XML | Server **and** every player | 1.0.2 |
-| [Keep Backpacks](#keep-backpacks) | Code | Server only | 1.2.2 |
+| [Keep Backpacks](#keep-backpacks) | Code | Server only | 1.2.3 |
 | [Blood Moon Sound](#blood-moon-sound) | Code (Harmony) | Players (own sound); server optional (sound for everyone, Discord posts) | 1.2.2 |
-| [Zombie and Animal Bait](#zombie-and-animal-bait) | Code (Harmony) + XML | Server only | 1.2.2 |
+| [Zombie and Animal Bait](#zombie-and-animal-bait) | Code (Harmony) + XML | Server only | 1.2.3 |
 
 Download the zips from the Releases page, unzip, and put the folder inside the game's `Mods` folder
 (or the server's `Mods` folder). Code that a player installs needs EasyAntiCheat turned off.

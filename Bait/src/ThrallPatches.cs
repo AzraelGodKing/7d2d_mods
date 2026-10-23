@@ -206,3 +206,13 @@ public static class ThrallSpawnCapPatch
         catch { }
     }
 }
+// Grabbing a creature (a chicken) turns it into an item and removes it. Without this the roster would respawn it,
+// leaving the player with both the item and a copy.
+[HarmonyPatch(typeof(Entity), "Collect")]
+public static class ThrallGrabPatch
+{
+    static void Prefix(Entity __instance, int _playerId)
+    {
+        if (Thralls.IsServer && Thralls.Live.Count > 0) Thralls.OnGrabbed(__instance, _playerId);
+    }
+}
