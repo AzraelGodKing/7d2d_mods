@@ -18,7 +18,7 @@ public static partial class Thralls
         float now = Time.time;
         try
         {
-            if (now >= nextTaunt) { nextTaunt = now + 1f; Taunt(world, now); }
+            if (now >= nextTaunt) { nextTaunt = now + 1f; Taunt(world, now); VehicleWatch(world); }
             if (now >= nextLook) { nextLook = now + 0.5f; Calm(); LookHp(world, now); }
             if (now >= nextSlow) { nextSlow = now + 5f; Slow(world, now); }
         }

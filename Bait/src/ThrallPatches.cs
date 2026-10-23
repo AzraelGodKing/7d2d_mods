@@ -49,6 +49,10 @@ public static class ThrallDamagePatch
         if (victimThrall && !BaitConfig.OwnerCanHurtThralls && attacker != null && Thralls.OwnedBy(__instance.entityId, attacker.entityId)
             && _damageSource.damageType != EnumDamageTypes.Suicide) { __result = -1; return false; }
 
+        // other players can't hurt it either
+        if (victimThrall && !BaitConfig.OthersCanHurtThralls && attacker is EntityPlayer && _damageSource.damageType != EnumDamageTypes.Suicide)
+        { __result = -1; return false; }
+
         // levels
         if (_damageSource.damageType != EnumDamageTypes.Suicide && _strength > 0)
         {
@@ -155,5 +159,32 @@ public static class ThrallPassivePatch
         }
         catch { }
         return true;
+    }
+}
+// Drones: a thrall is never a drone target, and a drone counts it as an ally (no shooting it, no enemy chatter).
+[HarmonyPatch]
+public static class ThrallDroneTargetPatch
+{
+    static IEnumerable<MethodBase> TargetMethods()
+    {
+        foreach (Type n in typeof(EntityDrone).GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic))
+        {
+            var m = AccessTools.DeclaredMethod(n, "canAttackTarget");
+            if (m != null) yield return m;
+        }
+    }
+
+    static void Postfix(EntityAlive enemy, ref bool __result)
+    {
+        if (__result && enemy != null && Thralls.IsThrall(enemy.entityId)) __result = false;
+    }
+}
+
+[HarmonyPatch(typeof(EntityDrone), "isAlly")]
+public static class ThrallDroneAllyPatch
+{
+    static void Postfix(EntityAlive _target, ref bool __result)
+    {
+        if (!__result && _target != null && Thralls.IsThrall(_target.entityId)) __result = true;
     }
 }

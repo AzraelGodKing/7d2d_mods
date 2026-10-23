@@ -30,6 +30,8 @@ public static class BaitConfig
     public static float TauntRadius = 14f;
     public static float TauntShare = 0.5f;
     public static float TauntSeconds = 8f;
+    public static bool OthersCanHurtThralls = false; // false: no player can hurt anyone else's thrall
+    public static bool AutoStowInVehicle = true;      // thralls go inactive while you ride a vehicle and come back when you get off
     public static bool OwnerCanHurtThralls = false;
     // tether (daycare)
     public static float TetherRadius = 8f;      // default radius for /thrall tether

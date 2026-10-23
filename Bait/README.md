@@ -49,3 +49,10 @@ Admins manage the list in game: `/thrall exclude list | add <className> | remove
 - **Feast Bait** counts as 4 meals. Craft: 5 Rich Bait + 3 raw meat + 1 acid, at a campfire (the hardest to make). It eats for about 45 s.
 
 Set the meal counts with `RichBaitMeals` and `FeastBaitMeals`. `giveself azraelBaitRich 10 true` and `giveself azraelBaitFeast 10 true` for testing.
+
+## Protection and vehicles
+
+- No player can hurt a thrall, not even its owner (`OwnerCanHurtThralls` and `OthersCanHurtThralls` allow it).
+- Drones ignore thralls and treat them as allies.
+- Tethers are blocked only inside another player's land claim. Your own claim and an ally's claim are fine.
+- While you ride a vehicle your active, non-tethered thralls go inactive, and they are called back when you get off (`AutoStowInVehicle=false` turns it off).

@@ -47,8 +47,9 @@ public static partial class Thralls
     {
         try
         {
+            // Only another player's claim blocks it; your own claim and an ally's are fine.
             var pd = GameManager.Instance.GetPersistentPlayerList().GetPlayerDataFromEntityID(p.entityId);
-            return W.IsMyLandProtectedBlock(new Vector3i(pos), pd);
+            return W.GetLandClaimOwner(new Vector3i(pos), pd) == EnumLandClaimOwner.Other;
         }
         catch { return false; }
     }
@@ -117,6 +118,43 @@ public static partial class Thralls
     class LookState { public int Target; public float At; public int Hp; }
     static readonly Dictionary<int, LookState> looks = new Dictionary<int, LookState>();
     static readonly List<Entity> lookTmp = new List<Entity>();
+
+    // Riding a vehicle: active thralls go inactive, and are called back when the player gets off.
+    static readonly Dictionary<int, List<string>> vehStowed = new Dictionary<int, List<string>>();
+    static void VehicleWatch(World world)
+    {
+        if (!BaitConfig.AutoStowInVehicle) return;
+        foreach (var p in world.GetPlayers())
+        {
+            if (p == null || p.IsDead()) continue;
+            string key = KeyOf(p);
+            if (key == null) continue;
+            bool riding = p.AttachedToEntity is EntityVehicle;
+            List<string> ids;
+            bool had = vehStowed.TryGetValue(p.entityId, out ids);
+            if (riding && !had)
+            {
+                var stowed = new List<string>();
+                foreach (var r in RosterOf(key))
+                    if (r.Active && !r.Tether) { r.Active = false; stowed.Add(r.Id); DespawnLive(r.Id); nextSpawn.Remove(r.Id); }
+                vehStowed[p.entityId] = stowed;
+                if (stowed.Count > 0) { dirty = true; Notify(p.entityId, stowed.Count + " stowed while you ride. They come back when you get off."); }
+            }
+            else if (!riding && had)
+            {
+                vehStowed.Remove(p.entityId);
+                int back = 0;
+                foreach (string id in ids)
+                {
+                    var r = Find(id);
+                    if (r == null || r.Active || r.Tether || r.ReviveAt > NowSec()) continue;
+                    if (ActiveCount(key) >= MaxActiveFor(key)) break;
+                    r.Active = true; back++;
+                }
+                if (back > 0) { dirty = true; nextSlow = 0f; Notify(p.entityId, back + " called back."); }
+            }
+        }
+    }
 
     // Passive thralls drop any target they already have (the AI patch stops new fights).
     static void Calm()
