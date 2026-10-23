@@ -158,6 +158,8 @@ public static partial class Thralls
             LookState st;
             if (!looks.TryGetValue(p.entityId, out st)) { st = new LookState(); looks[p.entityId] = st; }
             if (best == null) { st.Target = 0; continue; }
+            // A creature heading for bait or eating it is about to produce a fed toast; don't queue an HP toast in front of it.
+            if (best.IsEating || BaitCheck.ActiveBait(best) != null) continue;
             int hp = Mathf.CeilToInt(best.Stats.Health.Value);
             bool changed = st.Target != best.entityId;
             if (!changed && now - st.At < (hp != st.Hp ? 4f : 10f)) continue;
