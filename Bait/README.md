@@ -15,4 +15,4 @@ Animals tame the same way (3 meals by default) and follow you. **Daycare:** stan
 
 **Limits:** up to 20 owned, 4 out at once by default. Admins change any setting live with `/thrall config <name> <value>` (saved with the world); `/thrall config` lists them.
 
-**Levels:** wild zombies spawn with a level (game day / 14, plus tier, +-1, max 5) that makes them hit harder and take less damage, and they gain a level by killing a player or thrall. Thralls gain a level every 8 kills and add it to your perk power. Turn off with `ZombieLevels=false`.
+**Levels:** wild zombies spawn with a level (game day / 5, plus 5 per tier, plus 0-2, max 300) that makes them hit harder (+3% per level) and take less damage (3% per level, divided), and they gain a level by killing a player or thrall. Thralls gain a level every 8 kills and add it to your perk power. Turn off with `ZombieLevels=false`.

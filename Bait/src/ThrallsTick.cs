@@ -113,7 +113,7 @@ public static partial class Thralls
     {
         int power = 0;
         List<ThrallRecord> l;
-        if (roster.TryGetValue(ownerKey, out l)) foreach (var r in l) power += 1 + TierOf(r.ClassName) + r.Level;
+        if (roster.TryGetValue(ownerKey, out l)) foreach (var r in l) power += 1 + TierOf(r.ClassName) + r.Level / 10;
         return power;
     }
 

@@ -34,11 +34,12 @@ public static class BaitConfig
     public static float TetherMaxRadius = 40f;
     // zombie leveling
     public static bool ZombieLevels = true;     // wild zombies spawn with a level and grow by killing
-    public static int MaxLevel = 5;
-    public static int DaysPerLevel = 14;        // game days per starting level
+    public static int MaxLevel = 300;   // vanilla player level cap
+    public static int DaysPerLevel = 5;         // game days per starting level
     public static int KillsPerLevel = 8;        // thralls gain a level per this many kills
-    public static float LevelDamagePct = 12f;   // extra damage dealt per level
-    public static float LevelToughPct = 15f;    // damage reduction per level (1/(1+pct*level))
+    public static int TierLevelBonus = 5;       // starting levels added per tier (feral 1, radiated 2, charged/infernal 3)
+    public static float LevelDamagePct = 3f;   // extra damage dealt per level
+    public static float LevelToughPct = 3f;    // damage reduction per level (1/(1+pct*level))
     public static bool Debug = false;
 
     public static readonly HashSet<string> Exclude = new HashSet<string>(StringComparer.OrdinalIgnoreCase)

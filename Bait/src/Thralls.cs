@@ -40,7 +40,7 @@ public static partial class Thralls
     // levels: entityId -> level (0 = none). Wild zombies also carry a marker buff so the level survives a save.
     static readonly Dictionary<int, int> levels = new Dictionary<int, int>();
     static readonly HashSet<int> scanned = new HashSet<int>();
-    const int MarkerBuffs = 5;
+    const int MarkerBuffs = 300;
 
     static bool dirty, loaded;
     static float nextSlow, nextTaunt;
@@ -218,7 +218,7 @@ public static partial class Thralls
             if (lvl == 0)
             {
                 int dpl = Math.Max(1, BaitConfig.DaysPerLevel);
-                lvl = day / dpl + TierOf(ClassName(z)) + UnityEngine.Random.Range(-1, 2);
+                lvl = day / dpl + TierOf(ClassName(z)) * BaitConfig.TierLevelBonus + UnityEngine.Random.Range(0, 3);
                 lvl = Math.Max(0, Math.Min(BaitConfig.MaxLevel, lvl));
                 if (lvl > 0) ApplyMarker(z, Math.Min(lvl, MarkerBuffs));
             }
