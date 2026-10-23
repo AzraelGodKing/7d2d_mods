@@ -15,7 +15,7 @@ Animals tame the same way (3 meals by default) and follow you. **Daycare:** stan
 
 ### Thrall care and admin
 - `/thrall name <n> <name>` nickname. `/thrall stay` / `follow <n|all>` hold position or follow.
-- `/thrall mode <n|all> aggressive|defend|passive`: defend only fights what comes within 8 m of the thrall or you; passive never starts a fight.
+- `/thrall mode <n|all> aggressive|defensive|passive`: defensive only fights what comes within 8 m of the thrall or you; passive never starts a fight.
 - `/thrall heal <n>` spends 1 bait to restore 40% health. Out of combat thralls also regain 1% every 5 s.
 - A fallen thrall returns after 300 s (`ReviveSeconds`, 0 = permadeath), or at once with `/thrall revive <n>` for 3 bait.
 - Higher-level targets need more meals (+1 per 25 levels).
