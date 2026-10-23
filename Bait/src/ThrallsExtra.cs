@@ -85,6 +85,33 @@ public static partial class Thralls
         return o != null && (target.position - o.position).magnitude <= r;
     }
 
+    // Pack animals: each active, non-tethered, standing animal thrall adds bag slots to its owner.
+    static int PackSlots(string key)
+    {
+        if (BaitConfig.PackSlotsPerAnimal <= 0) return 0;
+        int n = 0;
+        List<ThrallRecord> l;
+        if (roster.TryGetValue(key, out l))
+            foreach (var r in l) if (r.Active && !r.Tether && IsAnimalClass(r.ClassName) && r.ReviveAt <= NowSec()) n++;
+        return Math.Min(BaitConfig.PackSlotsMax, n * BaitConfig.PackSlotsPerAnimal);
+    }
+
+    static readonly Dictionary<int, int> lastPack = new Dictionary<int, int>();
+
+    static void ApplyPack(EntityPlayer p, string key)
+    {
+        if (p.Buffs == null) return;
+        int slots = PackSlots(key), prev;
+        bool has = p.Buffs.HasBuff("azraelPackPerk");
+        if (lastPack.TryGetValue(p.entityId, out prev) && prev == slots && has == (slots > 0)) return;
+        p.Buffs.SetCustomVar("$azraelPackSlots", slots);
+        if (slots > 0 && !has) p.Buffs.AddBuff("azraelPackPerk");
+        else if (slots == 0 && has) p.Buffs.RemoveBuff("azraelPackPerk");
+        if (lastPack.TryGetValue(p.entityId, out prev) && prev != slots)
+            Tell(p.entityId, slots > 0 ? "Your pack animals carry for you: +" + slots + " bag slots." : "No pack animals with you, so the extra bag slots are gone.");
+        lastPack[p.entityId] = slots;
+    }
+
     static string NameOfKey(string key)
     {
         try

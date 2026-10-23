@@ -50,6 +50,8 @@ public static class BaitConfig
     public static float RegenPctPerTick = 1f;   // health a thrall regains every 5 s while not fighting
     public static float DefendRange = 8f;       // defend mode: fights only what comes this close to it or its owner
     public static bool TetherRespectClaims = true; // no tethers inside someone else's land claim
+    public static int PackSlotsPerAnimal = 4;   // bag slots each animal thrall that follows you adds (0 = off)
+    public static int PackSlotsMax = 48;        // cap on the total bonus
     public static bool HealthAlerts = true;     // whisper the owner when a thrall drops below 50%, 25%, 10%
     public static bool Debug = false;
 

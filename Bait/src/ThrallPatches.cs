@@ -75,8 +75,14 @@ public static class ThrallTargetPatch
     static bool Prefix(EntityAlive __instance, EntityAlive _attackTarget)
     {
         if (_attackTarget == null || !Thralls.IsServer) return true;
-        if (Thralls.IsThrall(__instance.entityId))
-            return !(_attackTarget is EntityPlayer) && !Thralls.IsThrall(_attackTarget.entityId);
+        LiveThrall lt;
+        if (Thralls.Live.TryGetValue(__instance.entityId, out lt))
+        {
+            if (_attackTarget is EntityPlayer || Thralls.IsThrall(_attackTarget.entityId)) return false;
+            if (lt.Mode == 2) return false;
+            if (lt.Mode == 1 && !Thralls.DefendOk(__instance, lt, _attackTarget)) return false;
+            return true;
+        }
         float until;
         if (_attackTarget is EntityPlayer && Thralls.TauntedUntil.TryGetValue(__instance.entityId, out until) && UnityEngine.Time.time < until)
             return false;

@@ -28,3 +28,5 @@ Animals tame the same way (3 meals by default) and follow you. **Daycare:** stan
 - Tethers are refused inside someone else's land claim.
 - Admins: `/thrall admin who | list <player> | release <player> <n> | limit <player> <owned> <active>` (per-player limits).
 - Wild zombie levels are now stored in a custom variable on the zombie (no marker buffs).
+
+**Pack animals (2.4.0):** every animal thrall that is out and following you (not tethered, not downed) adds 4 bag slots, up to 48 (`PackSlotsPerAnimal`, `PackSlotsMax`). Tethered daycare pets do not count, so the bonus only helps while they travel with you.

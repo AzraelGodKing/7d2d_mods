@@ -35,4 +35,13 @@
 		</buff>
 	</append>
 
+	<!-- Pack animals: the mod sets the player's cvar $azraelPackSlots; this buff turns it into extra bag slots. -->
+	<append xpath="/buffs">
+		<buff name="azraelPackPerk" hidden="true" remove_on_death="false">
+			<stack_type value="ignore"/>
+			<effect_group>
+				<passive_effect name="CarryCapacity" operation="base_add" value="@$azraelPackSlots"/>
+			</effect_group>
+		</buff>
+	</append>
 </configs>

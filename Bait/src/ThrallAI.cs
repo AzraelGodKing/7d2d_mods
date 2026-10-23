@@ -18,10 +18,16 @@ public class EAIFollowMaster : EAIBase
         return (o == null || o.IsDead()) ? null : o;
     }
 
+    bool Held()
+    {
+        LiveThrall lt;
+        return Thralls.Live.TryGetValue(theEntity.entityId, out lt) && lt.Hold;
+    }
+
     public override bool CanExecute()
     {
         var o = Owner();
-        if (o == null) return false;
+        if (o == null || Held()) return false;
         if (theEntity.GetAttackTarget() != null) return false;
         return (o.position - theEntity.position).magnitude > BaitConfig.FollowDistance;
     }
@@ -29,7 +35,7 @@ public class EAIFollowMaster : EAIBase
     public override bool Continue()
     {
         var o = Owner();
-        if (o == null || theEntity.GetAttackTarget() != null) return false;
+        if (o == null || Held() || theEntity.GetAttackTarget() != null) return false;
         return (o.position - theEntity.position).magnitude > BaitConfig.FollowDistance * 0.6f;
     }
 

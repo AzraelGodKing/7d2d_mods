@@ -18,8 +18,12 @@ public class ThrallRecord
     public bool Active;
     public int Level, Kills;
     public bool Tether; public float TX, TY, TZ, TR;
+    public string Name;      // optional nickname
+    public bool Stay;        // hold position instead of following
+    public int Mode;         // 0 aggressive, 1 defend, 2 passive
+    public long ReviveAt;    // unix seconds; while in the future the thrall is downed
 }
-public class LiveThrall { public int EntityId, OwnerEntityId; public string RecordId, OwnerKey; }
+public class LiveThrall { public int EntityId, OwnerEntityId; public string RecordId, OwnerKey; public bool Hold; public int Mode; }
 
 public static partial class Thralls
 {
@@ -40,7 +44,6 @@ public static partial class Thralls
     // levels: entityId -> level (0 = none). Wild zombies also carry a marker buff so the level survives a save.
     static readonly Dictionary<int, int> levels = new Dictionary<int, int>();
     static readonly HashSet<int> scanned = new HashSet<int>();
-    const int MarkerBuffs = 5;
 
     static bool dirty, loaded;
     static float nextSlow, nextTaunt;
@@ -67,11 +70,12 @@ public static partial class Thralls
         if (c.EndsWith("feral")) return 1;
         return 0;
     }
-    public static int FeedsNeeded(string cls)
+    public static int FeedsNeeded(string cls, int level)
     {
-        if (IsAnimalClass(cls)) return BaitConfig.AnimalFeedsToTame;
+        int extra = BaitConfig.FeedsPerLevelStep > 0 ? level / BaitConfig.FeedsPerLevelStep : 0;
+        if (IsAnimalClass(cls)) return BaitConfig.AnimalFeedsToTame + extra;
         int t = TierOf(cls);
-        return BaitConfig.FeedsToTame + (t == 3 ? BaitConfig.ChargedBonus : t == 2 ? BaitConfig.RadiatedBonus : t == 1 ? BaitConfig.FeralBonus : 0);
+        return extra + BaitConfig.FeedsToTame + (t == 3 ? BaitConfig.ChargedBonus : t == 2 ? BaitConfig.RadiatedBonus : t == 1 ? BaitConfig.FeralBonus : 0);
     }
     public static string Pretty(string cls)
     {
@@ -85,7 +89,11 @@ public static partial class Thralls
         return tier.Length > 0 ? c + " (" + tier + ")" : c;
     }
     static string ClassName(EntityAlive e) { return EntityClass.list[e.entityClass].entityClassName; }
-    static string Label(ThrallRecord r) { return Pretty(r.ClassName) + (r.Level > 0 ? " Lv" + r.Level : ""); }
+    static string Label(ThrallRecord r)
+    {
+        string b = string.IsNullOrEmpty(r.Name) ? Pretty(r.ClassName) : r.Name + " (" + Pretty(r.ClassName) + ")";
+        return b + (r.Level > 0 ? " Lv" + r.Level : "");
+    }
 
     public static string KeyOf(EntityPlayer p)
     {
@@ -119,6 +127,7 @@ public static partial class Thralls
     {
         roster.Clear();
         BaitConfig.LoadSaved();
+        LoadLimits();
         try
         {
             if (File.Exists(FilePath))
@@ -129,6 +138,7 @@ public static partial class Thralls
                     var r = new ThrallRecord { Id = p[0], OwnerKey = p[1], ClassName = p[2], Active = p[3] == "1" };
                     if (p.Length >= 6) { r.Level = PI(p[4]); r.Kills = PI(p[5]); }
                     if (p.Length >= 11) { r.Tether = p[6] == "1"; r.TX = P(p[7]); r.TY = P(p[8]); r.TZ = P(p[9]); r.TR = P(p[10]); }
+                    if (p.Length >= 15) { r.Name = p[11].Length > 0 ? p[11] : null; r.Stay = p[12] == "1"; r.Mode = PI(p[13]); long ra; if (long.TryParse(p[14], out ra)) r.ReviveAt = ra; }
                     RosterOf(r.OwnerKey).Add(r);
                 }
             Log.Out("[Bait] Thrall roster loaded: " + CountAll() + " tamed creatures.");
@@ -149,7 +159,8 @@ public static partial class Thralls
                 foreach (var r in kv.Value)
                     sb.Append(r.Id).Append('\t').Append(r.OwnerKey).Append('\t').Append(r.ClassName).Append('\t').Append(r.Active ? "1" : "0")
                       .Append('\t').Append(r.Level).Append('\t').Append(r.Kills).Append('\t').Append(r.Tether ? "1" : "0")
-                      .Append('\t').Append(F(r.TX)).Append('\t').Append(F(r.TY)).Append('\t').Append(F(r.TZ)).Append('\t').Append(F(r.TR)).Append('\n');
+                      .Append('\t').Append(F(r.TX)).Append('\t').Append(F(r.TY)).Append('\t').Append(F(r.TZ)).Append('\t').Append(F(r.TR))
+                      .Append('\t').Append(r.Name ?? "").Append('\t').Append(r.Stay ? "1" : "0").Append('\t').Append(r.Mode).Append('\t').Append(r.ReviveAt).Append('\n');
             File.WriteAllText(FilePath, sb.ToString());
             dirty = false;
         }
@@ -176,27 +187,17 @@ public static partial class Thralls
     static string NewId() { return Guid.NewGuid().ToString("N").Substring(0, 8); }
 
     // ------------------------------------------------------------------ levels
+    // The level rides on the zombie as a custom variable, which the game saves with the entity.
+    const string LevelVar = "azraelZLvl";
+
     static void ApplyMarker(EntityAlive e, int level)
     {
-        try
-        {
-            if (e.Buffs == null) return;
-            for (int i = 1; i <= MarkerBuffs; i++)
-                if (e.Buffs.HasBuff("azraelZombieLvl" + i)) e.Buffs.RemoveBuff("azraelZombieLvl" + i);
-            if (level > 0) e.Buffs.AddBuff("azraelZombieLvl" + Math.Min(level, MarkerBuffs));
-        }
-        catch { }
+        try { if (e.Buffs != null) e.Buffs.SetCustomVar(LevelVar, level, false); } catch { }
     }
 
     static int MarkerLevel(EntityAlive e)
     {
-        try
-        {
-            if (e.Buffs == null) return 0;
-            for (int i = MarkerBuffs; i >= 1; i--) if (e.Buffs.HasBuff("azraelZombieLvl" + i)) return i;
-        }
-        catch { }
-        return 0;
+        try { return e.Buffs != null ? (int)e.Buffs.GetCustomVar(LevelVar) : 0; } catch { return 0; }
     }
 
     // Give new wild zombies their level. Day sets the floor, the tier adds to it, one point of luck either way.
@@ -218,9 +219,9 @@ public static partial class Thralls
             if (lvl == 0)
             {
                 int dpl = Math.Max(1, BaitConfig.DaysPerLevel);
-                lvl = day / dpl + TierOf(ClassName(z)) + UnityEngine.Random.Range(-1, 2);
+                lvl = day / dpl + TierOf(ClassName(z)) * BaitConfig.TierLevelBonus + UnityEngine.Random.Range(0, 3);
                 lvl = Math.Max(0, Math.Min(BaitConfig.MaxLevel, lvl));
-                if (lvl > 0) ApplyMarker(z, Math.Min(lvl, MarkerBuffs));
+                if (lvl > 0) ApplyMarker(z, lvl);
             }
             if (lvl > 0) levels[z.entityId] = Math.Min(lvl, BaitConfig.MaxLevel);
         }
@@ -268,19 +269,19 @@ public static partial class Thralls
         Feed f;
         if (!feeds.TryGetValue(z.entityId, out f) || f.Owner != ownerId) { f = new Feed { Owner = ownerId }; feeds[z.entityId] = f; }
         f.Count++;
-        int need = FeedsNeeded(cls);
+        int need = FeedsNeeded(cls, LevelOf(z.entityId));
         if (f.Count < need) { Tell(ownerId, Pretty(cls) + " fed " + f.Count + "/" + need + "."); return; }
 
         string key = KeyOf(owner);
         if (key == null) return;
         var list = RosterOf(key);
-        if (list.Count >= BaitConfig.MaxOwned)
+        if (list.Count >= MaxOwnedFor(key))
         {
             f.Count = need - 1;
-            Tell(ownerId, "You already hold " + list.Count + " thralls (limit " + BaitConfig.MaxOwned + "). Release one first: /thrall release <number>");
+            Tell(ownerId, "You already hold " + list.Count + " thralls (limit " + MaxOwnedFor(key) + "). Release one first: /thrall release <number>");
             return;
         }
-        var rec = new ThrallRecord { Id = NewId(), OwnerKey = key, ClassName = cls, Level = LevelOf(z.entityId), Active = ActiveCount(key) < BaitConfig.MaxActive };
+        var rec = new ThrallRecord { Id = NewId(), OwnerKey = key, ClassName = cls, Level = LevelOf(z.entityId), Active = ActiveCount(key) < MaxActiveFor(key) };
         list.Add(rec);
         dirty = true;
         feeds.Remove(z.entityId);
@@ -292,7 +293,7 @@ public static partial class Thralls
         else
         {
             RemoveFromWorld(z);
-            Tell(ownerId, Label(rec) + " is yours, but you already have " + BaitConfig.MaxActive + " out, so it is stowed. /thrall call " + list.Count);
+            Tell(ownerId, Label(rec) + " is yours, but you already have " + MaxActiveFor(key) + " out, so it is stowed. /thrall call " + list.Count);
         }
         Flush();
     }
@@ -300,7 +301,7 @@ public static partial class Thralls
     // ------------------------------------------------------------------ making a live thrall
     static void MakeLive(EntityAlive z, ThrallRecord rec, EntityPlayer owner)
     {
-        Live[z.entityId] = new LiveThrall { EntityId = z.entityId, OwnerEntityId = owner != null ? owner.entityId : -1, RecordId = rec.Id, OwnerKey = rec.OwnerKey };
+        Live[z.entityId] = new LiveThrall { EntityId = z.entityId, OwnerEntityId = owner != null ? owner.entityId : -1, RecordId = rec.Id, OwnerKey = rec.OwnerKey, Hold = rec.Stay, Mode = rec.Mode };
         liveByRecord[rec.Id] = z.entityId;
         if (rec.Level > 0) levels[z.entityId] = rec.Level; else levels.Remove(z.entityId);
 
@@ -426,6 +427,7 @@ public static partial class Thralls
     {
         try
         {
+            if (rec.ReviveAt != 0) { rec.ReviveAt = 0; dirty = true; }
             int cid = EntityClass.FromString(rec.ClassName);
             Vector3 pos;
             if (rec.Tether) pos = new Vector3(rec.TX, rec.TY + 0.5f, rec.TZ);
@@ -462,9 +464,19 @@ public static partial class Thralls
             ForgetLive(victim.entityId);
             if (rec != null)
             {
-                RosterOf(rec.OwnerKey).Remove(rec);
+                if (BaitConfig.ReviveSeconds > 0)
+                {
+                    rec.ReviveAt = NowSec() + BaitConfig.ReviveSeconds;
+                    nextSpawn.Remove(rec.Id);
+                    Tell(lt.OwnerEntityId, Label(rec) + " fell. It rises again in " + BaitConfig.ReviveSeconds + "s, or /thrall revive "
+                        + (RosterOf(rec.OwnerKey).IndexOf(rec) + 1) + " (" + BaitConfig.ReviveBaitCost + " bait).");
+                }
+                else
+                {
+                    RosterOf(rec.OwnerKey).Remove(rec);
+                    Tell(lt.OwnerEntityId, Label(rec) + " fell and is gone for good.");
+                }
                 dirty = true;
-                Tell(lt.OwnerEntityId, Label(rec) + " fell and is gone for good.");
                 Flush();
             }
         }
