@@ -14,6 +14,8 @@ public static class BaitConfig
     public const string SavedName = "AzraelBaitSettings.cfg";
 
     // taming
+    public static int RichBaitMeals = 2;      // meals one Rich Bait counts as
+    public static int FeastBaitMeals = 4;     // meals one Feast Bait counts as
     public static int FeedsToTame = 4;          // meals a plain walker needs
     public static int FeralBonus = 2;           // extra meals for feral
     public static int RadiatedBonus = 4;        // radiated

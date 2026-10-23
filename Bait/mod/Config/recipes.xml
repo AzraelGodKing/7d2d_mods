@@ -4,5 +4,13 @@
 			<ingredient name="foodRottingFlesh" count="2"/>
 			<ingredient name="resourceYuccaFibers" count="1"/>
 		</recipe>
+		<recipe name="azraelBaitRich" count="1" craft_time="4" always_unlocked="true">
+			<ingredient name="azraelBait" count="2"/>
+			<ingredient name="foodRawMeat" count="1"/>
+		</recipe>
+		<recipe name="azraelBaitFeast" count="1" craft_time="6" always_unlocked="true">
+			<ingredient name="azraelBaitRich" count="2"/>
+			<ingredient name="resourceAnimalFat" count="1"/>
+		</recipe>
 	</append>
 </configs>

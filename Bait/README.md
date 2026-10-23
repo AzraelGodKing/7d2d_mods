@@ -42,3 +42,10 @@ Baby animals from other mods (such as CTK Animal Babies: fawns, cubs, pups, pigl
 Every zombie and every animal, including specials, dire wolves and bosses. To protect some, set `Exclude=className1,className2` in `AzraelBait.cfg` (or `/thrall config Exclude ...`).
 
 Admins manage the list in game: `/thrall exclude list | add <className> | remove <className> | clear` (class names like `animalDireWolf`, `zombieScreamer`). It is saved per world and overrides `AzraelBait.cfg`.
+
+## Stronger bait
+
+- **Rich Bait** counts as 2 meals toward taming. Craft: 2 Zombie and Animal Bait + 1 raw meat. It eats for about 30 s.
+- **Feast Bait** counts as 4 meals. Craft: 2 Rich Bait + 1 animal fat. It eats for about 45 s.
+
+Set the meal counts with `RichBaitMeals` and `FeastBaitMeals`. `giveself azraelBaitRich 10 true` and `giveself azraelBaitFeast 10 true` for testing.

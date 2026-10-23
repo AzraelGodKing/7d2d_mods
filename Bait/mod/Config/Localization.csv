@@ -1,3 +1,7 @@
 Key,File,Type,UsedInMainMenu,NoTranslate,english
 azraelBait,items,Resource,,,Zombie and Animal Bait
 azraelBaitDesc,items,Resource,,,"Throw it and it calls every zombie and animal within 40 blocks to the spot where it lands. Whatever reaches it stops to eat until it is gone.\nWhat comes running is up to you."
+azraelBaitRich,items,Resource,,,Rich Bait
+azraelBaitRichDesc,items,Resource,,,"Zombie and Animal Bait made richer. One throw counts as 2 meals toward taming. Eats for longer before it is gone."
+azraelBaitFeast,items,Resource,,,Feast Bait
+azraelBaitFeastDesc,items,Resource,,,"A whole feast for the creature that reaches it. One throw counts as 4 meals toward taming. Eats for a long time before it is gone."

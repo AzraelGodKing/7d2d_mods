@@ -34,6 +34,18 @@ public class AzraelBaitMod : IModApi
 public static class BaitCheck
 {
     public const string BaitItem = "azraelBait";
+    public const string RichItem = "azraelBaitRich";
+    public const string FeastItem = "azraelBaitFeast";
+
+    public static bool IsBait(string item) { return item == BaitItem || item == RichItem || item == FeastItem; }
+
+    // How many meals one of this bait counts as.
+    public static int Meals(string item)
+    {
+        if (item == FeastItem) return Math.Max(1, BaitConfig.FeastBaitMeals);
+        if (item == RichItem) return Math.Max(1, BaitConfig.RichBaitMeals);
+        return 1;
+    }
 
     // The bait a creature is currently going for, or null.
     public static EntityItem ActiveBait(Entity e)
@@ -42,7 +54,7 @@ public static class BaitCheck
         if (alive == null) return null;
         var d = alive.distraction;
         if (d == null || d.IsDead() || d.itemClass == null) return null;
-        return d.itemClass.GetItemName() == BaitItem ? d : null;
+        return IsBait(d.itemClass.GetItemName()) ? d : null;
     }
 }
 
@@ -136,7 +148,7 @@ public static class BaitLifetimePatch
         try
         {
             var ic = __instance.itemClass;
-            if (ic == null || ic.GetItemName() != BaitCheck.BaitItem) return;
+            if (ic == null || !BaitCheck.IsBait(ic.GetItemName())) return;
             if (!done.Add(__instance.entityId)) return;
             float want = __instance.distractionLifetime + 15f;
             if (__instance.lifetime < want) __instance.lifetime = want;

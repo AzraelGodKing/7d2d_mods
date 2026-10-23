@@ -319,14 +319,14 @@ public static partial class Thralls
     {
         if (!IsServer || !loaded || z == null) return;
         var d = z.distraction;
-        if (d == null || d.IsDead() || d.itemClass == null || d.itemClass.GetItemName() != BaitCheck.BaitItem) return;
+        if (d == null || d.IsDead() || d.itemClass == null || !BaitCheck.IsBait(d.itemClass.GetItemName())) return;
         if (!z.IsEating || d.distractionEatTicks > 0) return;
         long key = ((long)d.entityId << 32) | (uint)z.entityId;
         if (!counted.Add(key)) return;
-        CountMeal(z, d.OwnerId);
+        CountMeal(z, d.OwnerId, BaitCheck.Meals(d.itemClass.GetItemName()));
     }
 
-    static void CountMeal(EntityAlive z, int ownerId)
+    static void CountMeal(EntityAlive z, int ownerId, int meals)
     {
         var world = W;
         var owner = world != null ? world.GetEntity(ownerId) as EntityPlayer : null;
@@ -334,9 +334,9 @@ public static partial class Thralls
         string cls = ClassName(z);
         Feed f;
         if (!feeds.TryGetValue(z.entityId, out f) || f.Owner != ownerId) { f = new Feed { Owner = ownerId }; feeds[z.entityId] = f; }
-        f.Count++;
+        f.Count += Math.Max(1, meals);
         int need = FeedsNeeded(cls, LevelOf(z.entityId));
-        if (f.Count < need) { Notify(ownerId, Pretty(cls) + " fed " + f.Count + "/" + need + "."); return; }
+        if (f.Count < need) { Notify(ownerId, Pretty(cls) + " fed " + f.Count + "/" + need + (meals > 1 ? " (+" + meals + ")" : "") + "."); return; }
 
         string key = KeyOf(owner);
         if (key == null) return;
