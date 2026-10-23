@@ -36,3 +36,7 @@ The commands work from chat (/thrall ...) and from the console (F1, `thrall ...`
 ## Baby animals
 
 Baby animals from other mods (such as CTK Animal Babies: fawns, cubs, pups, piglets, kittens) can be tamed like any other animal. /thrall list shows zombies and animals as separate lists. Bear cubs get the bait behaviour added in code, since that mod replaces their AI list.
+
+## Which creatures can be tamed
+
+Every zombie and every animal, including specials, dire wolves and bosses. To protect some, set `Exclude=className1,className2` in `AzraelBait.cfg` (or `/thrall config Exclude ...`).

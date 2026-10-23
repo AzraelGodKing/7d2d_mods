@@ -65,8 +65,7 @@ public static class BaitConfig
 
     public static readonly HashSet<string> Exclude = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
-        "zombieDemolition", "zombieScreamer", "zombieScreamerFeral", "zombieScreamerRadiated", "zombieScreamerCharged",
-        "animalBossGrace", "animalInsectSwarm", "animalBeeSwarm"
+        // empty: every creature can be tamed. Add class names with  Exclude=name1,name2  to protect some.
     };
 
     static string modPath;
@@ -98,7 +97,7 @@ public static class BaitConfig
                 int eq = line.IndexOf('=');
                 if (eq < 0) continue;
                 string k = line.Substring(0, eq).Trim(), v = line.Substring(eq + 1).Trim();
-                if (string.Equals(k, "ExcludeZombies", StringComparison.OrdinalIgnoreCase) || string.Equals(k, "Exclude", StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(k, "Exclude", StringComparison.OrdinalIgnoreCase))
                 {
                     Exclude.Clear();
                     foreach (string n in v.Split(',')) if (n.Trim().Length > 0) Exclude.Add(n.Trim());
@@ -147,7 +146,7 @@ public static class BaitConfig
         {
             var sb = new StringBuilder("# written by /thrall config - overrides AzraelBait.cfg for this save\n");
             foreach (string s in All()) sb.Append(s).Append('\n');
-            sb.Append("ExcludeZombies=").Append(string.Join(",", new List<string>(Exclude).ToArray())).Append('\n');
+            sb.Append("Exclude=").Append(string.Join(",", new List<string>(Exclude).ToArray())).Append('\n');
             File.WriteAllText(Path.Combine(GameIO.GetSaveGameDir(), SavedName), sb.ToString());
         }
         catch (Exception e) { Log.Warning("[Bait] could not save settings: " + e.Message); }

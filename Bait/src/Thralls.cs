@@ -254,12 +254,13 @@ public static partial class Thralls
     {
         foreach (var o in new List<Entity>(world.Entities.list))
         {
-            var an = o as EntityAnimal;
+            var an = o as EntityAlive;
+            if (!(an is EntityAnimal || an is EntityEnemy)) continue;
             if (an == null || an.IsDead() || an.aiManager == null || baitAiDone.Contains(an.entityId)) continue;
             baitAiDone.Add(an.entityId);
             if (Live.ContainsKey(an.entityId)) continue;
             string cls = ClassName(an);
-            if (BaitConfig.Exclude.Contains(cls) || cls.IndexOf("Vulture", StringComparison.OrdinalIgnoreCase) >= 0) continue;
+            if (BaitConfig.Exclude.Contains(cls)) continue;
             try
             {
                 var tl = an.aiManager.tasks;
@@ -295,7 +296,7 @@ public static partial class Thralls
     // ------------------------------------------------------------------ feeding and taming
     static bool CanTame(EntityAlive z)
     {
-        if (!(z is EntityZombie) && !(z is EntityAnimal)) return false;
+        if (!(z is EntityEnemy) && !(z is EntityAnimal)) return false;
         if (z.IsDead() || Live.ContainsKey(z.entityId)) return false;
         return !BaitConfig.Exclude.Contains(ClassName(z));
     }
