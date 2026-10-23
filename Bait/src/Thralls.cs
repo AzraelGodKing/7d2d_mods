@@ -20,7 +20,7 @@ public class ThrallRecord
     public bool Tether; public float TX, TY, TZ, TR;
     public string Name;      // optional nickname
     public bool Stay;        // hold position instead of following
-    public int Mode;         // 0 aggressive, 1 defend, 2 passive
+    public int Mode;         // 0 aggressive, 1 defensive, 2 passive
     public long ReviveAt;    // unix seconds; while in the future the thrall is downed
 }
 public class LiveThrall { public int EntityId, OwnerEntityId; public string RecordId, OwnerKey; public bool Hold; public int Mode; }

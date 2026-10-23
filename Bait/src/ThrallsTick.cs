@@ -359,7 +359,7 @@ public static partial class Thralls
                 var t = Pick(arg, list);
                 string m = arg2 != null ? arg2.ToLowerInvariant() : "";
                 int mode = m.StartsWith("agg") ? 0 : m.StartsWith("def") ? 1 : m.StartsWith("pas") ? 2 : -1;
-                if (t.Count == 0 || mode < 0) { Tell(me, "Usage: /thrall mode <number|all> aggressive|defend|passive"); break; }
+                if (t.Count == 0 || mode < 0) { Tell(me, "Usage: /thrall mode <number|all> aggressive|defensive|passive"); break; }
                 foreach (var r in t)
                 {
                     r.Mode = mode;
@@ -367,7 +367,7 @@ public static partial class Thralls
                     if (liveByRecord.TryGetValue(r.Id, out lid) && Live.TryGetValue(lid, out l)) l.Mode = mode;
                 }
                 dirty = true;
-                Tell(me, "Mode: " + (mode == 0 ? "aggressive (attacks hostiles it sees)" : mode == 1 ? "defend (fights only what comes close to it or you)" : "passive (never starts a fight)") + ".");
+                Tell(me, "Mode: " + (mode == 0 ? "aggressive (attacks hostiles it sees)" : mode == 1 ? "defensive (fights only what comes close to it or you)" : "passive (never starts a fight)") + ".");
                 break;
             }
             case "heal":
@@ -481,7 +481,7 @@ public static partial class Thralls
                 break;
             }
             default:
-                Tell(me, "/thrall list | hp | name <n> <name> | call <n> | stow [n|all] | stay/follow <n|all> | mode <n|all> aggressive|defend|passive | heal <n> | revive <n> | tether <n|all> [radius] | untether <n|all> | release <n> | kill <n|all> | exclude list|add|remove <class> | config [name value] | admin ...");
+                Tell(me, "/thrall list | hp | name <n> <name> | call <n> | stow [n|all] | stay/follow <n|all> | mode <n|all> aggressive|defensive|passive | heal <n> | revive <n> | tether <n|all> [radius] | untether <n|all> | release <n> | kill <n|all> | exclude list|add|remove <class> | config [name value] | admin ...");
                 break;
         }
         Flush();

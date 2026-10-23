@@ -4,6 +4,6 @@
 	<DisplayName value="Zombie and Animal Bait"/>
 	<Description value="A craftable throwable bait. Zombies and animals within range run to where it lands and eat it. Server only: players install nothing. Baited creatures are only hurt by the player who threw the bait."/>
 	<Author value="Azrael"/>
-	<Version value="1.0.5"/>
+	<Version value="1.0.6"/>
 	<Website value="https://github.com/AzraelGodKing/7d2d_mods"/>
 </xml>
