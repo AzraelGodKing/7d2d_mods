@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xml>
+	<Name value="AzraelBait"/>
+	<DisplayName value="Zombie and Animal Bait"/>
+	<Description value="A craftable throwable bait. Zombies and animals within range run to where it lands and eat it. Server-side XML only."/>
+	<Author value="Azrael"/>
+	<Version value="1.0.0"/>
+	<Website value="https://github.com/AzraelGodKing/7d2d_mods"/>
+</xml>

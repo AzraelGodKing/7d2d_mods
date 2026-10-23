@@ -1,0 +1,43 @@
+<configs>
+	<!--
+		Thrown like a rock, lands, then pulls in zombies and animals within the radius. Whatever reaches it
+		stands there eating until the eat ticks run out, and the bait is used up. Tune the three numbers below.
+		DistractionRadius = blocks. DistractionLifetime = seconds it keeps calling after it lands.
+		DistractionEatTicks = how much eating it takes to use it up (about 20 ticks per second).
+	-->
+	<append xpath="/items">
+		<item name="azraelBait">
+			<property name="HoldType" value="40"/>
+			<property name="Meshfile" value="@:Other/Items/Food/parcelGenericPrefab.prefab"/>
+			<property name="DropMeshfile" value="@:Other/Items/Misc/sack_droppedPrefab.prefab"/>
+			<property name="Material" value="MfoodRawMeat"/>
+			<property name="CustomIcon" value="foodRottingFlesh"/>
+			<property name="CustomIconTint" value="C8503C"/>
+			<property name="DescriptionKey" value="azraelBaitDesc"/>
+			<property name="Weight" value="2"/>
+			<property name="Stacknumber" value="50"/>
+			<property name="EconomicValue" value="5"/>
+			<property name="EconomicBundleSize" value="1"/>
+			<property name="SellableToTrader" value="false"/>
+			<property name="SoundPickup" value="rottingflesh_grab"/>
+			<property name="SoundPlace" value="rottingflesh_place"/>
+			<property class="Action0">
+				<property name="Class" value="ThrowAway"/>
+				<property name="Delay" value="1.2"/>
+				<property name="Throw_strength_default" value="8"/>
+				<property name="Throw_strength_max" value="60"/>
+				<property name="Max_strain_time" value="1.25"/>
+				<property name="Sound_start" value="swoosh"/>
+			</property>
+			<property name="ThrowableDecoy" value="true"/>
+			<property name="DistractionTags" value="zombie,animal,eat,requires_contact"/>
+			<effect_group name="decoy" tiered="false">
+				<passive_effect name="DistractionRadius" operation="base_set" value="40"/>
+				<passive_effect name="DistractionLifetime" operation="base_set" value="45"/>
+				<passive_effect name="DistractionStrength" operation="base_set" value="100"/>
+				<passive_effect name="DistractionEatTicks" operation="base_set" value="400"/>
+			</effect_group>
+			<property name="Group" value="Resources"/>
+		</item>
+	</append>
+</configs>

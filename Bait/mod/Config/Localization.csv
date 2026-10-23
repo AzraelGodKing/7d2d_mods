@@ -1,0 +1,3 @@
+Key,File,Type,UsedInMainMenu,NoTranslate,english
+azraelBait,items,Resource,,,Zombie and Animal Bait
+azraelBaitDesc,items,Resource,,,"Throw it and it calls every zombie and animal within 40 blocks to the spot where it lands. Whatever reaches it stops to eat until it is gone.\nWhat comes running is up to you."

@@ -12,6 +12,7 @@ Small mods for 7 Days to Die, built and tested on **V3.3**.
 | [Upgrade Bench](#upgrade-bench) | Code + XML | Server **and** every player | 1.0.2 |
 | [Keep Backpacks](#keep-backpacks) | Code | Server only | 1.2.2 |
 | [Blood Moon Sound](#blood-moon-sound) | Code (Harmony) | Players (own sound); server optional (sound for everyone, Discord posts) | 1.2.2 |
+| [Zombie and Animal Bait](#zombie-and-animal-bait) | XML only | Server only | 1.0.0 |
 
 Download the zips from the Releases page, unzip, and put the folder inside the game's `Mods` folder
 (or the server's `Mods` folder). Code that a player installs needs EasyAntiCheat turned off.
@@ -304,6 +305,18 @@ Setup: copy `discord.example.txt` to `discord.txt` **on the server**, paste the 
 - 1.0.1: `bmsound` now works on multiplayer servers that don't have the mod.
 - 1.0.0: first version.
 
+## Zombie and Animal Bait
+
+**Server only (XML); players install nothing.** A craftable throwable that pulls zombies and animals to a spot.
+
+- **Item:** Zombie and Animal Bait. Recipe: 2 rotting flesh + 1 plant fiber makes 2 baits.
+- **Use:** throw it like a rock. Once it lands it calls every zombie and animal within 40 blocks for 45 seconds. Whatever reaches it stops and eats until it is used up (400 eat ticks, about 20 seconds of one animal eating).
+- **How it works:** vanilla already has throwable decoys (rocks, snowballs) that zombies chase through the ApproachDistraction AI task. Animals don't have that task, so this adds it to each animal's task list (after attacking, before Look/Wander). Skipped: bosses, vultures, insect swarms.
+- Tune the radius, time and eat ticks in `Config/items.xml`.
+
+Note: this changes animal AI for the whole server, but only things marked for animals pull them. Vanilla rocks and snowballs are still zombie-only, so only the bait draws animals.
+
+---
 ## Keep Backpacks
 
 Server only. Players install nothing and can leave EasyAntiCheat on. The server sends the bag times when they connect.

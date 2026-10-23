@@ -1,0 +1,8 @@
+<configs>
+	<append xpath="/recipes">
+		<recipe name="azraelBait" count="2" craft_time="3" always_unlocked="true">
+			<ingredient name="foodRottingFlesh" count="2"/>
+			<ingredient name="resourceYuccaFibers" count="1"/>
+		</recipe>
+	</append>
+</configs>
