@@ -43,7 +43,8 @@ public static class BaitConfig
     public static float LevelDamagePct = 3f;   // extra damage dealt per level
     public static float LevelToughPct = 3f;    // damage reduction per level (1/(1+pct*level))
     // taming extras
-    public static int FeedsPerLevelStep = 25;   // +1 meal per this many levels of the target (0 = off)
+    public static int MaxFeeds = 27;             // hard cap on meals needed for anything (0 = no cap)
+    public static int FeedsPerLevelStep = 17;   // +1 meal per this many levels of the target (0 = off)
     // thrall care
     public static int ReviveSeconds = 300;      // a fallen thrall returns after this long (0 = gone for good)
     public static int ReviveBaitCost = 3;       // bait to bring a fallen thrall back at once

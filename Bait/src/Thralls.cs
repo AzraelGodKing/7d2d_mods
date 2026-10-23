@@ -73,9 +73,14 @@ public static partial class Thralls
     public static int FeedsNeeded(string cls, int level)
     {
         int extra = BaitConfig.FeedsPerLevelStep > 0 ? level / BaitConfig.FeedsPerLevelStep : 0;
-        if (IsAnimalClass(cls)) return BaitConfig.AnimalFeedsToTame + extra;
-        int t = TierOf(cls);
-        return extra + BaitConfig.FeedsToTame + (t == 3 ? BaitConfig.ChargedBonus : t == 2 ? BaitConfig.RadiatedBonus : t == 1 ? BaitConfig.FeralBonus : 0);
+        int need;
+        if (IsAnimalClass(cls)) need = BaitConfig.AnimalFeedsToTame + extra;
+        else
+        {
+            int t = TierOf(cls);
+            need = extra + BaitConfig.FeedsToTame + (t == 3 ? BaitConfig.ChargedBonus : t == 2 ? BaitConfig.RadiatedBonus : t == 1 ? BaitConfig.FeralBonus : 0);
+        }
+        return BaitConfig.MaxFeeds > 0 ? Math.Min(need, BaitConfig.MaxFeeds) : need;
     }
     public static string Pretty(string cls)
     {
