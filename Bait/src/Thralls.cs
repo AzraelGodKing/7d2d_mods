@@ -247,28 +247,42 @@ public static partial class Thralls
         foreach (int id in gone) levels.Remove(id);
     }
 
-    // Animals from other mods that replace their AI list (e.g. a bear cub) lose the bait task; give it back.
+    // Wild animals don't have the bait task (it used to be injected by XML, which wiped their attack/flee settings), so it
+    // is added in code instead: just ahead of Look/Wander/ApproachSpot, so attacking and fleeing still come first.
     static readonly HashSet<int> baitAiDone = new HashSet<int>();
     static void EnsureBaitAi(World world)
     {
         foreach (var o in new List<Entity>(world.Entities.list))
         {
             var an = o as EntityAnimal;
-            if (an == null || an.IsDead() || baitAiDone.Contains(an.entityId) || an.aiManager == null) continue;
+            if (an == null || an.IsDead() || an.aiManager == null || baitAiDone.Contains(an.entityId)) continue;
             baitAiDone.Add(an.entityId);
-            if (Live.ContainsKey(an.entityId) || !BaitConfig.NeedsBaitAi.Contains(ClassName(an))) continue;
+            if (Live.ContainsKey(an.entityId)) continue;
+            string cls = ClassName(an);
+            if (BaitConfig.Exclude.Contains(cls) || cls.IndexOf("Vulture", StringComparison.OrdinalIgnoreCase) >= 0) continue;
             try
             {
-                if (an.aiManager.GetTasks<EAIApproachDistraction>() != null) continue;
+                var tl = an.aiManager.tasks;
+                if (tl.GetTask<EAIApproachDistraction>() != null) continue;
+                EAITaskEntry before = null;
+                foreach (var en in tl.Tasks)
+                    if (en.action is EAIApproachSpot || en.action is EAILook || en.action is EAIWander) { before = en; break; }
                 var t = new EAIApproachDistraction();
                 t.Init(an);
-                an.aiManager.tasks.AddTask(5, t);
+                tl.AddTask(before != null ? before.priority : 99, t);
+                if (before != null)
+                {
+                    var added = tl.Tasks[tl.Tasks.Count - 1];
+                    tl.Tasks.RemoveAt(tl.Tasks.Count - 1);
+                    int at = tl.Tasks.IndexOf(before);
+                    tl.Tasks.Insert(at < 0 ? tl.Tasks.Count : at, added);
+                }
+                Dbg("bait task added to " + cls + " #" + an.entityId);
             }
             catch (Exception e) { Dbg("bait ai: " + e.Message); }
         }
         if (baitAiDone.Count > 4000) baitAiDone.Clear();
     }
-
     static void LevelUp(EntityAlive e)
     {
         int cur = LevelOf(e.entityId);
