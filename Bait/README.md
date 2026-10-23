@@ -56,3 +56,5 @@ Set the meal counts with `RichBaitMeals` and `FeastBaitMeals`. `giveself azraelB
 - Drones ignore thralls and treat them as allies.
 - Tethers are blocked only inside another player's land claim. Your own claim and an ally's claim are fine.
 - While you ride a vehicle your active, non-tethered thralls go inactive, and they are called back when you get off (`AutoStowInVehicle=false` turns it off).
+
+**Spawn caps:** live thralls are not counted against `MaxSpawnedZombies` / `MaxSpawnedAnimals`, so tamed creatures do not shrink how many wild ones the server can spawn (`ThrallsCountTowardSpawnCap=true` counts them again).

@@ -188,3 +188,21 @@ public static class ThrallDroneAllyPatch
         if (!__result && _target != null && Thralls.IsThrall(_target.entityId)) __result = true;
     }
 }
+// The game counts every living enemy and animal against MaxSpawnedZombies / MaxSpawnedAnimals once a second. Thralls are
+// taken out of those counts so a player's army doesn't leave the server with room for fewer wild creatures.
+[HarmonyPatch(typeof(GameStats), "Set", new[] { typeof(EnumGameStats), typeof(int) })]
+public static class ThrallSpawnCapPatch
+{
+    static void Prefix(EnumGameStats _eProperty, ref int _value)
+    {
+        try
+        {
+            if (BaitConfig.ThrallsCountTowardSpawnCap || !Thralls.IsServer || Thralls.Live.Count == 0) return;
+            if (_eProperty != EnumGameStats.EnemyCount && _eProperty != EnumGameStats.AnimalCount) return;
+            int en, an;
+            Thralls.CountLive(out en, out an);
+            _value = Math.Max(0, _value - (_eProperty == EnumGameStats.EnemyCount ? en : an));
+        }
+        catch { }
+    }
+}

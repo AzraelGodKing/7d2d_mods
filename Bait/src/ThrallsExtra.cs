@@ -119,6 +119,23 @@ public static partial class Thralls
     static readonly Dictionary<int, LookState> looks = new Dictionary<int, LookState>();
     static readonly List<Entity> lookTmp = new List<Entity>();
 
+    // Live thralls by kind, so the spawn caps can ignore them.
+    public static void CountLive(out int enemies, out int animals)
+    {
+        enemies = 0; animals = 0;
+        var w = W;
+        if (w == null) return;
+        foreach (var lt in Live.Values)
+        {
+            var e = w.GetEntity(lt.EntityId) as EntityAlive;
+            if (e == null || e.IsDead()) continue;
+            EntityClass ec;
+            if (!EntityClass.list.TryGetValue(e.entityClass, out ec)) continue;
+            if (ec.bIsEnemyEntity) enemies++;
+            else if (ec.bIsAnimalEntity) animals++;
+        }
+    }
+
     // Riding a vehicle: active thralls go inactive, and are called back when the player gets off.
     static readonly Dictionary<int, List<string>> vehStowed = new Dictionary<int, List<string>>();
     static void VehicleWatch(World world)
