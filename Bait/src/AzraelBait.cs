@@ -82,7 +82,7 @@ public static class BaitAutoTurretIgnore
 {
     static void Postfix(Entity _target, ref bool __result)
     {
-        if (!__result && BaitCheck.ActiveBait(_target) != null) __result = true;
+        if (!__result && _target != null && (BaitCheck.ActiveBait(_target) != null || Thralls.IsThrall(_target.entityId))) __result = true;
     }
 }
 
@@ -91,7 +91,7 @@ public static class BaitMiniTurretIgnore
 {
     static void Postfix(Entity _target, ref bool __result)
     {
-        if (!__result && BaitCheck.ActiveBait(_target) != null) __result = true;
+        if (!__result && _target != null && (BaitCheck.ActiveBait(_target) != null || Thralls.IsThrall(_target.entityId))) __result = true;
     }
 }
 // Writes the stack trace of any NullReferenceException (the player log sometimes drops them) to AzraelBaitTrace.log
