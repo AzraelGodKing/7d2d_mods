@@ -40,3 +40,5 @@ Baby animals from other mods (such as CTK Animal Babies: fawns, cubs, pups, pigl
 ## Which creatures can be tamed
 
 Every zombie and every animal, including specials, dire wolves and bosses. To protect some, set `Exclude=className1,className2` in `AzraelBait.cfg` (or `/thrall config Exclude ...`).
+
+Admins manage the list in game: `/thrall exclude list | add <className> | remove <className> | clear` (class names like `animalDireWolf`, `zombieScreamer`). It is saved per world and overrides `AzraelBait.cfg`.

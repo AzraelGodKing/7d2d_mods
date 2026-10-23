@@ -432,6 +432,26 @@ public static partial class Thralls
                 Tell(me, usage);
                 break;
             }
+            case "exclude":
+            {
+                string sub = arg ?? "list";
+                if (sub == "list")
+                {
+                    Tell(me, BaitConfig.Exclude.Count == 0 ? "Nothing is excluded: every creature can be tamed." : "Cannot be tamed: " + string.Join(", ", new List<string>(BaitConfig.Exclude).ToArray()));
+                    break;
+                }
+                if (!IsAdmin(me)) { Tell(me, "Only admins can change the exclude list."); break; }
+                if (sub == "clear") { BaitConfig.Exclude.Clear(); BaitConfig.SaveRuntime(); Tell(me, "Exclude list cleared."); break; }
+                if (sub != "add" && sub != "remove" || a.Length < 4) { Tell(me, "Usage: /thrall exclude list | add <className> | remove <className> | clear   (e.g. animalDireWolf)"); break; }
+                string want = a[3], real = null;
+                foreach (var ec in EntityClass.list.Dict.Values)
+                    if (string.Equals(ec.entityClassName, want, StringComparison.OrdinalIgnoreCase)) { real = ec.entityClassName; break; }
+                if (real == null) { Tell(me, "No creature class called " + want + ". Use the entity name, like animalDireWolf or zombieScreamer."); break; }
+                if (sub == "add") { BaitConfig.Exclude.Add(real); Tell(me, real + " can no longer be tamed."); }
+                else { BaitConfig.Exclude.Remove(real); Tell(me, real + " can be tamed again."); }
+                BaitConfig.SaveRuntime();
+                break;
+            }
             case "config":
             {
                 string k = a.Length > 2 ? a[2] : null;
@@ -461,7 +481,7 @@ public static partial class Thralls
                 break;
             }
             default:
-                Tell(me, "/thrall list | hp | name <n> <name> | call <n> | stow [n|all] | stay/follow <n|all> | mode <n|all> aggressive|defend|passive | heal <n> | revive <n> | tether <n|all> [radius] | untether <n|all> | release <n> | kill <n|all> | config [name value] | admin ...");
+                Tell(me, "/thrall list | hp | name <n> <name> | call <n> | stow [n|all] | stay/follow <n|all> | mode <n|all> aggressive|defend|passive | heal <n> | revive <n> | tether <n|all> [radius] | untether <n|all> | release <n> | kill <n|all> | exclude list|add|remove <class> | config [name value] | admin ...");
                 break;
         }
         Flush();
