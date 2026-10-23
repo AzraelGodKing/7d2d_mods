@@ -110,7 +110,7 @@ signs (just the picture, no frame; the Doggo's billboard is made of these).
 | Canvas / decal sign, corrugated iron | 10 forged iron, 10 cloth, 5 paint |
 
 - You pick the size when you place it (up to 13 blocks wide), so a big billboard costs the same as a small sign.
-- Nothing about the signs themselves changes: same HP, same material. The wood ones are weak (225 HP, no upgrades).
+- Tougher than vanilla: 10x the HP (wood 225 -> 2250, iron 300 -> 3000). Only the picture signs change, not other wood or metal blocks. Adjust `MaxDamage` in `Config/blocks.xml`.
 - Change the costs in `Config/recipes.xml`.
 
 ---
