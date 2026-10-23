@@ -91,7 +91,7 @@ public static class ThrallTargetPatch
 }
 
 // Live thralls come from the roster, never from the world save.
-[HarmonyPatch(typeof(EntityEnemy), "get_IsSavedToFile")]
+[HarmonyPatch(typeof(EntityEnemy), "IsSavedToFile")]
 public static class ThrallNoSave
 {
     static void Postfix(EntityEnemy __instance, ref bool __result)
@@ -100,10 +100,10 @@ public static class ThrallNoSave
     }
 }
 
-[HarmonyPatch(typeof(EntityAnimal), "get_IsSavedToFile")]
+[HarmonyPatch(typeof(Entity), "IsSavedToFile")]
 public static class ThrallNoSaveAnimal
 {
-    static void Postfix(EntityAnimal __instance, ref bool __result)
+    static void Postfix(Entity __instance, ref bool __result)
     {
         if (__result && Thralls.IsThrall(__instance.entityId)) __result = false;
     }

@@ -3,7 +3,7 @@
   <PropertyGroup>
     <AssemblyName>AzraelBait</AssemblyName>
     <RootNamespace>AzraelBaitCode</RootNamespace>
-    <Version>2.4.1</Version>
+    <Version>2.4.2</Version>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="0Harmony"><HintPath>$(HarmonyDir)\0Harmony.dll</HintPath><Private>false</Private></Reference>

@@ -14,7 +14,13 @@ public class AzraelBaitMod : IModApi
     public void InitMod(Mod _modInstance)
     {
         BaitConfig.Load(_modInstance.Path);
-        new Harmony("azrael.bait").PatchAll(typeof(AzraelBaitMod).Assembly);
+        var harmony = new Harmony("azrael.bait");
+        foreach (Type type in typeof(AzraelBaitMod).Assembly.GetTypes())
+        {
+            if (type.GetCustomAttributes(typeof(HarmonyPatch), false).Length == 0) continue;
+            try { harmony.CreateClassProcessor(type).Patch(); }
+            catch (Exception e) { Log.Warning("[Bait] patch " + type.Name + " failed: " + e.Message); }
+        }
         ModEvents.GameStartDone.RegisterHandler(Thralls.OnGameStart);
         ModEvents.GameShutdown.RegisterHandler(Thralls.OnShutdown);
         ModEvents.GameUpdate.RegisterHandler(Thralls.OnUpdate);
