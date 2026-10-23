@@ -99,19 +99,19 @@ Server-side only; players install nothing.
 
 ## Craftable Canvas Signs
 
-**Server only (XML); players install nothing.** The game has picture (canvas) signs you can draw on
-with the in-game sign editor, but only places them in POIs: they are flagged developer-only and have
-no recipe. This makes them craftable.
+**Server only (XML); players install nothing.** The game has picture signs you can draw on with the
+in-game sign editor, but only places them in POIs: they are flagged developer-only and have no
+recipe. This makes them craftable. There are two families: **canvas** signs (framed) and **decal**
+signs (just the picture, no frame; the Doggo's billboard is made of these).
 
 | Sign | Recipe (one craft, any size) |
 |---|---|
-| Canvas sign, wood | 10 wood, 10 cloth, 5 paint |
-| Canvas sign, corrugated iron | 10 forged iron, 10 cloth, 5 paint |
+| Canvas / decal sign, wood | 10 wood, 10 cloth, 5 paint |
+| Canvas / decal sign, corrugated iron | 10 forged iron, 10 cloth, 5 paint |
 
 - You pick the size when you place it (up to 13 blocks wide), so a big billboard costs the same as a small sign.
 - Nothing about the signs themselves changes: same HP, same material. The wood ones are weak (225 HP, no upgrades).
-- Change the costs in Config/recipes.xml.
-- The decal signs (the other picture-sign family) are not included yet.
+- Change the costs in `Config/recipes.xml`.
 
 ---
 ## Honk Door Fix

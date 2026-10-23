@@ -1,11 +1,14 @@
 <configs>
 	<!--
-		The picture (canvas) signs are placed by the game in POIs and are flagged Dev, so the game
-		never offers them to players. Switching the two helper blocks to Player puts them in the
-		crafting list, the same way the vanilla wood text signs and paintings are. A helper lets you
-		pick the size when you place it. The blocks themselves are not changed: same HP, same
-		material, same sign editor.
+		The game places the picture signs in POIs and flags their helper blocks Dev, so players are
+		never offered them. There are two families: canvas signs (framed) and decal signs (just the
+		picture, no frame; the Doggo's billboard is made of these). Switching the four helper blocks
+		to Player puts them in the crafting list, the same way the vanilla wood text signs and
+		paintings are. A helper lets you pick the size when you place it. The blocks themselves are
+		not changed: same HP, same material, same sign editor.
 	-->
 	<set xpath="/blocks/block[@name='canvasSignBlockVariantHelper']/property[@name='CreativeMode']/@value">Player</set>
 	<set xpath="/blocks/block[@name='canvasSignCorrugatedMetalBlockVariantHelper']/property[@name='CreativeMode']/@value">Player</set>
+	<set xpath="/blocks/block[@name='decalSignBlockVariantHelper']/property[@name='CreativeMode']/@value">Player</set>
+	<set xpath="/blocks/block[@name='decalSignCorrugatedMetalBlockVariantHelper']/property[@name='CreativeMode']/@value">Player</set>
 </configs>
