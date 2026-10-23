@@ -40,6 +40,16 @@ public static class BaitConfig
     public static int TierLevelBonus = 5;       // starting levels added per tier (feral 1, radiated 2, charged/infernal 3)
     public static float LevelDamagePct = 3f;   // extra damage dealt per level
     public static float LevelToughPct = 3f;    // damage reduction per level (1/(1+pct*level))
+    // taming extras
+    public static int FeedsPerLevelStep = 25;   // +1 meal per this many levels of the target (0 = off)
+    // thrall care
+    public static int ReviveSeconds = 300;      // a fallen thrall returns after this long (0 = gone for good)
+    public static int ReviveBaitCost = 3;       // bait to bring a fallen thrall back at once
+    public static int HealBaitCost = 1;         // bait for /thrall heal
+    public static float HealPct = 40f;          // health restored by /thrall heal
+    public static float RegenPctPerTick = 1f;   // health a thrall regains every 5 s while not fighting
+    public static float DefendRange = 8f;       // defend mode: fights only what comes this close to it or its owner
+    public static bool TetherRespectClaims = true; // no tethers inside someone else's land claim
     public static bool HealthAlerts = true;     // whisper the owner when a thrall drops below 50%, 25%, 10%
     public static bool Debug = false;
 

@@ -3,10 +3,10 @@
   "name": "Zombie and Animal Bait",
   "game": "7-days-to-die",
   "description": "A craftable throwable bait. Zombies and animals within range run to where it lands and stop to eat it. While baited they are only hurt by the player who threw it (turrets and traps leave them alone). Server-side: players install nothing.",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "screenshots": [],
   "download": {
-    "file": "AzraelBait-2.2.0.zip"
+    "file": "AzraelBait-2.3.0.zip"
   },
   "links": {
     "steam": null,

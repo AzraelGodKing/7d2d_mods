@@ -90,7 +90,6 @@ public static partial class Thralls
             }
         }
 
-        HealthAlerts(world);
         foreach (var kv in online) ApplyPerks(kv.Value, PowerOf(kv.Key));
 
         if (tauntRoll.Count > 400 || feeds.Count > 200 || counted.Count > 400)
@@ -101,51 +100,6 @@ public static partial class Thralls
             foreach (var id in stale) TauntedUntil.Remove(id);
         }
         Flush();
-    }
-
-    // ------------------------------------------------------------------ health display (chat; no client mod needed)
-    static readonly Dictionary<int, int> alertStage = new Dictionary<int, int>();
-
-    static float HpFrac(EntityAlive e)
-    {
-        float max = e.GetMaxHealth();
-        return max <= 0f ? 0f : Mathf.Clamp01(e.Stats.Health.Value / max);
-    }
-
-    static string Bar(float frac)
-    {
-        int n = Mathf.RoundToInt(frac * 10f);
-        string col = frac > 0.5f ? "66ff66" : frac > 0.25f ? "ffd966" : "ff6666";
-        return "[" + col + "]" + new string('#', n) + "[-]" + new string('-', 10 - n);
-    }
-
-    static string HpText(ThrallRecord r)
-    {
-        int id;
-        EntityAlive e = liveByRecord.TryGetValue(r.Id, out id) && W != null ? W.GetEntity(id) as EntityAlive : null;
-        if (e == null || e.IsDead()) return r.Active ? "[away]" : "[stowed]";
-        return Bar(HpFrac(e)) + " " + Mathf.CeilToInt(e.Stats.Health.Value) + "/" + e.GetMaxHealth();
-    }
-
-    static void HealthAlerts(World world)
-    {
-        if (!BaitConfig.HealthAlerts) return;
-        foreach (var lt in new List<LiveThrall>(Live.Values))
-        {
-            var e = world.GetEntity(lt.EntityId) as EntityAlive;
-            var rec = Find(lt.RecordId);
-            if (e == null || e.IsDead() || rec == null) continue;
-            float f = HpFrac(e);
-            int stage = f <= 0.10f ? 3 : f <= 0.25f ? 2 : f <= 0.5f ? 1 : 0, prev;
-            alertStage.TryGetValue(lt.EntityId, out prev);
-            if (f > 0.6f) { alertStage[lt.EntityId] = 0; continue; }
-            if (stage > prev)
-            {
-                alertStage[lt.EntityId] = stage;
-                Tell(lt.OwnerEntityId, Label(rec) + " is at " + Mathf.RoundToInt(f * 100f) + "% health. " + Bar(f));
-            }
-        }
-        if (alertStage.Count > 300) alertStage.Clear();
     }
 
     // ------------------------------------------------------------------ perks
@@ -159,7 +113,7 @@ public static partial class Thralls
     {
         int power = 0;
         List<ThrallRecord> l;
-        if (roster.TryGetValue(ownerKey, out l)) foreach (var r in l) power += 1 + TierOf(r.ClassName) + r.Level / 10;
+        if (roster.TryGetValue(ownerKey, out l)) foreach (var r in l) power += 1 + TierOf(r.ClassName) + r.Level;
         return power;
     }
 
@@ -233,13 +187,9 @@ public static partial class Thralls
                 {
                     var r = list[i];
                     string st = r.Tether ? "[tethered r" + F(r.TR) + "]" : r.Active ? "[out]" : "[stowed]";
-                    Tell(me, (i + 1) + ". " + Label(r) + " " + st + (liveByRecord.ContainsKey(r.Id) ? " " + HpText(r) : ""));
+                    Tell(me, (i + 1) + ". " + Label(r) + " " + st);
                 }
                 Tell(me, "Thrall power " + PowerOf(key) + ", holding " + list.Count + "/" + BaitConfig.MaxOwned + ".");
-                break;
-            case "hp":
-                if (list.Count == 0) { Tell(me, "You have no thralls."); break; }
-                for (int i = 0; i < list.Count; i++) Tell(me, (i + 1) + ". " + Label(list[i]) + " " + HpText(list[i]));
                 break;
             case "call":
             {
@@ -325,7 +275,7 @@ public static partial class Thralls
                 break;
             }
             default:
-                Tell(me, "/thrall list | hp | call <n> | stow [n|all] | tether <n|all> [radius] | untether <n|all> | release <n> | kill <n|all> | config [name value]");
+                Tell(me, "/thrall list | call <n> | stow [n|all] | tether <n|all> [radius] | untether <n|all> | release <n> | kill <n|all> | config [name value]");
                 break;
         }
         Flush();

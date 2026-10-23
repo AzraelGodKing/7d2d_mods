@@ -18,3 +18,13 @@ Animals tame the same way (3 meals by default) and follow you. **Daycare:** stan
 **Levels:** wild zombies spawn with a level (game day / 5, plus 5 per tier, plus 0-2, max 300) that makes them hit harder (+3% per level) and take less damage (3% per level, divided), and they gain a level by killing a player or thrall. Thralls gain a level every 8 kills and add it to your perk power. Turn off with `ZombieLevels=false`.
 
 **Health:** `/thrall hp` (and `/thrall list`) show a health bar per thrall in chat, and you get a whisper when one drops below 50%, 25% and 10% (`HealthAlerts=false` to turn off). There is no on-screen bar, since that needs a client mod.
+
+### Thrall care and admin (2.3.0)
+- `/thrall name <n> <name>` nickname. `/thrall stay` / `follow <n|all>` hold position or follow.
+- `/thrall mode <n|all> aggressive|defend|passive`: defend only fights what comes within 8 m of the thrall or you; passive never starts a fight.
+- `/thrall heal <n>` spends 1 bait to restore 40% health. Out of combat thralls also regain 1% every 5 s.
+- A fallen thrall returns after 300 s (`ReviveSeconds`, 0 = permadeath), or at once with `/thrall revive <n>` for 3 bait.
+- Higher-level targets need more meals (+1 per 25 levels).
+- Tethers are refused inside someone else's land claim.
+- Admins: `/thrall admin who | list <player> | release <player> <n> | limit <player> <owned> <active>` (per-player limits).
+- Wild zombie levels are now stored in a custom variable on the zombie (no marker buffs).
