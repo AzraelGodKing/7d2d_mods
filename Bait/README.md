@@ -1,12 +1,6 @@
 
 
-### Taming (2.0.0, animals, tether and levels in 2.1.0)
-Feed a wild zombie bait until it has eaten enough meals (4 for a walker, +2 feral, +4 radiated, +6 charged/infernal) and it becomes your thrall: it follows you, fights other zombies and never hurts players. Wild zombies near a thrall sometimes go for it instead of you.
-
-Chat commands: `/thrall list | call <n> | stow [n|all] | release <n> | kill <n|all>`.
-Holding tamed zombies grants hidden perk buffs (Horde Bond I-III). Settings are in `AzraelBait.cfg`. Server only, no client install. Untested in game.
-
-### Taming (2.0.0, animals, tether and levels in 2.1.0)
+### Taming
 Feed a wild zombie bait until it has eaten enough meals (4 for a walker, +2 feral, +4 radiated, +6 charged/infernal) and it becomes your thrall: it follows you, fights other zombies and never hurts players. Wild zombies near a thrall sometimes go for it instead of you.
 
 Chat commands: `/thrall list | call <n> | stow [n|all] | release <n> | kill <n|all>`. Holding tamed zombies grants hidden perk buffs (Horde Bond I-III). Settings in `AzraelBait.cfg`. Server only. Untested in game.
@@ -19,7 +13,7 @@ Animals tame the same way (3 meals by default) and follow you. **Daycare:** stan
 
 **Health:** `/thrall hp` (and `/thrall list`) show a health bar per thrall in chat, and you get a whisper when one drops below 50%, 25% and 10% (`HealthAlerts=false` to turn off). There is no on-screen bar, since that needs a client mod.
 
-### Thrall care and admin (2.3.0)
+### Thrall care and admin
 - `/thrall name <n> <name>` nickname. `/thrall stay` / `follow <n|all>` hold position or follow.
 - `/thrall mode <n|all> aggressive|defend|passive`: defend only fights what comes within 8 m of the thrall or you; passive never starts a fight.
 - `/thrall heal <n>` spends 1 bait to restore 40% health. Out of combat thralls also regain 1% every 5 s.
@@ -29,15 +23,15 @@ Animals tame the same way (3 meals by default) and follow you. **Daycare:** stan
 - Admins: `/thrall admin who | list <player> | release <player> <n> | limit <player> <owned> <active>` (per-player limits).
 - Wild zombie levels are now stored in a custom variable on the zombie (no marker buffs).
 
-**Pack animals (2.4.0):** every animal thrall that is out and following you (not tethered, not downed) adds 4 bag slots, up to 48 (`PackSlotsPerAnimal`, `PackSlotsMax`). Tethered daycare pets do not count, so the bonus only helps while they travel with you.
+**Pack animals:** every animal thrall that is out and following you (not tethered, not downed) adds 4 bag slots, up to 48 (`PackSlotsPerAnimal`, `PackSlotsMax`). Tethered daycare pets do not count, so the bonus only helps while they travel with you.
 
-**POIs and infestations (2.4.1):** a zombie that came from a POI sleeper volume or an infested POI counts as dead for that volume the moment it is tamed, so clear quests and respawn timers are not held up by your thralls.
+**POIs and infestations:** a zombie that came from a POI sleeper volume or an infested POI counts as dead for that volume the moment it is tamed, so clear quests and respawn timers are not held up by your thralls.
 
-**Toasts (2.5.0):** events (meals, taming, level-ups, low health, perk and pack changes, falls) show as the game's own on-screen toast, so players need nothing installed. Command replies stay in chat. `UseToasts=false` puts everything back in chat.
+**Toasts:** events (meals, taming, level-ups, low health, perk and pack changes, falls) show as the game's own on-screen toast, so players need nothing installed. Command replies stay in chat. `UseToasts=false` puts everything back in chat.
 
 The commands work from chat (/thrall ...) and from the console (F1, `thrall ...`). Every command is logged as `[Bait] command from #id: ...`.
 
-**Look-at HP (2.6.0):** aim at one of your thralls, or any wild zombie or animal, and a toast shows its name, level and HP (up to 25 m, `LookHp`, `LookHpWild`, `LookHpRange`, `LookHpAngle`). Server side only, no client mod. It is a toast under the crosshair area, not a floating bar.
+**Look-at HP:** aim at one of your thralls, or any wild zombie or animal, and a toast shows its name, level and HP (up to 25 m, `LookHp`, `LookHpWild`, `LookHpRange`, `LookHpAngle`). Server side only, no client mod. It is a toast under the crosshair area, not a floating bar.
 
 ## Baby animals
 
