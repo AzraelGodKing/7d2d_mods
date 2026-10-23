@@ -12,7 +12,7 @@ Small mods for 7 Days to Die, built and tested on **V3.3**.
 | [Upgrade Bench](#upgrade-bench) | Code + XML | Server **and** every player | 1.0.2 |
 | [Keep Backpacks](#keep-backpacks) | Code | Server only | 1.2.2 |
 | [Blood Moon Sound](#blood-moon-sound) | Code (Harmony) | Players (own sound); server optional (sound for everyone, Discord posts) | 1.2.2 |
-| [Zombie and Animal Bait](#zombie-and-animal-bait) | XML only | Server only | 1.0.0 |
+| [Zombie and Animal Bait](#zombie-and-animal-bait) | Code (Harmony) + XML | Server only | 1.1.0 |
 
 Download the zips from the Releases page, unzip, and put the folder inside the game's `Mods` folder
 (or the server's `Mods` folder). Code that a player installs needs EasyAntiCheat turned off.
@@ -307,11 +307,13 @@ Setup: copy `discord.example.txt` to `discord.txt` **on the server**, paste the 
 
 ## Zombie and Animal Bait
 
-**Server only (XML); players install nothing.** A craftable throwable that pulls zombies and animals to a spot.
+**Server only; players install nothing.** A craftable throwable that pulls zombies and animals to a spot.
 
 - **Item:** Zombie and Animal Bait. Recipe: 2 rotting flesh + 1 plant fiber makes 2 baits.
 - **Use:** throw it like a rock. Once it lands it calls every zombie and animal within 40 blocks for 45 seconds. Whatever reaches it stops and eats until it is used up (400 eat ticks, about 20 seconds of one animal eating).
 - **How it works:** vanilla already has throwable decoys (rocks, snowballs) that zombies chase through the ApproachDistraction AI task. Animals don't have that task, so this adds it to each animal's task list (after attacking, before Look/Wander). Skipped: bosses, vultures, insect swarms.
+- **Protected while baited (1.1.0):** a creature that is going for (or eating) the bait is only hurt by the player who threw it. Turrets (auto and mini) stop picking it as a target, and damage from traps, fire, other monsters and other defences is cancelled. Damage the thrower deals still counts, and so do hunger, falling and despawn, so nothing gets stuck alive. Once the bait is gone the creature is a normal target again.
+- **Limits:** turret bullets are credited to the turret's owner, so a stray bullet from the thrower's own turret can still hit a baited creature in its line of fire (the turret just won't aim at it). Hits from other players are not blocked (their client sends that damage to the server).
 - Tune the radius, time and eat ticks in `Config/items.xml`.
 
 Note: this changes animal AI for the whole server, but only things marked for animals pull them. Vanilla rocks and snowballs are still zombie-only, so only the bait draws animals.
