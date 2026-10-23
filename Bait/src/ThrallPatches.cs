@@ -30,6 +30,13 @@ public static class ThrallDamagePatch
     static bool Prefix(EntityAlive __instance, DamageSource _damageSource, ref int _strength, ref int __result, ref object __state)
     {
         __state = null;
+        try { return PrefixInner(__instance, _damageSource, ref _strength, ref __result, ref __state); }
+        catch (Exception e) { Log.Warning("[Bait] damage patch: " + e); return true; }
+    }
+
+    static bool PrefixInner(EntityAlive __instance, DamageSource _damageSource, ref int _strength, ref int __result, ref object __state)
+    {
+        __state = null;
         if (!Thralls.IsServer) return true;
         var world = __instance.world;
         var attacker = world != null ? world.GetEntity(_damageSource.getEntityId()) as EntityAlive : null;
@@ -73,6 +80,11 @@ public static class ThrallDamagePatch
 public static class ThrallTargetPatch
 {
     static bool Prefix(EntityAlive __instance, EntityAlive _attackTarget)
+    {
+        try { return Inner(__instance, _attackTarget); } catch (Exception e) { Log.Warning("[Bait] target patch: " + e); return true; }
+    }
+
+    static bool Inner(EntityAlive __instance, EntityAlive _attackTarget)
     {
         if (_attackTarget == null || !Thralls.IsServer) return true;
         LiveThrall lt;
