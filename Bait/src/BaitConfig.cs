@@ -40,6 +40,7 @@ public static class BaitConfig
     public static int TierLevelBonus = 5;       // starting levels added per tier (feral 1, radiated 2, charged/infernal 3)
     public static float LevelDamagePct = 3f;   // extra damage dealt per level
     public static float LevelToughPct = 3f;    // damage reduction per level (1/(1+pct*level))
+    public static bool HealthAlerts = true;     // whisper the owner when a thrall drops below 50%, 25%, 10%
     public static bool Debug = false;
 
     public static readonly HashSet<string> Exclude = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
