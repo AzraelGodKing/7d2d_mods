@@ -25,6 +25,7 @@ public class AzraelBaitMod : IModApi
         ModEvents.GameShutdown.RegisterHandler(Thralls.OnShutdown);
         ModEvents.GameUpdate.RegisterHandler(Thralls.OnUpdate);
         ModEvents.EntityKilled.RegisterHandler(Thralls.OnEntityKilled);
+        ModEvents.ChatMessage.RegisterHandler(ThrallChatEvent.OnChat);
         Log.Out("[Bait] Loaded: creatures going for Zombie and Animal Bait are only hurt by the player who threw it.");
     }
 }

@@ -34,3 +34,5 @@ Animals tame the same way (3 meals by default) and follow you. **Daycare:** stan
 **POIs and infestations (2.4.1):** a zombie that came from a POI sleeper volume or an infested POI counts as dead for that volume the moment it is tamed, so clear quests and respawn timers are not held up by your thralls.
 
 **Toasts (2.5.0):** events (meals, taming, level-ups, low health, perk and pack changes, falls) show as the game's own on-screen toast, so players need nothing installed. Command replies stay in chat. `UseToasts=false` puts everything back in chat.
+
+The commands work from chat (/thrall ...) and from the console (F1, `thrall ...`). Every command is logged as `[Bait] command from #id: ...`.

@@ -222,7 +222,8 @@ public static partial class Thralls
         if (a.Length == 0 || Array.IndexOf(Prefixes, a[0].ToLowerInvariant()) < 0) return false;
         var owner = W != null ? W.GetEntity(senderEntityId) as EntityPlayer : null;
         string key = owner != null ? KeyOf(owner) : null;
-        if (key == null) return true;
+        Log.Out("[Bait] command from #" + senderEntityId + ": " + msg + (key == null ? "  (no player record found)" : ""));
+        if (key == null) { Notify(senderEntityId, "Could not find your player record yet. Try again in a moment."); return true; }
         string verb = a.Length > 1 ? a[1].ToLowerInvariant() : "list";
         string arg = a.Length > 2 ? a[2].ToLowerInvariant() : null;
         string arg2 = a.Length > 3 ? a[3] : null;
