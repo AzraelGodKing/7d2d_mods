@@ -30,3 +30,5 @@ Animals tame the same way (3 meals by default) and follow you. **Daycare:** stan
 - Wild zombie levels are now stored in a custom variable on the zombie (no marker buffs).
 
 **Pack animals (2.4.0):** every animal thrall that is out and following you (not tethered, not downed) adds 4 bag slots, up to 48 (`PackSlotsPerAnimal`, `PackSlotsMax`). Tethered daycare pets do not count, so the bonus only helps while they travel with you.
+
+**POIs and infestations (2.4.1):** a zombie that came from a POI sleeper volume or an infested POI counts as dead for that volume the moment it is tamed, so clear quests and respawn timers are not held up by your thralls.

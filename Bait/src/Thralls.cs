@@ -285,6 +285,8 @@ public static partial class Thralls
         list.Add(rec);
         dirty = true;
         feeds.Remove(z.entityId);
+        // A zombie from a POI sleeper volume or an infestation counts as dead for that volume once tamed.
+        try { z.NotifySleeperDeath(); } catch (Exception ex) { Dbg("sleeper notify failed: " + ex.Message); }
         if (rec.Active)
         {
             MakeLive(z, rec, owner);
