@@ -114,7 +114,7 @@ public static partial class Thralls
     public static bool NotifyLow(int entityId, string msg)
     {
         float last;
-        if (lastToast.TryGetValue(entityId, out last) && Time.time - last < 4f) return false;
+        if (lastToast.TryGetValue(entityId, out last) && Time.time - last < 6f) return false;
         Notify(entityId, msg);
         return true;
     }
