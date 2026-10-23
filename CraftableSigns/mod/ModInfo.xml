@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xml>
+	<Name value="AzraelCraftableSigns" />
+	<DisplayName value="Craftable Canvas Signs" />
+	<Description value="Lets players craft the picture (canvas) signs the game normally only places in POIs: a wood one and a corrugated-iron one, in every size. Draw on them with the in-game sign editor. Server-side: players install nothing." />
+	<Author value="Azrael" />
+	<Version value="1.0.0" />
+	<Website value="https://github.com/AzraelGodKing/7d2d_mods" />
+</xml>

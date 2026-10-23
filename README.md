@@ -7,6 +7,7 @@ Small mods for 7 Days to Die, built and tested on **V3.3**.
 | [Remove Any Entity](#remove-any-entity) | Code (Harmony) | Server only | 2.0.1 |
 | [Quest Disconnect Fix](#quest-disconnect-fix) | Code (Harmony) | Server only | 1.1.0 |
 | [Honk Door Fix](#honk-door-fix) | Code (Harmony) | Server only | 1.0.0 |
+| [Craftable Canvas Signs](#craftable-canvas-signs) | XML only | Server only | 1.0.0 |
 | [Speedometer](#speedometer) | Code + UI | Players only | 1.1.1 |
 | [Craft From Chests](#craft-from-chests) | Code (Harmony) | Players only | 1.2.0 |
 | [Upgrade Bench](#upgrade-bench) | Code + XML | Server **and** every player | 1.0.2 |
@@ -96,6 +97,23 @@ Server-side only; players install nothing.
 - 1.1.0: fix parties breaking after a robotic drone unloads (3.3).
 - 1.0.0: first version.
 
+## Craftable Canvas Signs
+
+**Server only (XML); players install nothing.** The game has picture (canvas) signs you can draw on
+with the in-game sign editor, but only places them in POIs: they are flagged developer-only and have
+no recipe. This makes them craftable.
+
+| Sign | Recipe (one craft, any size) |
+|---|---|
+| Canvas sign, wood | 10 wood, 10 cloth, 5 paint |
+| Canvas sign, corrugated iron | 10 forged iron, 10 cloth, 5 paint |
+
+- You pick the size when you place it (up to 13 blocks wide), so a big billboard costs the same as a small sign.
+- Nothing about the signs themselves changes: same HP, same material. The wood ones are weak (225 HP, no upgrades).
+- Change the costs in Config/recipes.xml.
+- The decal signs (the other picture-sign family) are not included yet.
+
+---
 ## Honk Door Fix
 
 Nexus: https://www.nexusmods.com/7daystodie/mods/12926
