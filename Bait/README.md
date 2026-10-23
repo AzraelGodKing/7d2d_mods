@@ -45,7 +45,7 @@ Admins manage the list in game: `/thrall exclude list | add <className> | remove
 
 ## Stronger bait
 
-- **Rich Bait** counts as 2 meals toward taming. Craft: 5 Zombie and Animal Bait + 1 raw meat. It eats for about 30 s.
-- **Feast Bait** counts as 4 meals. Craft: 3 Rich Bait + 3 raw meat + 2 animal fat, at a campfire (the hardest to make). It eats for about 45 s.
+- **Rich Bait** counts as 2 meals toward taming. Craft: 5 Zombie and Animal Bait + 1 raw meat + 1 honey. It eats for about 30 s.
+- **Feast Bait** counts as 4 meals. Craft: 5 Rich Bait + 3 raw meat + 1 acid, at a campfire (the hardest to make). It eats for about 45 s.
 
 Set the meal counts with `RichBaitMeals` and `FeastBaitMeals`. `giveself azraelBaitRich 10 true` and `giveself azraelBaitFeast 10 true` for testing.
