@@ -247,6 +247,28 @@ public static partial class Thralls
         foreach (int id in gone) levels.Remove(id);
     }
 
+    // Animals from other mods that replace their AI list (e.g. a bear cub) lose the bait task; give it back.
+    static readonly HashSet<int> baitAiDone = new HashSet<int>();
+    static void EnsureBaitAi(World world)
+    {
+        foreach (var o in new List<Entity>(world.Entities.list))
+        {
+            var an = o as EntityAnimal;
+            if (an == null || an.IsDead() || baitAiDone.Contains(an.entityId) || an.aiManager == null) continue;
+            baitAiDone.Add(an.entityId);
+            if (Live.ContainsKey(an.entityId) || !BaitConfig.NeedsBaitAi.Contains(ClassName(an))) continue;
+            try
+            {
+                if (an.aiManager.GetTasks<EAIApproachDistraction>() != null) continue;
+                var t = new EAIApproachDistraction();
+                t.Init(an);
+                an.aiManager.tasks.AddTask(5, t);
+            }
+            catch (Exception e) { Dbg("bait ai: " + e.Message); }
+        }
+        if (baitAiDone.Count > 4000) baitAiDone.Clear();
+    }
+
     static void LevelUp(EntityAlive e)
     {
         int cur = LevelOf(e.entityId);

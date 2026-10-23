@@ -60,6 +60,9 @@ public static class BaitConfig
     public static bool HealthAlerts = true;     // whisper the owner when a thrall drops below 50%, 25%, 10%
     public static bool Debug = false;
 
+    // Animal classes whose AI list is replaced by other mods and so needs the bait task added in code.
+    public static readonly HashSet<string> NeedsBaitAi = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "animalBearCub" };
+
     public static readonly HashSet<string> Exclude = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
         "zombieDemolition", "zombieScreamer", "zombieScreamerFeral", "zombieScreamerRadiated", "zombieScreamerCharged",

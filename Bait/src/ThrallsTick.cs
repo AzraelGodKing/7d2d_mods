@@ -62,6 +62,7 @@ public static partial class Thralls
         }
 
         ScanZombies(world);
+        EnsureBaitAi(world);
 
         // keep or drop the live thralls
         foreach (var lt in new List<LiveThrall>(Live.Values))
@@ -235,17 +236,33 @@ public static partial class Thralls
         {
             case "list":
                 if (list.Count == 0) { Tell(me, "You have no thralls. Throw bait at a zombie or animal and let it eat " + BaitConfig.FeedsToTame + " times."); break; }
-                for (int i = 0; i < list.Count; i++)
+                for (int pass = 0; pass < 2; pass++)
                 {
-                    var r = list[i];
-                    string st = r.Tether ? "[tethered r" + F(r.TR) + "]" : r.Active ? "[out]" : "[stowed]";
-                    Tell(me, (i + 1) + ". " + Label(r) + " " + st + (liveByRecord.ContainsKey(r.Id) ? " " + HpText(r) : ""));
+                    bool wantAnimals = pass == 1;
+                    bool any = false;
+                    for (int i = 0; i < list.Count; i++)
+                    {
+                        var r = list[i];
+                        if (IsAnimalClass(r.ClassName) != wantAnimals) continue;
+                        if (!any) { Tell(me, wantAnimals ? "Animals:" : "Zombies:"); any = true; }
+                        string st = r.Tether ? "[tethered r" + F(r.TR) + "]" : r.Active ? "[out]" : "[stowed]";
+                        Tell(me, "  " + (i + 1) + ". " + Label(r) + " " + st + (liveByRecord.ContainsKey(r.Id) ? " " + HpText(r) : ""));
+                    }
                 }
                 Tell(me, "Thrall power " + PowerOf(key) + (PackSlots(key) > 0 ? ", pack +" + PackSlots(key) + " slots" : "") + ", holding " + list.Count + "/" + MaxOwnedFor(key) + ".");
                 break;
             case "hp":
                 if (list.Count == 0) { Tell(me, "You have no thralls."); break; }
-                for (int i = 0; i < list.Count; i++) Tell(me, (i + 1) + ". " + Label(list[i]) + " " + HpText(list[i]));
+                for (int pass = 0; pass < 2; pass++)
+                {
+                    bool any = false;
+                    for (int i = 0; i < list.Count; i++)
+                    {
+                        if (IsAnimalClass(list[i].ClassName) != (pass == 1)) continue;
+                        if (!any) { Tell(me, pass == 1 ? "Animals:" : "Zombies:"); any = true; }
+                        Tell(me, "  " + (i + 1) + ". " + Label(list[i]) + " " + HpText(list[i]));
+                    }
+                }
                 break;
             case "call":
             {
