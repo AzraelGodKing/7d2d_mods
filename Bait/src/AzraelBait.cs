@@ -125,3 +125,23 @@ public static class BaitTrace
         catch { }
     }
 }
+// A thrown item is removed after 60 seconds, which cut the bait short. Keep it for as long as it calls creatures
+// (DistractionLifetime in items.xml) plus a little.
+[HarmonyPatch(typeof(EntityItem), "OnUpdateEntity")]
+public static class BaitLifetimePatch
+{
+    static readonly HashSet<int> done = new HashSet<int>();
+    static void Prefix(EntityItem __instance)
+    {
+        try
+        {
+            var ic = __instance.itemClass;
+            if (ic == null || ic.GetItemName() != BaitCheck.BaitItem) return;
+            if (!done.Add(__instance.entityId)) return;
+            float want = __instance.distractionLifetime + 15f;
+            if (__instance.lifetime < want) __instance.lifetime = want;
+            if (done.Count > 2000) done.Clear();
+        }
+        catch { }
+    }
+}

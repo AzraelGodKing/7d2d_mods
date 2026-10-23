@@ -7,7 +7,7 @@ Chat commands: `/thrall list | call <n> | stow [n|all] | release <n> | kill <n|a
 
 Animals tame the same way (3 meals by default) and follow you. **Daycare:** stand where the pen is and run `/thrall tether <n|all> [radius]`; tethered creatures stay inside the circle, keep standing while you are offline, and do not use your active slots. `/thrall untether` frees them.
 
-**Limits:** up to 20 owned, 4 out at once by default. Admins change any setting live with `/thrall config <name> <value>` (saved with the world); `/thrall config` lists them.
+**Limits:** up to 20 owned, 4 active at once by default. Admins change any setting live with `/thrall config <name> <value>` (saved with the world); `/thrall config` lists them.
 
 **Levels:** wild zombies spawn with a level (game day / 5, plus 5 per tier, plus 0-2, max 300) that makes them hit harder (+3% per level) and take less damage (3% per level, divided), and they gain a level by killing a player or thrall. Thralls gain a level every 8 kills and add it to your perk power. Turn off with `ZombieLevels=false`.
 
@@ -23,7 +23,7 @@ Animals tame the same way (3 meals by default) and follow you. **Daycare:** stan
 - Admins: `/thrall admin who | list <player> | release <player> <n> | limit <player> <owned> <active>` (per-player limits).
 - Wild zombie levels are now stored in a custom variable on the zombie (no marker buffs).
 
-**Pack animals:** every animal thrall that is out and following you (not tethered, not downed) adds 4 bag slots, up to 48 (`PackSlotsPerAnimal`, `PackSlotsMax`). Tethered daycare pets do not count, so the bonus only helps while they travel with you.
+**Pack animals:** every animal thrall that is active and following you (not tethered, not downed) adds 4 bag slots, up to 48 (`PackSlotsPerAnimal`, `PackSlotsMax`). Tethered daycare pets do not count, so the bonus only helps while they travel with you.
 
 **POIs and infestations:** a zombie that came from a POI sleeper volume or an infested POI counts as dead for that volume the moment it is tamed, so clear quests and respawn timers are not held up by your thralls.
 

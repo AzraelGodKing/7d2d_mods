@@ -33,7 +33,7 @@
 			<property name="DistractionTags" value="zombie,animal,eat,requires_contact"/>
 			<effect_group name="decoy" tiered="false">
 				<passive_effect name="DistractionRadius" operation="base_set" value="40"/>
-				<passive_effect name="DistractionLifetime" operation="base_set" value="45"/>
+				<passive_effect name="DistractionLifetime" operation="base_set" value="300"/>
 				<passive_effect name="DistractionStrength" operation="base_set" value="100"/>
 				<passive_effect name="DistractionEatTicks" operation="base_set" value="400"/>
 			</effect_group>

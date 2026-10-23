@@ -19,7 +19,7 @@ public static partial class Thralls
         try
         {
             if (now >= nextTaunt) { nextTaunt = now + 1f; Taunt(world, now); }
-            if (now >= nextLook) { nextLook = now + 0.5f; LookHp(world, now); }
+            if (now >= nextLook) { nextLook = now + 0.5f; Calm(); LookHp(world, now); }
             if (now >= nextSlow) { nextSlow = now + 5f; Slow(world, now); }
         }
         catch (Exception e) { Log.Warning("[Bait] tick: " + e.Message); }
@@ -129,7 +129,7 @@ public static partial class Thralls
         int id;
         EntityAlive e = liveByRecord.TryGetValue(r.Id, out id) && W != null ? W.GetEntity(id) as EntityAlive : null;
         if (r.ReviveAt > NowSec()) return "[downed " + (r.ReviveAt - NowSec()) + "s]";
-        if (e == null || e.IsDead()) return r.Active ? "[away]" : "[stowed]";
+        if (e == null || e.IsDead()) return r.Active ? "[away]" : "[inactive]";
         return Bar(HpFrac(e)) + " " + Mathf.CeilToInt(e.Stats.Health.Value) + "/" + e.GetMaxHealth();
     }
 
@@ -245,7 +245,7 @@ public static partial class Thralls
                         var r = list[i];
                         if (IsAnimalClass(r.ClassName) != wantAnimals) continue;
                         if (!any) { Tell(me, wantAnimals ? "Animals:" : "Zombies:"); any = true; }
-                        string st = r.Tether ? "[tethered r" + F(r.TR) + "]" : r.Active ? "[out]" : "[stowed]";
+                        string st = r.Tether ? "[tethered r" + F(r.TR) + "]" : r.Active ? "[active]" : "[inactive]";
                         Tell(me, "  " + (i + 1) + ". " + Label(r) + " " + st + (liveByRecord.ContainsKey(r.Id) ? " " + HpText(r) : ""));
                     }
                 }
@@ -269,8 +269,8 @@ public static partial class Thralls
                 var t = Pick(arg, list);
                 if (t.Count != 1) { Tell(me, "Usage: /thrall call <number>"); break; }
                 var r = t[0];
-                if (r.Active) { Tell(me, Label(r) + " is already out."); break; }
-                if (ActiveCount(key) >= MaxActiveFor(key)) { Tell(me, "You already have " + MaxActiveFor(key) + " out. Stow one first: /thrall stow <number>"); break; }
+                if (r.Active) { Tell(me, Label(r) + " is already active."); break; }
+                if (ActiveCount(key) >= MaxActiveFor(key)) { Tell(me, "You already have " + MaxActiveFor(key) + " active. Stow one first: /thrall stow <number>"); break; }
                 r.Active = true; dirty = true; nextSpawn.Remove(r.Id); nextSlow = 0f;
                 Tell(me, "Calling " + Label(r) + ".");
                 break;
@@ -281,7 +281,7 @@ public static partial class Thralls
                 if (t.Count == 0) { Tell(me, "Usage: /thrall stow [number|all]"); break; }
                 foreach (var r in t) { r.Active = false; r.Tether = false; DespawnLive(r.Id); }
                 dirty = true;
-                Tell(me, t.Count == 1 ? Label(t[0]) + " stowed." : t.Count + " thralls stowed.");
+                Tell(me, t.Count == 1 ? Label(t[0]) + " is now inactive." : t.Count + " thralls are now inactive.");
                 break;
             }
             case "tether":
@@ -411,7 +411,7 @@ public static partial class Thralls
                 if (sub == "list")
                 {
                     for (int i = 0; i < tl.Count; i++) Tell(me, (i + 1) + ". " + Label(tl[i]) + " " + HpText(tl[i]));
-                    Tell(me, NameOfKey(tkey) + ": " + tl.Count + "/" + MaxOwnedFor(tkey) + " owned, up to " + MaxActiveFor(tkey) + " out.");
+                    Tell(me, NameOfKey(tkey) + ": " + tl.Count + "/" + MaxOwnedFor(tkey) + " owned, up to " + MaxActiveFor(tkey) + " active.");
                     break;
                 }
                 if (sub == "release")

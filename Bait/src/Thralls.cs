@@ -361,7 +361,7 @@ public static partial class Thralls
         else
         {
             RemoveFromWorld(z);
-            Notify(ownerId, Label(rec) + " is yours, but you already have " + MaxActiveFor(key) + " out, so it is stowed. /thrall call " + list.Count);
+            Notify(ownerId, Label(rec) + " is yours, but you already have " + MaxActiveFor(key) + " active, so it is inactive. /thrall call " + list.Count);
         }
         Flush();
     }

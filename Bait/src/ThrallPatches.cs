@@ -132,3 +132,28 @@ public static class ThrallChatPatch
         return true;
     }
 }
+
+// Passive mode: a thrall in passive mode never starts or keeps an attack, whoever started the fight.
+[HarmonyPatch]
+public static class ThrallPassivePatch
+{
+    static IEnumerable<MethodBase> TargetMethods()
+    {
+        var a = AccessTools.DeclaredMethod(typeof(EAIApproachAndAttackTarget), "CanExecute");
+        var b = AccessTools.DeclaredMethod(typeof(EAIApproachAndAttackTarget), "Continue");
+        if (a != null) yield return a;
+        if (b != null) yield return b;
+    }
+
+    static bool Prefix(EAIBase __instance, ref bool __result)
+    {
+        try
+        {
+            LiveThrall lt;
+            var e = __instance.theEntity;
+            if (e != null && Thralls.IsServer && Thralls.Live.TryGetValue(e.entityId, out lt) && lt.Mode == 2) { __result = false; return false; }
+        }
+        catch { }
+        return true;
+    }
+}
