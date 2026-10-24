@@ -254,7 +254,7 @@ public static partial class Thralls
             {
                 int dpl = Math.Max(1, BaitConfig.DaysPerLevel);
                 lvl = day / dpl + TierOf(ClassName(z)) * BaitConfig.TierLevelBonus + UnityEngine.Random.Range(0, 3);
-                lvl = Math.Max(0, Math.Min(BaitConfig.MaxLevel, lvl));
+                lvl = Math.Max(1, Math.Min(BaitConfig.MaxLevel, lvl));   // every wild zombie starts at level 1 or more
                 if (lvl > 0) ApplyMarker(z, lvl);
             }
             if (lvl > 0) levels[z.entityId] = Math.Min(lvl, BaitConfig.MaxLevel);
@@ -421,6 +421,7 @@ public static partial class Thralls
         StartGrace(z);
         Live[z.entityId] = new LiveThrall { EntityId = z.entityId, OwnerEntityId = owner != null ? owner.entityId : -1, RecordId = rec.Id, OwnerKey = rec.OwnerKey, Hold = rec.Stay, Mode = rec.Mode };
         liveByRecord[rec.Id] = z.entityId;
+        if (rec.Level < 1 && z is EntityZombie) { rec.Level = 1; dirty = true; }   // a zombie thrall is never level 0 (older ones are brought up to 1 here)
         if (rec.Level > 0) levels[z.entityId] = rec.Level; else levels.Remove(z.entityId);
 
         z.distraction = null;
