@@ -90,3 +90,5 @@ Set the meal counts with `RichBaitMeals` and `FeastBaitMeals`. `giveself azraelB
 **Kill credit (1.7.2):** a thrall that is out with you now also gets credit for the hostile creatures you kill within `OwnerKillShareRange` (30 blocks, 0 = off), so clearing a POI mostly yourself still levels your thralls (8 kills per level by default). Before, only kills the thrall landed itself counted.
 
 **1.7.3:** Sends Bait UI who owns each thrall, so party members can see each other's thralls' HP bars (older Bait UI versions ignore it).
+
+**1.7.4:** Finding out why thralls die with no recorded hit. Every thrall death now writes a `kill trace` line to the server log (health, damage type, active buffs, and which game method called Kill), and the killing blow's damage type now shows in the death text when no earlier hit was seen.

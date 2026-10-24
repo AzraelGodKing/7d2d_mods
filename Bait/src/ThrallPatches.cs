@@ -264,3 +264,40 @@ public static class DroneSpikePatch
         return true;
     }
 }
+
+// Diagnostics: when a thrall is killed by something that never went through DamageEntity (so there is no "last hit"), the game
+// still calls Kill. Log who called it, the damage type, health and active buffs, so a "died with no recorded hit" can be traced.
+[HarmonyPatch(typeof(EntityAlive), nameof(EntityAlive.Kill))]
+public static class ThrallKillTracePatch
+{
+    static void Prefix(EntityAlive __instance, DamageResponse _dmResponse)
+    {
+        try
+        {
+            if (__instance == null || !Thralls.Live.ContainsKey(__instance.entityId)) return;
+            if (_dmResponse.Source != null) Thralls.NoteHit(__instance, _dmResponse.Source, null, _dmResponse.Strength);   // the killing blow names the cause even when DamageEntity never saw it
+            var sb = new System.Text.StringBuilder();
+            sb.Append("[Bait] kill trace for #").Append(__instance.entityId).Append(' ').Append(__instance.EntityName)
+              .Append(": health ").Append(__instance.Stats.Health.Value.ToString("0.#")).Append('/').Append(__instance.GetMaxHealth())
+              .Append(", damage ").Append(_dmResponse.Source != null ? _dmResponse.Source.damageType.ToString() : "none")
+              .Append(", strength ").Append(_dmResponse.Strength).Append(", at ").Append(__instance.position);
+            if (__instance.Buffs != null && __instance.Buffs.ActiveBuffs != null)
+            {
+                sb.Append(", buffs [");
+                for (int i = 0; i < __instance.Buffs.ActiveBuffs.Count; i++) { if (i > 0) sb.Append(','); sb.Append(__instance.Buffs.ActiveBuffs[i].BuffName); }
+                sb.Append(']');
+            }
+            var st = new System.Diagnostics.StackTrace(2, false);
+            sb.Append(", from ");
+            for (int i = 0; i < st.FrameCount && i < 6; i++)
+            {
+                var m = st.GetFrame(i).GetMethod();
+                if (m == null) continue;
+                if (i > 0) sb.Append(" < ");
+                sb.Append(m.DeclaringType != null ? m.DeclaringType.Name : "?").Append('.').Append(m.Name);
+            }
+            Log.Out(sb.ToString());
+        }
+        catch { }
+    }
+}
