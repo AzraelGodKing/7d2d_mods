@@ -43,6 +43,9 @@ public static class ThrallDamagePatch
         bool victimThrall = Thralls.IsThrall(__instance.entityId);
         bool attackerThrall = attacker != null && Thralls.IsThrall(attacker.entityId);
 
+        // a thrall that was just tamed or called is untouchable for a few seconds
+        if (victimThrall && Thralls.InGrace(__instance.entityId) && _damageSource.damageType != EnumDamageTypes.Suicide) { __result = -1; return false; }
+
         // a thrall never hurts a player or another thrall
         if (attackerThrall && (__instance is EntityPlayer || victimThrall)) { __result = -1; return false; }
         // optionally the owner can't hurt their own thrall
@@ -93,6 +96,7 @@ public static class ThrallTargetPatch
     static bool Inner(EntityAlive __instance, EntityAlive _attackTarget)
     {
         if (_attackTarget == null || !Thralls.IsServer) return true;
+        if (Thralls.InGrace(_attackTarget.entityId) && !Thralls.Live.ContainsKey(__instance.entityId)) return false;
         LiveThrall lt;
         if (Thralls.Live.TryGetValue(__instance.entityId, out lt))
         {

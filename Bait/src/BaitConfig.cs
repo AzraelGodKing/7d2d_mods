@@ -56,6 +56,7 @@ public static class BaitConfig
     public static int ReviveCostRich = 2;         // ...or this many Rich bait...
     public static int ReviveCostFeast = 1;        // ...or this many Feast bait. Tried in that order; the first you can afford is taken.
     public static int HealBaitCost = 1;         // bait for /thrall heal
+    public static float NewThrallGraceSeconds = 8f; // a thrall that was just tamed or called can't be targeted or hurt for this long (0 = off)
     public static float HealPct = 40f;          // health restored by /thrall heal
     public static float RegenPctPerTick = 1f;   // health a thrall regains every 5 s while not fighting
     public static float DefendRange = 8f;       // defend mode: fights only what comes this close to it or its owner

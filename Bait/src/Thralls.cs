@@ -361,7 +361,15 @@ public static partial class Thralls
         try { z.NotifySleeperDeath(); } catch (Exception ex) { Dbg("sleeper notify failed: " + ex.Message); }
         if (rec.Active)
         {
-            MakeLive(z, rec, owner);
+            if (z.IsSleeper)
+            {
+                // Clients keep the "sleeper" flag (red dot on the quest map) of the entity they were sent, so
+                // swap it for a fresh thrall at the same spot.
+                Vector3 at = z.position;
+                RemoveFromWorld(z);
+                Spawn(rec, owner, at);
+            }
+            else MakeLive(z, rec, owner);
             Notify(ownerId, Label(rec) + " is yours now. /thrall help");
         }
         else
@@ -373,8 +381,37 @@ public static partial class Thralls
     }
 
     // ------------------------------------------------------------------ making a live thrall
+    // Newly made thralls can't be targeted or hurt for a few seconds, so they can walk back to their owner.
+    public static readonly Dictionary<int, float> Grace = new Dictionary<int, float>();
+    public static bool InGrace(int entityId)
+    {
+        float u;
+        return Grace.Count > 0 && Grace.TryGetValue(entityId, out u) && Time.time < u;
+    }
+
+    static void StartGrace(EntityAlive z)
+    {
+        if (BaitConfig.NewThrallGraceSeconds <= 0f) return;
+        if (Grace.Count > 200) Grace.Clear();
+        Grace[z.entityId] = Time.time + BaitConfig.NewThrallGraceSeconds;
+        try
+        {
+            // anything already hunting it lets go
+            foreach (var other in W.Entities.list)
+            {
+                var a = other as EntityAlive;
+                if (a == null || a == z || a is EntityPlayer || a.IsDead()) continue;
+                if (a.GetAttackTarget() == z && (a.position - z.position).sqrMagnitude < 60f * 60f) a.SetAttackTarget(null, 0);
+            }
+        }
+        catch (Exception ex) { Dbg("grace clear failed: " + ex.Message); }
+    }
+
     static void MakeLive(EntityAlive z, ThrallRecord rec, EntityPlayer owner)
     {
+        // no longer a POI sleeper: no red quest dot on the map, no leash back to the sleeper volume
+        z.IsSleeper = false; z.IsSleeperPassive = false;
+        StartGrace(z);
         Live[z.entityId] = new LiveThrall { EntityId = z.entityId, OwnerEntityId = owner != null ? owner.entityId : -1, RecordId = rec.Id, OwnerKey = rec.OwnerKey, Hold = rec.Stay, Mode = rec.Mode };
         liveByRecord[rec.Id] = z.entityId;
         if (rec.Level > 0) levels[z.entityId] = rec.Level; else levels.Remove(z.entityId);
@@ -469,7 +506,7 @@ public static partial class Thralls
     static void ForgetLive(int entityId)
     {
         LiveThrall lt;
-        if (Live.TryGetValue(entityId, out lt)) { liveByRecord.Remove(lt.RecordId); Live.Remove(entityId); levels.Remove(entityId); }
+        if (Live.TryGetValue(entityId, out lt)) { liveByRecord.Remove(lt.RecordId); Live.Remove(entityId); levels.Remove(entityId); Grace.Remove(entityId); }
     }
 
     static void DespawnLive(string recordId)
@@ -497,7 +534,7 @@ public static partial class Thralls
         return w != null && w.GetChunkFromWorldPos(Mathf.FloorToInt(p.x), Mathf.FloorToInt(p.y), Mathf.FloorToInt(p.z)) != null;
     }
 
-    static void Spawn(ThrallRecord rec, EntityPlayer owner)
+    static void Spawn(ThrallRecord rec, EntityPlayer owner, Vector3? at = null)
     {
         try
         {
@@ -512,7 +549,8 @@ public static partial class Thralls
             if (rec.ReviveAt != 0) { rec.ReviveAt = 0; dirty = true; }
             int cid = EntityClass.FromString(rec.ClassName);
             Vector3 pos;
-            if (rec.Tether) pos = new Vector3(rec.TX, rec.TY + 0.5f, rec.TZ);
+            if (at.HasValue) pos = at.Value + new Vector3(0f, 0.3f, 0f);
+            else if (rec.Tether) pos = new Vector3(rec.TX, rec.TY + 0.5f, rec.TZ);
             else if (owner != null) pos = owner.position + new Vector3(UnityEngine.Random.Range(-3f, 3f), 0.5f, UnityEngine.Random.Range(-3f, 3f));
             else return;
             var e = EntityFactory.CreateEntity(cid, pos, Vector3.zero) as EntityAlive;
