@@ -1,8 +1,8 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <xml>
 	<Name value="AzraelGyroSafe"/>
 	<DisplayName value="Gyro Safe"/>
-	<Description value="Gyrocopters no longer damage blocks or terrain when they hit them. Block damage is worked out where the gyro is driven, so install it on the players who fly (and the host); on the server it also drops any block change credited to a gyro."/>
+	<Description value="Gyrocopters no longer damage blocks or terrain when they hit them. Block damage is worked out where the gyro is driven, so install it on the players who fly (and the host); on the server it also drops block changes sent by a player riding a gyro."/>
 	<Author value="Azrael"/>
 	<Version value="1.0.0"/>
 	<Website value="https://github.com/AzraelGodKing/7d2d_mods"/>
