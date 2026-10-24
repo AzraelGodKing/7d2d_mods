@@ -74,3 +74,5 @@ Set the meal counts with `RichBaitMeals` and `FeastBaitMeals`. `giveself azraelB
 **Grabbing (fixed in 1.4.0 for multiplayer):** picking up a thrall (a chicken, with an empty hand) leaves it in your inventory as the item and marks it inactive on your roster. Place the item down and it is that thrall again, tethered where you put it if it was tethered, otherwise following you. Or use `/thrall call <n>` (that takes the item back). Before, the roster respawned it and you ended up with a copy.
 
 **Tame handoff (1.5.0):** a zombie tamed out of a POI sleeper volume is swapped for a fresh thrall at the same spot, so the red quest dot on the map goes away (it already counted as dead for the POI). Every new or called thrall is untargetable and unhurtable for `NewThrallGraceSeconds` (8) so it can walk back to you. Mode (aggressive/defensive/passive), stay and tether are stored with the thrall and survive stow, call, grab and revive.
+
+**No harvesting (1.5.1):** a fallen thrall's body drops no loot bag and has nothing to butcher or search; it comes back from its record anyway.

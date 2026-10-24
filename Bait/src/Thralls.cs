@@ -582,6 +582,7 @@ public static partial class Thralls
             if (!Live.TryGetValue(victim.entityId, out lt)) return;
             var rec = Find(lt.RecordId);
             ForgetLive(victim.entityId);
+            NoHarvest(victim);
             string why = DeathReason(victim, killer);
             if (rec != null)
             {
@@ -603,6 +604,17 @@ public static partial class Thralls
             }
         }
         catch (Exception ex) { Log.Warning("[Bait] kill handler: " + ex.Message); }
+    }
+
+    // A fallen thrall comes back from its record, so its body gives nothing: no loot bag, nothing to butcher or search.
+    static void NoHarvest(EntityAlive v)
+    {
+        try
+        {
+            v.lootDropProb = 0f;
+            if (v.bag != null) { v.bag.Clear(); v.bag.ItemGrid.Touch(); }
+        }
+        catch (Exception ex) { Dbg("no-harvest failed: " + ex.Message); }
     }
 
     static void ThrallKilledSomething(LiveThrall lt, EntityAlive killer)
