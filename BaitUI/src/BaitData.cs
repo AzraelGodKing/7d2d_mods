@@ -194,6 +194,7 @@ public static class BaitChatPatch
 public static class UiSettings
 {
     public static KeyCode Key = KeyCode.Home;   // was Backslash, which not every keyboard layout has
+    public static bool CaptureKey;   // the next key pressed becomes the roster hotkey (set by the button in the roster window)
     static bool keyChosen;   // the settings file was written by a version that knew the new default (keyver=2)
     public static bool Nameplates = true, Party = true, Feed = true;
     public static float PartyX = 0.006f, PartyY = 0.14f;   // party list position (fraction of the screen)

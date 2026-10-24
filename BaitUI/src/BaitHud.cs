@@ -95,6 +95,14 @@ public class BaitHud : MonoBehaviour
                 if (ui != null && ui.windowManager != null && !ui.windowManager.IsFullHUDDisabled())
                     edit = ui.windowManager.IsCursorWindowOpen() || ui.windowManager.IsModalWindowOpen();
             }
+            if (UiSettings.CaptureKey && Event.current.type == EventType.KeyDown && Event.current.keyCode != KeyCode.None)
+            {
+                var pressed = Event.current.keyCode;
+                UiSettings.CaptureKey = false;
+                if (pressed != KeyCode.Escape) { UiSettings.Key = pressed; UiSettings.Save(); }
+                Event.current.Use();
+                return;
+            }
             if (Event.current.type != EventType.Repaint) { if (edit && UiSettings.Party) DragParty(); return; }
             if (!hud && !(edit && UiSettings.Party)) return;
             if (label == null || Mathf.Abs(styleScale - Sc) > 0.01f)

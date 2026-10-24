@@ -407,10 +407,15 @@
 				<button name="cyclebar" depth="3" width="250" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
 				<label depth="4" text="{bartxt}" width="250" height="28" pos="0,-5" justify="center" font_size="22" />
 			</rect>
-			<rect pos="12,-678" width="746" height="36" depth="3">
+			<rect pos="12,-678" width="480" height="36" depth="3">
 				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
-				<button name="cycletarget" depth="3" width="746" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
-				<label depth="4" text="{targettxt}" width="746" height="28" pos="0,-5" justify="center" font_size="22" />
+				<button name="cycletarget" depth="3" width="480" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{targettxt}" width="480" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="500,-678" width="258" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="pickkey" depth="3" width="258" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{keytxt}" width="258" height="28" pos="0,-5" justify="center" font_size="22" />
 			</rect>
 		</window>
 		<window name="windowAzraelBaitName" anchor="Center" pos="-200, 80" width="400" height="150" depth="15" controller="AzraelBaitName, AzraelBaitUI" cursor_area="true" lock_navigation="true">

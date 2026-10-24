@@ -41,3 +41,5 @@ The buttons send the normal `/thrall` chat commands (they are hidden from other 
 **1.5.0:** Name and bar colours can be set per thrall. In the roster window, click the `Colors apply to` button to pick a thrall (or all thralls for the default), then the Name color and Bar color buttons; `Default` follows the all-thralls setting. Saved on your own computer by roster number and class, so releasing or reordering thralls can shift which colour goes with which.
 
 **1.5.1:** The roster window now opens with the Home key, since the backslash key is missing or elsewhere on some keyboard layouts. Settings files that still held the old default are moved to Home; `baitui key <key>` picks any other key (Backslash included).
+
+**1.6.0:** Players pick their own roster hotkey: open the roster window (Home by default), click the `Hotkey` button in the bottom row and press the key you want (Esc cancels). It is saved with the other settings. `baitui key <key>` and `baitui key none` still work from the console.

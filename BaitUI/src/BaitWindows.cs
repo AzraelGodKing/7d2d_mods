@@ -59,6 +59,7 @@ public class XUiC_AzraelBaitRoster : XUiController
         Hook("tglfed", () => { UiSettings.Feed = !UiSettings.Feed; UiSettings.Save(); seen = -1; });
         Hook("tglpbars", () => { UiSettings.PartyBars = !UiSettings.PartyBars; UiSettings.Save(); seen = -1; });
         Hook("cyclecolor", () => { UiSettings.CycleName(); seen = -1; });
+        Hook("pickkey", () => { UiSettings.CaptureKey = !UiSettings.CaptureKey; seen = -1; });
         Hook("cycletarget", () => { UiSettings.NextTarget(); seen = -1; });
         Hook("cyclebar", () => { UiSettings.CycleBar(); seen = -1; });
         Hook("sizedown", () => { UiSettings.Scale = Mathf.Clamp(Mathf.Round((UiSettings.Scale - 0.2f) * 10f) / 10f, 0.5f, 4f); UiSettings.Save(); seen = -1; });
@@ -71,9 +72,16 @@ public class XUiC_AzraelBaitRoster : XUiController
         return i >= 0 && i < BaitData.Thralls.Count ? BaitData.Thralls[i] : null;
     }
 
+    public override void OnClose()
+    {
+        base.OnClose();
+        UiSettings.CaptureKey = false;
+    }
+
     public override void OnOpen()
     {
         base.OnOpen();
+        UiSettings.CaptureKey = false;
         page = 0; relRow = -1; seen = -1;
         BaitData.Cmd("/thrall ui", false);   // ask for a fresh copy of everything
         RefreshBindings();
@@ -114,7 +122,8 @@ public class XUiC_AzraelBaitRoster : XUiController
             case "pbarstxt": value = "Party members' bars: " + (UiSettings.PartyBars ? "on" : "off"); return true;
             case "colortxt": value = "Name color: " + UiSettings.NameLabel(); return true;
             case "bartxt": value = "Bar color: " + UiSettings.BarLabel(); return true;
-            case "targettxt": { var tt = UiSettings.TargetThrall; value = "Colors apply to: " + (tt == null ? "all thralls (default)" : tt.Idx + ". " + tt.Label) + "   (click to change)"; return true; }
+            case "targettxt": { var tt = UiSettings.TargetThrall; value = "Colors for: " + (tt == null ? "all thralls" : tt.Idx + ". " + tt.Label) + " (click)"; return true; }
+            case "keytxt": value = UiSettings.CaptureKey ? "Press a key..." : "Hotkey: " + (UiSettings.Key == KeyCode.None ? "none" : UiSettings.Key.ToString()); return true;
             case "tagstxt": value = "Name tags: " + (UiSettings.Nameplates ? "on" : "off"); return true;
             case "partytxt": value = "Party list: " + (UiSettings.Party ? "on" : "off"); return true;
             case "fedtxt": value = "Fed tags: " + (UiSettings.Feed ? "on" : "off"); return true;
