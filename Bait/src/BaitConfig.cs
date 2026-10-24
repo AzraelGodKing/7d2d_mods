@@ -125,7 +125,26 @@ public static class BaitConfig
     }
 
     public static void Load(string path) { modPath = path; ReadFile(Path.Combine(path, FileName)); }
-    public static void LoadSaved() { ReadFile(Path.Combine(GameIO.GetSaveGameDir(), SavedName)); }
+    public static void LoadSaved() { savedPass = true; try { ReadFile(Path.Combine(GameIO.GetSaveGameDir(), SavedName)); } finally { savedPass = false; } }
+
+    // Feed rates an admin set in game with "/thrall config feeds.<class> <n>"; only these are written to the save settings.
+    static readonly Dictionary<string, int> feedOverrides = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+    static bool savedPass;
+
+    static bool IsFeedKey(string key, out string cls)
+    {
+        cls = null;
+        if (key == null || !key.StartsWith("feeds.", StringComparison.OrdinalIgnoreCase) || key.Length <= 6) return false;
+        cls = key.Substring(6);
+        return true;
+    }
+
+    public static string FeedsSummary()
+    {
+        var parts = new List<string>();
+        foreach (var kv in AnimalFeeds) parts.Add(kv.Key.StartsWith("animal") ? kv.Key.Substring(6) + " " + kv.Value : kv.Key + " " + kv.Value);
+        return string.Join(", ", parts.ToArray()) + " (other animals " + AnimalFeedsToTame + ")";
+    }
 
     static void ReadFile(string file)
     {
@@ -145,7 +164,12 @@ public static class BaitConfig
                     foreach (string n in v.Split(',')) if (n.Trim().Length > 0) Exclude.Add(n.Trim());
                     continue;
                 }
-                if (string.Equals(k, "AnimalFeeds", StringComparison.OrdinalIgnoreCase)) { ReadFeedList(AnimalFeeds, v); continue; }
+                if (string.Equals(k, "AnimalFeeds", StringComparison.OrdinalIgnoreCase))
+                {
+                    ReadFeedList(AnimalFeeds, v);
+                    if (savedPass) ReadFeedList(feedOverrides, v);
+                    continue;
+                }
                 string err; Set(k, v, out err);
             }
         }
@@ -156,6 +180,15 @@ public static class BaitConfig
     public static bool Set(string key, string value, out string error)
     {
         error = null;
+        string fcls;
+        if (IsFeedKey(key, out fcls))
+        {
+            int n;
+            if (!int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out n) || n < 1) { error = "bad value for " + key + " (expected a whole number, 1 or more)"; return false; }
+            if (!fcls.StartsWith("animal", StringComparison.OrdinalIgnoreCase)) { error = "feed rates are for animals; the class should start with animal, like animalBear"; return false; }
+            AnimalFeeds[fcls] = n; feedOverrides[fcls] = n;
+            return true;
+        }
         FieldInfo f = Find(key);
         if (f == null) { error = "unknown setting " + key; return false; }
         try
@@ -170,11 +203,20 @@ public static class BaitConfig
 
     public static string Get(string key)
     {
+        string fcls;
+        if (string.Equals(key, "feeds", StringComparison.OrdinalIgnoreCase)) return FeedsSummary();
+        if (IsFeedKey(key, out fcls)) return AnimalFeeds.ContainsKey(fcls) ? AnimalFeeds[fcls].ToString() : null;
         FieldInfo f = Find(key);
         return f == null ? null : Convert.ToString(f.GetValue(null), CultureInfo.InvariantCulture);
     }
 
-    public static string KeyName(string key) { FieldInfo f = Find(key); return f == null ? null : f.Name; }
+    public static string KeyName(string key)
+    {
+        string fcls;
+        if (string.Equals(key, "feeds", StringComparison.OrdinalIgnoreCase)) return "feeds";
+        if (IsFeedKey(key, out fcls)) return "Feeds." + fcls;
+        FieldInfo f = Find(key); return f == null ? null : f.Name;
+    }
 
     // name|value|type for the client UI (type: i int, f float, b bool)
     public static List<string> Describe()
@@ -198,6 +240,12 @@ public static class BaitConfig
         {
             var sb = new StringBuilder("# written by /thrall config - overrides AzraelBait.cfg for this save\n");
             foreach (string s in All()) sb.Append(s).Append('\n');
+            if (feedOverrides.Count > 0)
+            {
+                var fp = new List<string>();
+                foreach (var kv in feedOverrides) fp.Add(kv.Key + ":" + kv.Value);
+                sb.Append("AnimalFeeds=").Append(string.Join(",", fp.ToArray())).Append('\n');
+            }
             sb.Append("Exclude=").Append(string.Join(",", new List<string>(Exclude).ToArray())).Append('\n');
             File.WriteAllText(Path.Combine(GameIO.GetSaveGameDir(), SavedName), sb.ToString());
         }

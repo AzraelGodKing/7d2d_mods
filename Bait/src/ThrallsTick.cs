@@ -489,6 +489,7 @@ public static partial class Thralls
                         sb.Append(s);
                     }
                     if (sb.Length > 0) Tell(me, sb.ToString());
+                    Tell(me, "Animal meals: /thrall config feeds   (change one: /thrall config feeds.animalBear 6)");
                     Tell(me, "Admins change one with: /thrall config <name> <value>");
                     break;
                 }

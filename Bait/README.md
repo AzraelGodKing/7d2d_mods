@@ -78,3 +78,5 @@ Set the meal counts with `RichBaitMeals` and `FeastBaitMeals`. `giveself azraelB
 **No harvesting (1.5.1):** a fallen thrall's body drops no loot bag and has nothing to butcher or search; it comes back from its record anyway.
 
 **Animal feed rates (1.6.0):** each animal now needs its own number of meals instead of a flat 3: chicken and rabbit 1; snake, pig, stag, doe 2; boar, coyote 3; wolf, small bear, zombie dog, zombie vulture 4; mountain lion, zombie boar 5; bear, radiated vulture 6; dire wolf, zombie bear 8. Change them with `AnimalFeeds=animalBear:6,animalChicken:1` in `AzraelBait.cfg`; `AnimalFeedsToTame` is used for any animal not listed. Level bonuses and `MaxFeeds` still apply.
+
+**Feed rates in game (1.6.1):** admins can read and change them with `/thrall config feeds` (lists them) and `/thrall config feeds.animalBear 6`. Changes are saved with the world in `AzraelBaitSettings.cfg`; only the rates you changed are written there, so later default changes still apply to the rest.
