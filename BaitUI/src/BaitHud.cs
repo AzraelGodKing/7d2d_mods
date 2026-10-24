@@ -168,7 +168,7 @@ public class BaitHud : MonoBehaviour
     void Plate(Camera cam, EntityPlayerLocal p, EntityAlive e, string text, float frac, Color col, string extra, float maxDist)
     {
         if ((e.position - p.position).magnitude > maxDist) return;
-        Vector3 sp = cam.WorldToScreenPoint(e.position + Vector3.up * (e.height + 0.35f));
+        Vector3 sp = cam.WorldToScreenPoint(e.position - Origin.position + Vector3.up * (e.height + 0.35f));   // entity.position is world space; the camera lives in floating-origin space
         if (sp.z <= 0.1f) return;
         float x = sp.x, y = Screen.height - sp.y;
         float s = Sc;
