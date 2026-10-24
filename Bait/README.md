@@ -82,3 +82,5 @@ Set the meal counts with `RichBaitMeals` and `FeastBaitMeals`. `giveself azraelB
 **Feed rates in game (1.6.1):** admins can read and change them with `/thrall config feeds` (lists them) and `/thrall config feeds.animalBear 6`. Changes are saved with the world in `AzraelBaitSettings.cfg`; only the rates you changed are written there, so later default changes still apply to the rest.
 
 **Invulnerable mode (1.7.0):** `/thrall mode <n|all> invulnerable` - the thrall never attacks (like passive) and cannot be killed: all damage is cancelled and its health is kept full each tick, so bleeding, poison and fire don't hurt it either. Only despawn-type damage still applies. Mode is stored with the thrall like the others.
+
+**1.7.1:** an invulnerable thrall is also untargetable: zombies and animals can't pick it as a target (anything already hunting it lets go, checked every second), on top of all damage being cancelled. Turrets, traps, motion sensors and drones already ignore thralls.

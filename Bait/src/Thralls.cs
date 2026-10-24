@@ -385,6 +385,8 @@ public static partial class Thralls
     public static readonly Dictionary<int, float> Grace = new Dictionary<int, float>();
     public static bool InGrace(int entityId)
     {
+        LiveThrall lt;
+        if (Live.TryGetValue(entityId, out lt) && lt.Mode == 3) return true;   // invulnerable mode: untargetable by everything, for good
         float u;
         return Grace.Count > 0 && Grace.TryGetValue(entityId, out u) && Time.time < u;
     }
@@ -394,9 +396,14 @@ public static partial class Thralls
         if (BaitConfig.NewThrallGraceSeconds <= 0f) return;
         if (Grace.Count > 200) Grace.Clear();
         Grace[z.entityId] = Time.time + BaitConfig.NewThrallGraceSeconds;
+        ClearAttackers(z);
+    }
+
+    // anything already hunting this thrall lets go
+    static void ClearAttackers(EntityAlive z)
+    {
         try
         {
-            // anything already hunting it lets go
             foreach (var other in W.Entities.list)
             {
                 var a = other as EntityAlive;
@@ -404,7 +411,7 @@ public static partial class Thralls
                 if (a.GetAttackTarget() == z && (a.position - z.position).sqrMagnitude < 60f * 60f) a.SetAttackTarget(null, 0);
             }
         }
-        catch (Exception ex) { Dbg("grace clear failed: " + ex.Message); }
+        catch (Exception ex) { Dbg("clear attackers failed: " + ex.Message); }
     }
 
     static void MakeLive(EntityAlive z, ThrallRecord rec, EntityPlayer owner)

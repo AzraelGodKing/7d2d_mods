@@ -391,7 +391,8 @@ public static partial class Thralls
                     if (liveByRecord.TryGetValue(r.Id, out lid) && Live.TryGetValue(lid, out l)) l.Mode = mode;
                 }
                 dirty = true;
-                Tell(me, "Mode: " + (mode == 0 ? "aggressive (attacks hostiles it sees)" : mode == 1 ? "defensive (fights only what comes close to it or you)" : mode == 2 ? "passive (never starts a fight)" : "invulnerable (never attacks and cannot be killed)") + ".");
+                if (mode == 3) foreach (var r2 in t) { int lid2; if (liveByRecord.TryGetValue(r2.Id, out lid2)) { var ze = W != null ? W.GetEntity(lid2) as EntityAlive : null; if (ze != null) ClearAttackers(ze); } }
+                Tell(me, "Mode: " + (mode == 0 ? "aggressive (attacks hostiles it sees)" : mode == 1 ? "defensive (fights only what comes close to it or you)" : mode == 2 ? "passive (never starts a fight)" : "invulnerable (never attacks, cannot be killed, and nothing can target it)") + ".");
                 break;
             }
             case "heal":

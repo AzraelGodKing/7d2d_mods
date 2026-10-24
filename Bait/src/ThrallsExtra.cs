@@ -409,7 +409,7 @@ public static partial class Thralls
             if (lt.Mode < 2) continue;
             var e = W != null ? W.GetEntity(lt.EntityId) as EntityAlive : null;
             if (e == null || e.IsDead()) continue;
-            if (lt.Mode == 3) e.Stats.Health.Value = e.GetMaxHealth();   // invulnerable: also covers bleeding, poison and fire
+            if (lt.Mode == 3) { e.Stats.Health.Value = e.GetMaxHealth(); ClearAttackers(e); }   // invulnerable: also covers bleeding, poison and fire
             if (e.GetAttackTarget() != null) e.SetAttackTarget(null, 0);
             e.SetRevengeTarget(null);
         }
