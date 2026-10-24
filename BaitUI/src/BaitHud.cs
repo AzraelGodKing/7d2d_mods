@@ -42,11 +42,15 @@ public class BaitHud : MonoBehaviour
             ClearThrallMarks();
 
             // Tell the server mod we are here (only on servers that run Bait, and only a few tries).
-            if (!BaitData.HasData && helloTries < 3 && Time.time > nextHello && BaitData.ServerHasBait())
+            if (!BaitData.HasData && BaitData.ServerHasBait())
             {
-                helloTries++;
-                nextHello = Time.time + 12f;
-                BaitData.Cmd("/thrall hello", false);
+                if (helloTries < 3 && Time.time > nextHello)
+                {
+                    helloTries++;
+                    nextHello = Time.time + 15f;
+                    BaitData.Cmd("/thrall hello", false);
+                }
+                else if (helloTries >= 3 && Time.time > nextHello) BaitData.HelloGaveUp = true;   // stop asking: a server without Bait would show every ask as a chat line
             }
 
             // old fed tags
@@ -62,10 +66,10 @@ public class BaitHud : MonoBehaviour
             if (ui == null || ui.windowManager == null) return;
             var wm = ui.windowManager;
             if (UiSettings.Key == KeyCode.None || !Input.GetKeyDown(UiSettings.Key)) return;
-            if (wm.IsInputActive() || wm.IsModalWindowOpen() || wm.IsCursorWindowOpen()) return;
+            if (wm.IsInputActive()) return;
             if (GameManager.Instance != null && GameManager.Instance.IsPaused()) return;
             if (p.IsDead()) return;
-            wm.Open("azraelBaitRoster", true);
+            BaitData.TryOpenRoster();
         }
         catch (Exception e) { Log.Warning("[BaitUI] update: " + e.Message); }
     }
@@ -277,7 +281,7 @@ public class ConsoleCmdBaitUI : ConsoleCmdAbstract
     public override bool AllowedInMainMenu { get { return true; } }
     public override int DefaultPermissionLevel { get { return 1000; } }
     public override string[] getCommands() { return new[] { "baitui" }; }
-    public override string getDescription() { return "Bait UI: turn name tags, the party list and fed tags on or off, change the roster hotkey"; }
+    public override string getDescription() { return "Bait UI: turn name tags, the party list and fed tags on or off, change the roster hotkey, open the roster"; }
     public override string getHelp()
     {
         return "baitui                       - show settings\n" +
@@ -286,12 +290,18 @@ public class ConsoleCmdBaitUI : ConsoleCmdAbstract
                "baitui feed on|off           - 'Fed x/y' tags over creatures you are taming\n" +
                "baitui scale <number>       - size of the tags and party list (default 1.6)\n" +
                "baitui reset                - party list back to the default spot and size\n" +
-               "baitui key <key>             - roster window hotkey (default Home), 'none' to disable";
+               "baitui key <key>             - roster window hotkey (default Home), 'none' to disable\n" +
+               "baitui open                  - open or close the roster window";
     }
 
     public override void Execute(List<string> p, CommandSenderInfo info)
     {
         var con = SingletonMonoBehaviour<SdtdConsole>.Instance;
+        if (p.Count == 1 && p[0].ToLowerInvariant() == "open")
+        {
+            if (!BaitData.TryOpenRoster()) con.Output("Could not open the roster (not in a world, or the window XML did not load).");
+            return;
+        }
         if (p.Count == 1 && p[0].ToLowerInvariant() == "reset") { UiSettings.PartyX = 0.006f; UiSettings.PartyY = 0.14f; UiSettings.Scale = 1.6f; UiSettings.Save(); }
         else if (p.Count >= 2)
         {

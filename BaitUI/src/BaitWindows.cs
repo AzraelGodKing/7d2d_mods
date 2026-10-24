@@ -114,12 +114,12 @@ public class XUiC_AzraelBaitRoster : XUiController
         switch (name)
         {
             case "title":
-                value = BaitData.HasData ? "Thralls   " + BaitData.ActiveCount + "/" + BaitData.MaxActive + " active   " + BaitData.Thralls.Count + "/" + BaitData.MaxOwned + " held   power " + BaitData.Power
-                                         : "Thralls   (waiting for the server...)";
+                value = BaitData.HasData ? (BaitData.ServerTooOld ? "Thralls   (server Bait " + BaitData.ServerVersion + " is too old: this UI needs " + BaitData.NeedsServer + " or newer)   " : "Thralls   ") + BaitData.ActiveCount + "/" + BaitData.MaxActive + " active   " + BaitData.Thralls.Count + "/" + BaitData.MaxOwned + " held   power " + BaitData.Power + (string.IsNullOrEmpty(BaitData.ServerVersion) ? "" : "   Bait " + BaitData.ServerVersion)
+                                         : BaitData.HelloGaveUp ? "Thralls   (no answer from the server: it needs the Zombie and Animal Bait mod, 1.3 or newer)" : "Thralls   (waiting for the server...)";
                 return true;
             case "status": value = BaitData.StatusText; return true;
             case "pagetext": value = "Page " + (page + 1) + "/" + Math.Max(1, (BaitData.Thralls.Count + Rows - 1) / Rows); return true;
-            case "pbarstxt": value = "Party members' bars: " + (UiSettings.PartyBars ? "on" : "off"); return true;
+            case "pbarstxt": value = BaitData.HasData && !BaitData.ServerHasPartyBars ? "Party bars: server needs " + BaitData.PartyBarsNeed + "+" : "Party members' bars: " + (UiSettings.PartyBars ? "on" : "off"); return true;
             case "colortxt": value = "Name color: " + UiSettings.NameLabel(); return true;
             case "bartxt": value = "Bar color: " + UiSettings.BarLabel(); return true;
             case "targettxt": { var tt = UiSettings.TargetThrall; value = "Colors for: " + (tt == null ? "all thralls" : tt.Idx + ". " + tt.Label) + " (click)"; return true; }

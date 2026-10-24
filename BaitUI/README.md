@@ -43,3 +43,9 @@ The buttons send the normal `/thrall` chat commands (they are hidden from other 
 **1.5.1:** The roster window now opens with the Home key, since the backslash key is missing or elsewhere on some keyboard layouts. Settings files that still held the old default are moved to Home; `baitui key <key>` picks any other key (Backslash included).
 
 **1.6.0:** Players pick their own roster hotkey: open the roster window (Home by default), click the `Hotkey` button in the bottom row and press the key you want (Esc cancels). It is saved with the other settings. `baitui key <key>` and `baitui key none` still work from the console.
+
+**1.6.1:** On a dedicated or listen-server client, `/thrall hello` and roster buttons now go through `ChatMessageClient`. The old path called `ChatMessageServer` on the player's game, which the dedicated host refuses, so the roster stayed empty. Home also opens the window while another cursor HUD is up. `baitui open` toggles the roster from F1.
+
+**1.6.2:** Dedicated hosts send their own XUi to every client, which never includes this client-only roster. The client now puts the roster windows back on after those files arrive, so Home and `baitui open` work on a dedicated server without installing Bait UI on the host.
+
+**1.6.3:** Version check. The roster title shows the server's Bait version (Bait 1.7.6 or newer sends it) and warns when it is older than 1.3.0, the oldest this UI can talk to. The `Party members' bars` button says so when the server is older than 1.7.3. The UI asks the server for its roster 3 times (15 s apart) instead of 8, hides the `/thrall` command lines from your chat, and says when the server never answered.

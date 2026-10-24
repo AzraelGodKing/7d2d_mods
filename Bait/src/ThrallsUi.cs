@@ -9,6 +9,7 @@ using System.Text;
 public static partial class Thralls
 {
     const string UiTag = "\u200B\u200BBAIT|";
+    public const string ModVersion = "1.7.6";   // keep in step with mod.json; sent to Bait UI so it can warn about a server that is too old
     static readonly HashSet<int> uiClients = new HashSet<int>();
     static readonly Dictionary<int, string> uiRoster = new Dictionary<int, string>();
     static readonly Dictionary<int, string> uiCfg = new Dictionary<int, string>();
@@ -49,7 +50,7 @@ public static partial class Thralls
     {
         var l = new List<string>();
         var list = RosterOf(key);
-        l.Add("S|" + list.Count + "|" + MaxOwnedFor(key) + "|" + MaxActiveFor(key) + "|" + ActiveCount(key) + "|" + (IsAdmin(me) ? 1 : 0) + "|" + PowerOf(key));
+        l.Add("S|" + list.Count + "|" + MaxOwnedFor(key) + "|" + MaxActiveFor(key) + "|" + ActiveCount(key) + "|" + (IsAdmin(me) ? 1 : 0) + "|" + PowerOf(key) + "|" + ModVersion);
         for (int i = 0; i < list.Count; i++)
         {
             var r = list[i];

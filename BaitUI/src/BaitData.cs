@@ -15,6 +15,7 @@ public class AzraelBaitUIMod : IModApi
     public void InitMod(Mod _modInstance)
     {
         if (GameManager.IsDedicatedServer) return;
+        BaitXui.Mod = _modInstance;
         UiSettings.Load();
         new Harmony("azrael.baitui").PatchAll(typeof(AzraelBaitUIMod).Assembly);
         var go = new GameObject("AzraelBaitUI");
@@ -60,7 +61,7 @@ public static class BaitData
 
     public static void Reset()
     {
-        Thralls.Clear(); Config.Clear(); Exclude.Clear(); Feeds.Clear(); All.Clear(); Owner.Clear();
+        Thralls.Clear(); Config.Clear(); Exclude.Clear(); Feeds.Clear(); All.Clear(); Owner.Clear(); HelloGaveUp = false; ServerVersion = ""; ServerHasOwners = false;
         HasData = false; Admin = false; Status = ""; Version++;
     }
 
@@ -96,7 +97,7 @@ public static class BaitData
             {
                 case "S":
                     pendT = new List<UiThrall>(); pendTn = I(At(f, 1));
-                    MaxOwned = I(At(f, 2)); MaxActive = I(At(f, 3)); ActiveCount = I(At(f, 4)); Admin = I(At(f, 5)) == 1; Power = I(At(f, 6));
+                    MaxOwned = I(At(f, 2)); MaxActive = I(At(f, 3)); ActiveCount = I(At(f, 4)); Admin = I(At(f, 5)) == 1; Power = I(At(f, 6)); ServerVersion = At(f, 7);
                     if (pendTn == 0) CommitT();
                     break;
                 case "T":
@@ -117,6 +118,7 @@ public static class BaitData
                     foreach (string s in At(f, 1).Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)) All.Add(I(s));
                     break;
                 case "O":
+                    ServerHasOwners = true;
                     if (At(f, 1) == "1") Owner.Clear();
                     foreach (string s in At(f, 2).Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)) { var kv = s.Split(':'); if (kv.Length == 2) Owner[I(kv[0])] = I(kv[1]); }
                     break;
@@ -137,19 +139,69 @@ public static class BaitData
         get { var w = GameManager.Instance != null ? GameManager.Instance.World : null; return w != null ? w.GetPrimaryPlayer() : null; }
     }
 
-    // Sends a /thrall chat command (hidden from other players by the server mod).
+    // Sends a /thrall command to the machine that runs Bait.
+    // Dedicated / listen-server clients must use ChatMessageClient: ChatMessageServer
+    // only runs on the host, and the dedicated process refuses that package.
     public static void Cmd(string text, bool expectReply = true)
     {
         var p = Me;
         if (p == null || GameManager.Instance == null) return;
         if (expectReply) LastCmd = Time.time;
-        try { GameManager.Instance.ChatMessageServer(null, EChatType.Global, p.entityId, text, null, EMessageSender.SenderIdAsPlayer); }
+        try
+        {
+            var cm = SingletonMonoBehaviour<ConnectionManager>.Instance;
+            var bb = GeneratedTextManager.BbCodeSupportMode.Supported;
+            if (cm != null && cm.IsClient)
+                GameManager.Instance.ChatMessageClient(EChatType.Global, p.entityId, text, null, EMessageSender.SenderIdAsPlayer, bb);
+            else
+                GameManager.Instance.ChatMessageServer(null, EChatType.Global, p.entityId, text, null, EMessageSender.SenderIdAsPlayer, bb);
+        }
         catch (Exception e) { Log.Warning("[BaitUI] send: " + e.Message); }
+    }
+
+    public static bool TryOpenRoster()
+    {
+        try
+        {
+            var ui = LocalPlayerUI.GetUIForPrimaryPlayer();
+            if (ui == null || ui.windowManager == null) return false;
+            var wm = ui.windowManager;
+            if (wm.IsWindowOpen("azraelBaitRoster")) { wm.Close("azraelBaitRoster"); return true; }
+            BaitXui.TryRegister(ui);
+            wm.Open("azraelBaitRoster", true);
+            return wm.IsWindowOpen("azraelBaitRoster");
+        }
+        catch (Exception e) { Log.Warning("[BaitUI] open roster: " + e.Message); return false; }
     }
 
     public static bool ServerHasBait()
     {
         try { return ItemClass.GetItemClass("azraelBait", true) != null; } catch { return false; }
+    }
+
+    // What the server told us about itself. ServerVersion is empty on a Bait older than 1.7.6, which did not send it.
+    public static string ServerVersion = "";
+    public static bool ServerHasOwners;   // got the owner list (Bait 1.7.3+), which the party members' bars need
+    public const string NeedsServer = "1.3.0";     // the oldest Bait this UI can talk to at all
+    public const string PartyBarsNeed = "1.7.3";   // party members' bars
+
+    public static bool Older(string have, string need)
+    {
+        System.Version h, n;
+        return System.Version.TryParse(have, out h) && System.Version.TryParse(need, out n) && h < n;
+    }
+    public static bool ServerTooOld { get { return !string.IsNullOrEmpty(ServerVersion) && Older(ServerVersion, NeedsServer); } }
+    public static bool ServerHasPartyBars { get { return ServerHasOwners || (!string.IsNullOrEmpty(ServerVersion) && !Older(ServerVersion, PartyBarsNeed)); } }
+
+    public static bool HelloGaveUp;   // asked a few times and the server never answered
+
+    // The chat line a /thrall command leaves behind when the server does not swallow it ("Name: /thrall hello").
+    public static bool IsThrallCommandLine(string m)
+    {
+        if (string.IsNullOrEmpty(m)) return false;
+        int i = m.IndexOf("/thrall", StringComparison.OrdinalIgnoreCase);
+        if (i < 0) return false;
+        return i == 0 || (i >= 2 && m[i - 1] == ' ' && m[i - 2] == ':');
     }
 
     public static string StatusText { get { return Time.time - StatusAt < 8f ? Status : ""; } }
@@ -187,7 +239,7 @@ public static class BaitChatPatch
 {
     static bool Prefix(string _message)
     {
-        return !BaitData.Handle(_message);
+        return !(BaitData.Handle(_message) || BaitData.IsThrallCommandLine(_message));
     }
 }
 

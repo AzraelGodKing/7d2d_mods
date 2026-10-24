@@ -94,3 +94,5 @@ Set the meal counts with `RichBaitMeals` and `FeastBaitMeals`. `giveself azraelB
 **1.7.4:** Finding out why thralls die with no recorded hit. Every thrall death now writes a `kill trace` line to the server log (health, damage type, active buffs, and which game method called Kill), and the killing blow's damage type now shows in the death text when no earlier hit was seen.
 
 **1.7.5:** Zombies never start at level 0 any more: a wild zombie spawns at level 1 or higher, and a zombie thrall that was level 0 (it came from a one-in-three roll on the low game days) becomes level 1 when it next comes out. Animals and dogs are unchanged.
+
+**1.7.6:** Bait UI is told which Bait version the server runs (a new last field in the first record it sends), so the UI can warn when the server is too old.
