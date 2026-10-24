@@ -35,3 +35,5 @@ The buttons send the normal `/thrall` chat commands (they are hidden from other 
 **1.3.0:** The roster window has a new bottom row: buttons to switch name tags, the party list and fed tags on or off, and a size - / + pair (steps of 0.2, from 0.5 to 4). They save with the other settings, the same as the `baitui` console command.
 
 **1.3.1:** Name tags and HP bars sat in the wrong place on screen once you had travelled a few hundred blocks from where the world loaded: the game recentres its scene as you move, and the tag position did not allow for that. They now line up with the thrall.
+
+**1.4.0:** Name tags and HP bars now also show over thralls that belong to members of your party (switch: `Party members' bars` in the roster window; needs Bait 1.7.3 on the server, and the owner's thralls within 45 blocks). New roster-window buttons pick the colour of the name text and of the HP bar (Auto keeps the green-to-red health colour). Thralls no longer show an enemy marker on the compass or map.

@@ -57,6 +57,9 @@ public class XUiC_AzraelBaitRoster : XUiController
         Hook("tgltags", () => { UiSettings.Nameplates = !UiSettings.Nameplates; UiSettings.Save(); seen = -1; });
         Hook("tglparty", () => { UiSettings.Party = !UiSettings.Party; UiSettings.Save(); seen = -1; });
         Hook("tglfed", () => { UiSettings.Feed = !UiSettings.Feed; UiSettings.Save(); seen = -1; });
+        Hook("tglpbars", () => { UiSettings.PartyBars = !UiSettings.PartyBars; UiSettings.Save(); seen = -1; });
+        Hook("cyclecolor", () => { UiSettings.NameColorIdx = (UiSettings.NameColorIdx + 1) % UiSettings.ColorNames.Length; UiSettings.Save(); seen = -1; });
+        Hook("cyclebar", () => { UiSettings.BarColorIdx = (UiSettings.BarColorIdx + 1) % UiSettings.BarColorNames.Length; UiSettings.Save(); seen = -1; });
         Hook("sizedown", () => { UiSettings.Scale = Mathf.Clamp(Mathf.Round((UiSettings.Scale - 0.2f) * 10f) / 10f, 0.5f, 4f); UiSettings.Save(); seen = -1; });
         Hook("sizeup", () => { UiSettings.Scale = Mathf.Clamp(Mathf.Round((UiSettings.Scale + 0.2f) * 10f) / 10f, 0.5f, 4f); UiSettings.Save(); seen = -1; });
     }
@@ -107,6 +110,9 @@ public class XUiC_AzraelBaitRoster : XUiController
                 return true;
             case "status": value = BaitData.StatusText; return true;
             case "pagetext": value = "Page " + (page + 1) + "/" + Math.Max(1, (BaitData.Thralls.Count + Rows - 1) / Rows); return true;
+            case "pbarstxt": value = "Party members' bars: " + (UiSettings.PartyBars ? "on" : "off"); return true;
+            case "colortxt": value = "Name color: " + UiSettings.ColorNames[UiSettings.NameColorIdx]; return true;
+            case "bartxt": value = "Bar color: " + UiSettings.BarColorNames[UiSettings.BarColorIdx]; return true;
             case "tagstxt": value = "Name tags: " + (UiSettings.Nameplates ? "on" : "off"); return true;
             case "partytxt": value = "Party list: " + (UiSettings.Party ? "on" : "off"); return true;
             case "fedtxt": value = "Fed tags: " + (UiSettings.Feed ? "on" : "off"); return true;

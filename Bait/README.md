@@ -88,3 +88,5 @@ Set the meal counts with `RichBaitMeals` and `FeastBaitMeals`. `giveself azraelB
 **1.7.2:** Heal and revive now find your bait on a dedicated server, with no client mod needed. The server cannot see a remote player's bag or toolbelt, only the saved copy their game sends, so it now reads that copy for the count and takes the bait with a game event that runs on your own game (new `Config/gameevents.xml`, and each bait item has a tag in `items.xml`). Damage that reaches a thrall through something another player owns (a turret, trap or explosive) is cancelled like a direct hit. Drones never bark at or attack a thrall.
 
 **Kill credit (1.7.2):** a thrall that is out with you now also gets credit for the hostile creatures you kill within `OwnerKillShareRange` (30 blocks, 0 = off), so clearing a POI mostly yourself still levels your thralls (8 kills per level by default). Before, only kills the thrall landed itself counted.
+
+**1.7.3:** Sends Bait UI who owns each thrall, so party members can see each other's thralls' HP bars (older Bait UI versions ignore it).

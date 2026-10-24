@@ -89,8 +89,17 @@ public static partial class Thralls
         ids.Sort();
         var sbIds = new StringBuilder("A|");
         for (int i = 0; i < ids.Count; i++) { if (i > 0) sbIds.Append(','); sbIds.Append(ids[i]); }
-        sig = sbIds.ToString();
-        if (force || !uiAll.TryGetValue(id, out old) || old != sig) { uiAll[id] = sig; UiSend(id, new List<string> { sig }); }
+        // who owns each one, so a party can see its members' thralls (separate records, in chunks, so older clients just skip them)
+        var recs = new List<string> { sbIds.ToString() };
+        for (int i = 0; i < ids.Count; i += 40)
+        {
+            var sbOwn = new StringBuilder("O|" + (i == 0 ? "1" : "0") + "|");
+            for (int j = i; j < ids.Count && j < i + 40; j++) { if (j > i) sbOwn.Append(','); sbOwn.Append(ids[j]).Append(':').Append(Live[ids[j]].OwnerEntityId); }
+            recs.Add(sbOwn.ToString());
+        }
+        if (ids.Count == 0) recs.Add("O|1|");
+        sig = string.Join("~", recs.ToArray());
+        if (force || !uiAll.TryGetValue(id, out old) || old != sig) { uiAll[id] = sig; UiSend(id, recs); }
     }
 
     // Called once a second.

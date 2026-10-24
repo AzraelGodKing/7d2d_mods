@@ -12,6 +12,22 @@ public class BaitHud : MonoBehaviour
     float styleScale;
     static float Sc { get { return UiSettings.Scale * Screen.height / 1080f; } }
 
+    float nextNav;
+
+    // Thralls are not hostile to their players: take the enemy marker (compass and map) off every thrall the server told us about.
+    void ClearThrallMarks()
+    {
+        if (Time.time < nextNav || BaitData.All.Count == 0 || !NavObjectManager.HasInstance) return;
+        nextNav = Time.time + 1f;
+        foreach (int id in BaitData.All)
+        {
+            var e = BaitData.Live(id);
+            if (e == null || e.NavObject == null) continue;
+            NavObjectManager.Instance.UnRegisterNavObjectByEntityID(id);
+            e.NavObject = null;
+        }
+    }
+
     void Update()
     {
         try
@@ -22,6 +38,8 @@ public class BaitHud : MonoBehaviour
                 if (BaitData.HasData || helloTries > 0) { BaitData.Reset(); helloTries = 0; }
                 return;
             }
+
+            ClearThrallMarks();
 
             // Tell the server mod we are here (only on servers that run Bait, and only a few tries).
             if (!BaitData.HasData && helloTries < 3 && Time.time > nextHello && BaitData.ServerHasBait())
@@ -92,7 +110,7 @@ public class BaitHud : MonoBehaviour
                 foreach (var t in BaitData.Thralls)
                 {
                     var e = BaitData.LiveThrall(t);
-                    if (hud && UiSettings.Nameplates && e != null && t.Active) Plate(cam, p, e, Title(t), HpFrac(e), t.Mode == 3 ? InvColor : HpColor(HpFrac(e)), t.Mode == 3 ? (t.Stay ? "invulnerable, hold" : "invulnerable") : (t.Stay ? "hold" : null), 45f);
+                    if (hud && UiSettings.Nameplates && e != null && t.Active) Plate(cam, p, e, Title(t), HpFrac(e), t.Mode == 3 ? InvColor : UiSettings.BarColor(HpFrac(e), HpColor(HpFrac(e))), t.Mode == 3 ? (t.Stay ? "invulnerable, hold" : "invulnerable") : (t.Stay ? "hold" : null), 45f);
                     if (UiSettings.Party && t.Active)
                     {
                         float s = Sc, y = PartyRect.y + 22 * s + row * 36 * s;
@@ -107,9 +125,25 @@ public class BaitHud : MonoBehaviour
                         }
                         float f = e != null ? HpFrac(e) : 0f;
                         Shadow(new Rect(PartyRect.x + 4, y, 320 * s, 20 * s), (t.Tether ? "[T] " : "") + (t.Mode == 3 ? "[Inv] " : "") + Title(t) + (e == null ? " (away)" : ""), small);
-                        Bar(new Rect(PartyRect.x + 4, y + 21 * s, 220 * s, 7 * s), f, t.Mode == 3 ? InvColor : HpColor(f));
+                        Bar(new Rect(PartyRect.x + 4, y + 21 * s, 220 * s, 7 * s), f, t.Mode == 3 ? InvColor : UiSettings.BarColor(f, HpColor(f)));
                         row++;
                     }
+                }
+            }
+            if (hud && UiSettings.Nameplates && UiSettings.PartyBars && p.Party != null)
+            {
+                foreach (var kv in BaitData.Owner)
+                {
+                    if (kv.Value == p.entityId || !p.Party.ContainsMember(kv.Value)) continue;
+                    bool mine = false;
+                    foreach (var t in BaitData.Thralls) if (t.EntityId == kv.Key) { mine = true; break; }
+                    if (mine) continue;
+                    var e = BaitData.Live(kv.Key);
+                    if (e == null) continue;
+                    string cn = e.EntityClass != null ? Localization.Get(EntityClass.list[e.entityClass].entityClassName) : "Thrall";
+                    var ow = e.world != null ? e.world.GetEntity(kv.Value) as EntityPlayer : null;
+                    string label = (ow != null ? ow.PlayerDisplayName + "'s " : "") + cn;
+                    Plate(cam, p, e, label, HpFrac(e), UiSettings.BarColor(HpFrac(e), HpColor(HpFrac(e))), null, 45f);
                 }
             }
             if (hud && UiSettings.Feed)
@@ -172,16 +206,18 @@ public class BaitHud : MonoBehaviour
         if (sp.z <= 0.1f) return;
         float x = sp.x, y = Screen.height - sp.y;
         float s = Sc;
-        Shadow(new Rect(x - 120 * s, y - 20 * s, 240 * s, 18 * s), text + (extra != null ? " [" + extra + "]" : ""), label);
+        Shadow(new Rect(x - 120 * s, y - 20 * s, 240 * s, 18 * s), text + (extra != null ? " [" + extra + "]" : ""), label, UiSettings.NameColor);
         Bar(new Rect(x - 50 * s, y - 1, 100 * s, 8 * s), frac, col);
     }
 
-    static void Shadow(Rect r, string text, GUIStyle st)
+    static void Shadow(Rect r, string text, GUIStyle st) { Shadow(r, text, st, Color.white); }
+
+    static void Shadow(Rect r, string text, GUIStyle st, Color tint)
     {
         var old = GUI.color;
         GUI.color = new Color(0, 0, 0, 0.9f);
         GUI.Label(new Rect(r.x + 1, r.y + 1, r.width, r.height), text, st);
-        GUI.color = Color.white;
+        GUI.color = tint;
         GUI.Label(r, text, st);
         GUI.color = old;
     }

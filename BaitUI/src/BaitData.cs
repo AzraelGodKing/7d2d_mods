@@ -44,6 +44,7 @@ public static class BaitData
     public static readonly List<string[]> Config = new List<string[]>();   // name, value, type (i f b)
     public static readonly List<string> Exclude = new List<string>();
     public static readonly Dictionary<int, UiFeedInfo> Feeds = new Dictionary<int, UiFeedInfo>();
+    public static readonly Dictionary<int, int> Owner = new Dictionary<int, int>();   // thrall entity id -> owner entity id (every thrall on the server)
     public static readonly HashSet<int> All = new HashSet<int>();   // every thrall on the server (any owner): turrets and motion sensors skip them
     public static int MaxOwned, MaxActive, ActiveCount, Power;
     public static bool Admin, HasData;
@@ -59,7 +60,7 @@ public static class BaitData
 
     public static void Reset()
     {
-        Thralls.Clear(); Config.Clear(); Exclude.Clear(); Feeds.Clear(); All.Clear();
+        Thralls.Clear(); Config.Clear(); Exclude.Clear(); Feeds.Clear(); All.Clear(); Owner.Clear();
         HasData = false; Admin = false; Status = ""; Version++;
     }
 
@@ -114,6 +115,10 @@ public static class BaitData
                 case "A":
                     All.Clear();
                     foreach (string s in At(f, 1).Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)) All.Add(I(s));
+                    break;
+                case "O":
+                    if (At(f, 1) == "1") Owner.Clear();
+                    foreach (string s in At(f, 2).Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)) { var kv = s.Split(':'); if (kv.Length == 2) Owner[I(kv[0])] = I(kv[1]); }
                     break;
                 case "F":
                     Feeds[I(At(f, 1))] = new UiFeedInfo { Cur = I(At(f, 2)), Need = I(At(f, 3)), At = Time.time };
@@ -192,6 +197,14 @@ public static class UiSettings
     public static bool Nameplates = true, Party = true, Feed = true;
     public static float PartyX = 0.006f, PartyY = 0.14f;   // party list position (fraction of the screen)
     public static float Scale = 1.6f;   // size of the name tags and party list
+    public static bool PartyBars = true;   // also show name tags and HP bars over thralls that belong to members of your party
+    public static readonly string[] ColorNames = { "White", "Yellow", "Cyan", "Green", "Orange", "Pink", "Red" };
+    static readonly Color[] ColorValues = { Color.white, new Color(1f, 0.92f, 0.25f), new Color(0.4f, 0.95f, 1f), new Color(0.5f, 1f, 0.45f), new Color(1f, 0.6f, 0.2f), new Color(1f, 0.55f, 0.85f), new Color(1f, 0.35f, 0.35f) };
+    public static int BarColorIdx = 0;    // 0 = auto (green to red by health), 1.. = a fixed colour from the list below
+    public static readonly string[] BarColorNames = { "Auto", "White", "Yellow", "Cyan", "Green", "Orange", "Pink", "Red" };
+    public static Color BarColor(float frac, Color auto) { return BarColorIdx <= 0 ? auto : ColorValues[Mathf.Clamp(BarColorIdx - 1, 0, ColorValues.Length - 1)]; }
+    public static int NameColorIdx = 0;   // colour of the name tag text
+    public static Color NameColor { get { return ColorValues[Mathf.Clamp(NameColorIdx, 0, ColorValues.Length - 1)]; } }
 
     static string FilePath { get { try { return Path.Combine(GameIO.GetUserGameDataDir(), "AzraelBaitUI.txt"); } catch { return null; } } }
 
@@ -222,6 +235,9 @@ public static class UiSettings
                     case "nameplates": Nameplates = on; break;
                     case "party": Party = on; break;
                     case "feed": Feed = on; break;
+                    case "partybars": PartyBars = on; break;
+                    case "barcolor": { int bi = Array.FindIndex(BarColorNames, n => n.Equals(v, StringComparison.OrdinalIgnoreCase)); if (bi >= 0) BarColorIdx = bi; break; }
+                    case "namecolor": { int ci = Array.FindIndex(ColorNames, n => n.Equals(v, StringComparison.OrdinalIgnoreCase)); if (ci >= 0) NameColorIdx = ci; break; }
                     case "partyx": float px; if (float.TryParse(v, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out px)) PartyX = Mathf.Clamp01(px); break;
                     case "partyy": float py; if (float.TryParse(v, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out py)) PartyY = Mathf.Clamp01(py); break;
                     case "scale": float sc; if (float.TryParse(v, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out sc)) Scale = Mathf.Clamp(sc, 0.5f, 4f); break;
@@ -237,7 +253,7 @@ public static class UiSettings
         {
             var p = FilePath;
             if (p == null) return;
-            File.WriteAllText(p, "key=" + Key + "\nnameplates=" + (Nameplates ? "on" : "off") + "\nparty=" + (Party ? "on" : "off") + "\nfeed=" + (Feed ? "on" : "off") + "\nscale=" + Scale.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) +
+            File.WriteAllText(p, "key=" + Key + "\nnameplates=" + (Nameplates ? "on" : "off") + "\nparty=" + (Party ? "on" : "off") + "\nfeed=" + (Feed ? "on" : "off") + "\npartybars=" + (PartyBars ? "on" : "off") + "\nbarcolor=" + BarColorNames[Mathf.Clamp(BarColorIdx, 0, BarColorNames.Length - 1)] + "\nnamecolor=" + ColorNames[Mathf.Clamp(NameColorIdx, 0, ColorNames.Length - 1)] + "\nscale=" + Scale.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) +
                 "\npartyx=" + PartyX.ToString("0.####", System.Globalization.CultureInfo.InvariantCulture) + "\npartyy=" + PartyY.ToString("0.####", System.Globalization.CultureInfo.InvariantCulture) + "\n");
         }
         catch (Exception e) { Log.Warning("[BaitUI] settings save: " + e.Message); }
