@@ -5,14 +5,15 @@ Small mods for 7 Days to Die, built and tested on **V3.3**.
 | Mod | Type | Install on | Version |
 |---|---|---|---|
 | [Remove Any Entity](#remove-any-entity) | Code (Harmony) | Server only | 2.0.1 |
-| [Quest Disconnect Fix](#quest-disconnect-fix) | Code (Harmony) | Server only | 1.2.5 |
-| [Honk Door Fix](#honk-door-fix) | Code (Harmony) | Server only | 1.2.5 |
+| [Quest Disconnect Fix](#quest-disconnect-fix) | Code (Harmony) | Server only | 1.3.0 |
+| [Honk Door Fix](#honk-door-fix) | Code (Harmony) | Server only | 1.3.0 |
 | [Speedometer](#speedometer) | Code + UI | Players only | 1.1.1 |
 | [Craft From Chests](#craft-from-chests) | Code (Harmony) | Players only | 1.2.0 |
 | [Upgrade Bench](#upgrade-bench) | Code + XML | Server **and** every player | 1.0.2 |
-| [Keep Backpacks](#keep-backpacks) | Code | Server only | 1.2.5 |
+| [Keep Backpacks](#keep-backpacks) | Code | Server only | 1.3.0 |
 | [Blood Moon Sound](#blood-moon-sound) | Code (Harmony) | Players (own sound); server optional (sound for everyone, Discord posts) | 1.2.2 |
-| [Zombie and Animal Bait](#zombie-and-animal-bait) | Code (Harmony) + XML | Server only | 1.2.5 |
+| [Zombie and Animal Bait](#zombie-and-animal-bait) | Code (Harmony) + XML | Server only | 1.3.0 |
+| [Bait UI](#bait-ui) | Code + UI | Players only (optional, needs Bait on the server) | 1.0.0 |
 
 Download the zips from the Releases page, unzip, and put the folder inside the game's `Mods` folder
 (or the server's `Mods` folder). Code that a player installs needs EasyAntiCheat turned off.
@@ -304,6 +305,10 @@ Setup: copy `discord.example.txt` to `discord.txt` **on the server**, paste the 
   hear only theirs. Fixed start/dawn both posting when a time skip lands after midnight.
 - 1.0.1: `bmsound` now works on multiplayer servers that don't have the mod.
 - 1.0.0: first version.
+
+## Bait UI
+
+Optional client add-on for Zombie and Animal Bait: roster window (F7), name tags with HP bars, party list, fed tags and an admin window. Players only; needs Bait 1.3.0+ on the server. See [BaitUI/README.md](BaitUI/README.md).
 
 ## Zombie and Animal Bait
 

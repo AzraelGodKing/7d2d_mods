@@ -139,6 +139,15 @@ public static class BaitConfig
 
     public static string KeyName(string key) { FieldInfo f = Find(key); return f == null ? null : f.Name; }
 
+    // name|value|type for the client UI (type: i int, f float, b bool)
+    public static List<string> Describe()
+    {
+        var l = new List<string>();
+        foreach (FieldInfo f in Fields())
+            l.Add("C|" + f.Name + "|" + Convert.ToString(f.GetValue(null), CultureInfo.InvariantCulture) + "|" + (f.FieldType == typeof(int) ? "i" : f.FieldType == typeof(float) ? "f" : "b"));
+        return l;
+    }
+
     public static List<string> All()
     {
         var l = new List<string>();

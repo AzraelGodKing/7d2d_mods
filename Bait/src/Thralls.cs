@@ -341,6 +341,7 @@ public static partial class Thralls
         if (!feeds.TryGetValue(z.entityId, out f) || f.Owner != ownerId) { f = new Feed { Owner = ownerId }; feeds[z.entityId] = f; }
         f.Count += Math.Max(1, meals);
         int need = FeedsNeeded(cls, LevelOf(z.entityId));
+        UiFeed(ownerId, z.entityId, Math.Min(f.Count, need), need);
         if (f.Count < need) { Notify(ownerId, Pretty(cls) + " fed " + f.Count + "/" + need + (meals > 1 ? " (+" + meals + ")" : "") + "."); return; }
 
         string key = KeyOf(owner);

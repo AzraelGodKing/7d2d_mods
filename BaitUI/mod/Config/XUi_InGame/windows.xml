@@ -1,0 +1,561 @@
+<configs>
+	<append xpath="/windows">
+		<window name="windowAzraelBaitRoster" anchor="Center" pos="-415, 270" width="830" height="540" depth="15" controller="AzraelBaitRoster, AzraelBaitUI" cursor_area="true">
+			<sprite depth="1" name="background" sprite="menu_empty" color="[darkestGrey]" type="sliced" />
+			<sprite depth="8" name="border" sprite="menu_empty3px" color="[black]" type="sliced" fillcenter="false" />
+			<label depth="3" pos="12,-8" width="806" height="34" font_size="28" text="{title}" />
+			<rect name="row1" pos="0,-52" width="830" height="44" depth="2" visible="{r1vis}">
+				<sprite depth="1" sprite="menu_empty" color="[darkGrey]" type="sliced" width="818" height="42" pos="6,0" />
+				<label depth="3" pos="14,-3" width="340" height="40" font_size="19" text="{r1text}" />
+			<rect pos="362,-4" width="66" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r1call" depth="3" width="66" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r1calltxt}" width="66" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="434,-4" width="66" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r1stay" depth="3" width="66" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r1staytxt}" width="66" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="506,-4" width="66" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r1mode" depth="3" width="66" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r1modetxt}" width="66" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="578,-4" width="84" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r1teth" depth="3" width="84" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r1tethtxt}" width="84" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="668,-4" width="72" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r1heal" depth="3" width="72" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r1healtxt}" width="72" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="746,-4" width="76" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r1rel" depth="3" width="76" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r1reltxt}" width="76" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			</rect>
+			<rect name="row2" pos="0,-98" width="830" height="44" depth="2" visible="{r2vis}">
+				<sprite depth="1" sprite="menu_empty" color="[darkGrey]" type="sliced" width="818" height="42" pos="6,0" />
+				<label depth="3" pos="14,-3" width="340" height="40" font_size="19" text="{r2text}" />
+			<rect pos="362,-4" width="66" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r2call" depth="3" width="66" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r2calltxt}" width="66" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="434,-4" width="66" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r2stay" depth="3" width="66" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r2staytxt}" width="66" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="506,-4" width="66" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r2mode" depth="3" width="66" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r2modetxt}" width="66" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="578,-4" width="84" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r2teth" depth="3" width="84" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r2tethtxt}" width="84" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="668,-4" width="72" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r2heal" depth="3" width="72" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r2healtxt}" width="72" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="746,-4" width="76" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r2rel" depth="3" width="76" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r2reltxt}" width="76" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			</rect>
+			<rect name="row3" pos="0,-144" width="830" height="44" depth="2" visible="{r3vis}">
+				<sprite depth="1" sprite="menu_empty" color="[darkGrey]" type="sliced" width="818" height="42" pos="6,0" />
+				<label depth="3" pos="14,-3" width="340" height="40" font_size="19" text="{r3text}" />
+			<rect pos="362,-4" width="66" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r3call" depth="3" width="66" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r3calltxt}" width="66" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="434,-4" width="66" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r3stay" depth="3" width="66" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r3staytxt}" width="66" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="506,-4" width="66" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r3mode" depth="3" width="66" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r3modetxt}" width="66" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="578,-4" width="84" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r3teth" depth="3" width="84" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r3tethtxt}" width="84" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="668,-4" width="72" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r3heal" depth="3" width="72" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r3healtxt}" width="72" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="746,-4" width="76" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r3rel" depth="3" width="76" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r3reltxt}" width="76" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			</rect>
+			<rect name="row4" pos="0,-190" width="830" height="44" depth="2" visible="{r4vis}">
+				<sprite depth="1" sprite="menu_empty" color="[darkGrey]" type="sliced" width="818" height="42" pos="6,0" />
+				<label depth="3" pos="14,-3" width="340" height="40" font_size="19" text="{r4text}" />
+			<rect pos="362,-4" width="66" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r4call" depth="3" width="66" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r4calltxt}" width="66" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="434,-4" width="66" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r4stay" depth="3" width="66" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r4staytxt}" width="66" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="506,-4" width="66" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r4mode" depth="3" width="66" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r4modetxt}" width="66" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="578,-4" width="84" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r4teth" depth="3" width="84" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r4tethtxt}" width="84" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="668,-4" width="72" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r4heal" depth="3" width="72" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r4healtxt}" width="72" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="746,-4" width="76" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r4rel" depth="3" width="76" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r4reltxt}" width="76" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			</rect>
+			<rect name="row5" pos="0,-236" width="830" height="44" depth="2" visible="{r5vis}">
+				<sprite depth="1" sprite="menu_empty" color="[darkGrey]" type="sliced" width="818" height="42" pos="6,0" />
+				<label depth="3" pos="14,-3" width="340" height="40" font_size="19" text="{r5text}" />
+			<rect pos="362,-4" width="66" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r5call" depth="3" width="66" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r5calltxt}" width="66" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="434,-4" width="66" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r5stay" depth="3" width="66" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r5staytxt}" width="66" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="506,-4" width="66" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r5mode" depth="3" width="66" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r5modetxt}" width="66" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="578,-4" width="84" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r5teth" depth="3" width="84" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r5tethtxt}" width="84" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="668,-4" width="72" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r5heal" depth="3" width="72" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r5healtxt}" width="72" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="746,-4" width="76" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r5rel" depth="3" width="76" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r5reltxt}" width="76" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			</rect>
+			<rect name="row6" pos="0,-282" width="830" height="44" depth="2" visible="{r6vis}">
+				<sprite depth="1" sprite="menu_empty" color="[darkGrey]" type="sliced" width="818" height="42" pos="6,0" />
+				<label depth="3" pos="14,-3" width="340" height="40" font_size="19" text="{r6text}" />
+			<rect pos="362,-4" width="66" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r6call" depth="3" width="66" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r6calltxt}" width="66" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="434,-4" width="66" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r6stay" depth="3" width="66" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r6staytxt}" width="66" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="506,-4" width="66" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r6mode" depth="3" width="66" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r6modetxt}" width="66" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="578,-4" width="84" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r6teth" depth="3" width="84" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r6tethtxt}" width="84" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="668,-4" width="72" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r6heal" depth="3" width="72" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r6healtxt}" width="72" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="746,-4" width="76" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r6rel" depth="3" width="76" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r6reltxt}" width="76" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			</rect>
+			<rect name="row7" pos="0,-328" width="830" height="44" depth="2" visible="{r7vis}">
+				<sprite depth="1" sprite="menu_empty" color="[darkGrey]" type="sliced" width="818" height="42" pos="6,0" />
+				<label depth="3" pos="14,-3" width="340" height="40" font_size="19" text="{r7text}" />
+			<rect pos="362,-4" width="66" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r7call" depth="3" width="66" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r7calltxt}" width="66" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="434,-4" width="66" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r7stay" depth="3" width="66" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r7staytxt}" width="66" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="506,-4" width="66" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r7mode" depth="3" width="66" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r7modetxt}" width="66" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="578,-4" width="84" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r7teth" depth="3" width="84" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r7tethtxt}" width="84" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="668,-4" width="72" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r7heal" depth="3" width="72" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r7healtxt}" width="72" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="746,-4" width="76" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r7rel" depth="3" width="76" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r7reltxt}" width="76" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			</rect>
+			<rect name="row8" pos="0,-374" width="830" height="44" depth="2" visible="{r8vis}">
+				<sprite depth="1" sprite="menu_empty" color="[darkGrey]" type="sliced" width="818" height="42" pos="6,0" />
+				<label depth="3" pos="14,-3" width="340" height="40" font_size="19" text="{r8text}" />
+			<rect pos="362,-4" width="66" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r8call" depth="3" width="66" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r8calltxt}" width="66" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="434,-4" width="66" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r8stay" depth="3" width="66" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r8staytxt}" width="66" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="506,-4" width="66" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r8mode" depth="3" width="66" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r8modetxt}" width="66" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="578,-4" width="84" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r8teth" depth="3" width="84" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r8tethtxt}" width="84" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="668,-4" width="72" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r8heal" depth="3" width="72" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r8healtxt}" width="72" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="746,-4" width="76" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="r8rel" depth="3" width="76" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{r8reltxt}" width="76" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			</rect>
+			<label depth="3" pos="12,-424" width="806" height="30" font_size="20" text="{emptytext}" />
+			<label depth="3" pos="12,-452" width="806" height="30" font_size="20" text="{status}" />
+			<rect pos="12,-494" width="80" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="prev" depth="3" width="80" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="Prev" width="80" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<label depth="3" pos="100,-498" width="110" height="30" font_size="20" text="{pagetext}" />
+			<rect pos="214,-494" width="80" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="next" depth="3" width="80" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="Next" width="80" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="310,-494" width="110" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="stowall" depth="3" width="110" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="Stow all" width="110" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="428,-494" width="110" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="followall" depth="3" width="110" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="Follow all" width="110" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="546,-494" width="100" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="stayall" depth="3" width="100" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="Stay all" width="100" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect name="adminrect" pos="0,0" width="830" height="540" depth="2" visible="{adminvis}">
+			<rect pos="654,-494" width="80" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="admin" depth="3" width="80" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="Admin" width="80" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			</rect>
+			<rect pos="742,-494" width="80" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="close" depth="3" width="80" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="Close" width="80" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+		</window>
+		<window name="windowAzraelBaitAdmin" anchor="Center" pos="-415, 330" width="830" height="660" depth="15" controller="AzraelBaitAdmin, AzraelBaitUI" cursor_area="true">
+			<sprite depth="1" name="background" sprite="menu_empty" color="[darkestGrey]" type="sliced" />
+			<sprite depth="8" name="border" sprite="menu_empty3px" color="[black]" type="sliced" fillcenter="false" />
+			<label depth="3" pos="12,-8" width="806" height="34" font_size="28" text="{title}" />
+			<rect name="crow1" pos="0,-50" width="830" height="34" depth="2" visible="{c1vis}">
+				<sprite depth="1" sprite="menu_empty" color="[darkGrey]" type="sliced" width="818" height="32" pos="6,0" />
+				<label depth="3" pos="14,-4" width="560" height="28" font_size="21" text="{c1text}" />
+			<rect pos="626,-2" width="80" height="30" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="c1minus" depth="3" width="80" height="30" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{c1minustxt}" width="80" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+				<rect name="cplus1" pos="0,0" width="830" height="34" depth="2" visible="{c1plusvis}">
+			<rect pos="714,-2" width="80" height="30" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="c1plus" depth="3" width="80" height="30" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="+" width="80" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+				</rect>
+			</rect>
+			<rect name="crow2" pos="0,-86" width="830" height="34" depth="2" visible="{c2vis}">
+				<sprite depth="1" sprite="menu_empty" color="[darkGrey]" type="sliced" width="818" height="32" pos="6,0" />
+				<label depth="3" pos="14,-4" width="560" height="28" font_size="21" text="{c2text}" />
+			<rect pos="626,-2" width="80" height="30" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="c2minus" depth="3" width="80" height="30" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{c2minustxt}" width="80" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+				<rect name="cplus2" pos="0,0" width="830" height="34" depth="2" visible="{c2plusvis}">
+			<rect pos="714,-2" width="80" height="30" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="c2plus" depth="3" width="80" height="30" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="+" width="80" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+				</rect>
+			</rect>
+			<rect name="crow3" pos="0,-122" width="830" height="34" depth="2" visible="{c3vis}">
+				<sprite depth="1" sprite="menu_empty" color="[darkGrey]" type="sliced" width="818" height="32" pos="6,0" />
+				<label depth="3" pos="14,-4" width="560" height="28" font_size="21" text="{c3text}" />
+			<rect pos="626,-2" width="80" height="30" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="c3minus" depth="3" width="80" height="30" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{c3minustxt}" width="80" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+				<rect name="cplus3" pos="0,0" width="830" height="34" depth="2" visible="{c3plusvis}">
+			<rect pos="714,-2" width="80" height="30" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="c3plus" depth="3" width="80" height="30" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="+" width="80" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+				</rect>
+			</rect>
+			<rect name="crow4" pos="0,-158" width="830" height="34" depth="2" visible="{c4vis}">
+				<sprite depth="1" sprite="menu_empty" color="[darkGrey]" type="sliced" width="818" height="32" pos="6,0" />
+				<label depth="3" pos="14,-4" width="560" height="28" font_size="21" text="{c4text}" />
+			<rect pos="626,-2" width="80" height="30" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="c4minus" depth="3" width="80" height="30" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{c4minustxt}" width="80" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+				<rect name="cplus4" pos="0,0" width="830" height="34" depth="2" visible="{c4plusvis}">
+			<rect pos="714,-2" width="80" height="30" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="c4plus" depth="3" width="80" height="30" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="+" width="80" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+				</rect>
+			</rect>
+			<rect name="crow5" pos="0,-194" width="830" height="34" depth="2" visible="{c5vis}">
+				<sprite depth="1" sprite="menu_empty" color="[darkGrey]" type="sliced" width="818" height="32" pos="6,0" />
+				<label depth="3" pos="14,-4" width="560" height="28" font_size="21" text="{c5text}" />
+			<rect pos="626,-2" width="80" height="30" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="c5minus" depth="3" width="80" height="30" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{c5minustxt}" width="80" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+				<rect name="cplus5" pos="0,0" width="830" height="34" depth="2" visible="{c5plusvis}">
+			<rect pos="714,-2" width="80" height="30" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="c5plus" depth="3" width="80" height="30" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="+" width="80" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+				</rect>
+			</rect>
+			<rect name="crow6" pos="0,-230" width="830" height="34" depth="2" visible="{c6vis}">
+				<sprite depth="1" sprite="menu_empty" color="[darkGrey]" type="sliced" width="818" height="32" pos="6,0" />
+				<label depth="3" pos="14,-4" width="560" height="28" font_size="21" text="{c6text}" />
+			<rect pos="626,-2" width="80" height="30" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="c6minus" depth="3" width="80" height="30" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{c6minustxt}" width="80" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+				<rect name="cplus6" pos="0,0" width="830" height="34" depth="2" visible="{c6plusvis}">
+			<rect pos="714,-2" width="80" height="30" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="c6plus" depth="3" width="80" height="30" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="+" width="80" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+				</rect>
+			</rect>
+			<rect name="crow7" pos="0,-266" width="830" height="34" depth="2" visible="{c7vis}">
+				<sprite depth="1" sprite="menu_empty" color="[darkGrey]" type="sliced" width="818" height="32" pos="6,0" />
+				<label depth="3" pos="14,-4" width="560" height="28" font_size="21" text="{c7text}" />
+			<rect pos="626,-2" width="80" height="30" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="c7minus" depth="3" width="80" height="30" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{c7minustxt}" width="80" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+				<rect name="cplus7" pos="0,0" width="830" height="34" depth="2" visible="{c7plusvis}">
+			<rect pos="714,-2" width="80" height="30" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="c7plus" depth="3" width="80" height="30" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="+" width="80" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+				</rect>
+			</rect>
+			<rect name="crow8" pos="0,-302" width="830" height="34" depth="2" visible="{c8vis}">
+				<sprite depth="1" sprite="menu_empty" color="[darkGrey]" type="sliced" width="818" height="32" pos="6,0" />
+				<label depth="3" pos="14,-4" width="560" height="28" font_size="21" text="{c8text}" />
+			<rect pos="626,-2" width="80" height="30" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="c8minus" depth="3" width="80" height="30" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{c8minustxt}" width="80" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+				<rect name="cplus8" pos="0,0" width="830" height="34" depth="2" visible="{c8plusvis}">
+			<rect pos="714,-2" width="80" height="30" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="c8plus" depth="3" width="80" height="30" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="+" width="80" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+				</rect>
+			</rect>
+			<rect name="crow9" pos="0,-338" width="830" height="34" depth="2" visible="{c9vis}">
+				<sprite depth="1" sprite="menu_empty" color="[darkGrey]" type="sliced" width="818" height="32" pos="6,0" />
+				<label depth="3" pos="14,-4" width="560" height="28" font_size="21" text="{c9text}" />
+			<rect pos="626,-2" width="80" height="30" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="c9minus" depth="3" width="80" height="30" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{c9minustxt}" width="80" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+				<rect name="cplus9" pos="0,0" width="830" height="34" depth="2" visible="{c9plusvis}">
+			<rect pos="714,-2" width="80" height="30" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="c9plus" depth="3" width="80" height="30" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="+" width="80" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+				</rect>
+			</rect>
+			<rect name="crow10" pos="0,-374" width="830" height="34" depth="2" visible="{c10vis}">
+				<sprite depth="1" sprite="menu_empty" color="[darkGrey]" type="sliced" width="818" height="32" pos="6,0" />
+				<label depth="3" pos="14,-4" width="560" height="28" font_size="21" text="{c10text}" />
+			<rect pos="626,-2" width="80" height="30" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="c10minus" depth="3" width="80" height="30" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{c10minustxt}" width="80" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+				<rect name="cplus10" pos="0,0" width="830" height="34" depth="2" visible="{c10plusvis}">
+			<rect pos="714,-2" width="80" height="30" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="c10plus" depth="3" width="80" height="30" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="+" width="80" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+				</rect>
+			</rect>
+			<rect pos="12,-414" width="80" height="34" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="prev" depth="3" width="80" height="34" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="Prev" width="80" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<label depth="3" pos="100,-418" width="110" height="30" font_size="20" text="{pagetext}" />
+			<rect pos="214,-414" width="80" height="34" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="next" depth="3" width="80" height="34" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="Next" width="80" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<label depth="3" pos="12,-462" width="400" height="30" font_size="22" text="{expagetext}" />
+			<rect name="xrow1" pos="0,-494" width="830" height="28" depth="2" visible="{x1vis}">
+				<label depth="3" pos="14,-2" width="560" height="26" font_size="20" text="{x1text}" />
+			<rect pos="626,-1" width="100" height="26" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="x1del" depth="3" width="100" height="26" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{x1deltxt}" width="100" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			</rect>
+			<rect name="xrow2" pos="0,-524" width="830" height="28" depth="2" visible="{x2vis}">
+				<label depth="3" pos="14,-2" width="560" height="26" font_size="20" text="{x2text}" />
+			<rect pos="626,-1" width="100" height="26" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="x2del" depth="3" width="100" height="26" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{x2deltxt}" width="100" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			</rect>
+			<rect name="xrow3" pos="0,-554" width="830" height="28" depth="2" visible="{x3vis}">
+				<label depth="3" pos="14,-2" width="560" height="26" font_size="20" text="{x3text}" />
+			<rect pos="626,-1" width="100" height="26" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="x3del" depth="3" width="100" height="26" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{x3deltxt}" width="100" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			</rect>
+			<rect name="xrow4" pos="0,-584" width="830" height="28" depth="2" visible="{x4vis}">
+				<label depth="3" pos="14,-2" width="560" height="26" font_size="20" text="{x4text}" />
+			<rect pos="626,-1" width="100" height="26" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="x4del" depth="3" width="100" height="26" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{x4deltxt}" width="100" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			</rect>
+			<rect pos="430,-460" width="70" height="30" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="exprev" depth="3" width="70" height="30" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="Prev" width="70" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="508,-460" width="70" height="30" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="exnext" depth="3" width="70" height="30" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="Next" width="70" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="590,-460" width="228" height="30" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="addlook" depth="3" width="228" height="30" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="Exclude what I aim at" width="228" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<label depth="3" pos="12,-622" width="806" height="30" font_size="20" text="{status}" />
+			<rect pos="446,-620" width="150" height="30" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="clearex" depth="3" width="150" height="30" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="Clear excludes" width="150" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="606,-620" width="100" height="30" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="back" depth="3" width="100" height="30" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="Back" width="100" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="714,-620" width="104" height="30" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="close" depth="3" width="104" height="30" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="Close" width="104" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+		</window>
+	</append>
+</configs>

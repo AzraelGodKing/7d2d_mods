@@ -59,4 +59,6 @@ Set the meal counts with `RichBaitMeals` and `FeastBaitMeals`. `giveself azraelB
 
 **Spawn caps:** live thralls are not counted against `MaxSpawnedZombies` / `MaxSpawnedAnimals`, so tamed creatures do not shrink how many wild ones the server can spawn (`ThrallsCountTowardSpawnCap=true` counts them again).
 
+**Client UI (1.3.0):** the optional BaitUI client mod gives players a roster window, name tags, a party list, fed tags and an admin window. The server sends it data only after the client says `/thrall hello` (hidden from chat), so players without it see nothing new.
+
 **Grabbing:** picking up a thrall (a chicken, with an empty hand) leaves it in your inventory as the item and marks it inactive on your roster. Place the item down and it is that thrall again, tethered where you put it if it was tethered, otherwise following you. Or use `/thrall call <n>` (that takes the item back). Before, the roster respawned it and you ended up with a copy.

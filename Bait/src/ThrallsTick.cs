@@ -18,7 +18,7 @@ public static partial class Thralls
         float now = Time.time;
         try
         {
-            if (now >= nextTaunt) { nextTaunt = now + 1f; Taunt(world, now); VehicleWatch(world); }
+            if (now >= nextTaunt) { nextTaunt = now + 1f; Taunt(world, now); VehicleWatch(world); UiPush(); }
             if (now >= nextLook) { nextLook = now + 0.5f; Calm(); LookHp(world, now); }
             if (now >= nextSlow) { nextSlow = now + 5f; Slow(world, now); }
         }
@@ -224,6 +224,8 @@ public static partial class Thralls
         if (!IsServer || !loaded || senderEntityId < 0 || string.IsNullOrEmpty(msg)) return false;
         string[] a = msg.Trim().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
         if (a.Length == 0 || Array.IndexOf(Prefixes, a[0].ToLowerInvariant()) < 0) return false;
+        if (a.Length > 1 && (a[1].Equals("hello", StringComparison.OrdinalIgnoreCase) || a[1].Equals("ui", StringComparison.OrdinalIgnoreCase)))
+            return UiCommand(senderEntityId, a[1].ToLowerInvariant());
         var owner = W != null ? W.GetEntity(senderEntityId) as EntityPlayer : null;
         string key = owner != null ? KeyOf(owner) : null;
         Log.Out("[Bait] command from #" + senderEntityId + ": " + msg + (key == null ? "  (no player record found)" : ""));

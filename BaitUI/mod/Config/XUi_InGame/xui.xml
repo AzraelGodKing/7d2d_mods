@@ -1,0 +1,10 @@
+<configs>
+	<append xpath="/xui">
+		<window_group name="azraelBaitRoster" defaultselected="close">
+			<window name="windowAzraelBaitRoster" />
+		</window_group>
+		<window_group name="azraelBaitAdmin" defaultselected="close">
+			<window name="windowAzraelBaitAdmin" />
+		</window_group>
+	</append>
+</configs>
