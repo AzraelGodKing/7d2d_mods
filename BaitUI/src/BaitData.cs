@@ -5,7 +5,7 @@ using System.IO;
 using HarmonyLib;
 using UnityEngine;
 
-// Azrael's Bait UI: the optional client side of Zombie and Animal Bait. A roster window (F7), name tags with HP
+// Azrael's Bait UI: the optional client side of Zombie and Animal Bait. A roster window (\ key), name tags with HP
 // bars over your thralls, a small party list, a "fed x/y" tag over creatures you are taming, and an admin window.
 // It only talks to the Bait mod on the server through the normal /thrall chat commands; the server mod sends
 // the data back as hidden whispers that this mod swallows before they reach the chat window.
@@ -166,7 +166,7 @@ public static class BaitChatPatch
 
 public static class UiSettings
 {
-    public static KeyCode Key = KeyCode.F7;
+    public static KeyCode Key = KeyCode.Backslash;
     public static bool Nameplates = true, Party = true, Feed = true;
     public static float Scale = 1.6f;   // size of the name tags and party list
 

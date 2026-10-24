@@ -5,7 +5,7 @@ It needs the Bait mod (1.3.0 or newer) on the server. Players without it lose no
 
 ## What you get
 
-- **Roster window (F7):** every thrall as a row with buttons: Call/Stow, Stay/Follow, mode (Aggr, Def, Pass cycles), Tether/Untether (tethers where you stand), Heal/Revive, Release (asks twice). Stow all, Follow all and Stay all along the bottom. Replies from the server show in a status line instead of chat.
+- **Roster window (backslash key):** every thrall as a row with buttons: Call/Stow, Stay/Follow, mode (Aggr, Def, Pass cycles), Tether/Untether (tethers where you stand), Heal/Revive, Release (asks twice). Stow all, Follow all and Stay all along the bottom. Replies from the server show in a status line instead of chat.
 - **Name tags:** level, name and an HP bar over your active thralls (within 45 m).
 - **Party list:** your active thralls and their HP down the left side of the screen.
 - **Fed tags:** "Fed 2/4" and a bar over a creature you are taming, so you do not need the toast.
@@ -13,7 +13,7 @@ It needs the Bait mod (1.3.0 or newer) on the server. Players without it lose no
 
 ## Options
 
-Console (F1): `baitui` shows them. `baitui nameplates on|off`, `baitui party on|off`, `baitui feed on|off`, `baitui scale <number>` (size of tags and list, default 1.6), `baitui key <key>` (default F7, `none` to turn it off).
+Console (F1): `baitui` shows them. `baitui nameplates on|off`, `baitui party on|off`, `baitui feed on|off`, `baitui scale <number>` (size of tags and list, default 1.6), `baitui key <key>` (default Backslash, `none` to turn it off).
 Saved in `%APPDATA%\7DaysToDie\AzraelBaitUI.txt`.
 
 ## How it works
