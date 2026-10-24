@@ -31,3 +31,5 @@ The buttons send the normal `/thrall` chat commands (they are hidden from other 
 **1.2.0:** shows the new invulnerable mode: the roster mode button cycles Aggr / Def / Pass / Inv, the name tag reads [invulnerable] with a light-blue health bar, and the party list marks [Inv].
 
 **1.2.1:** A name tag or HP bar is only drawn over an entity of the same class the server reported for that thrall. Before, a saved id that had been reused after a respawn or relog could put a thrall's tag over some other creature.
+
+**1.3.0:** The roster window has a new bottom row: buttons to switch name tags, the party list and fed tags on or off, and a size - / + pair (steps of 0.2, from 0.5 to 4). They save with the other settings, the same as the `baitui` console command.

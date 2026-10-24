@@ -54,6 +54,11 @@ public class XUiC_AzraelBaitRoster : XUiController
         Hook("stayall", () => BaitData.Cmd("/thrall stay all"));
         Hook("admin", () => { var wm = xui.playerUI.windowManager; wm.Close("azraelBaitRoster"); wm.Open("azraelBaitAdmin", true); });
         Hook("close", () => xui.playerUI.windowManager.Close("azraelBaitRoster"));
+        Hook("tgltags", () => { UiSettings.Nameplates = !UiSettings.Nameplates; UiSettings.Save(); seen = -1; });
+        Hook("tglparty", () => { UiSettings.Party = !UiSettings.Party; UiSettings.Save(); seen = -1; });
+        Hook("tglfed", () => { UiSettings.Feed = !UiSettings.Feed; UiSettings.Save(); seen = -1; });
+        Hook("sizedown", () => { UiSettings.Scale = Mathf.Clamp(Mathf.Round((UiSettings.Scale - 0.2f) * 10f) / 10f, 0.5f, 4f); UiSettings.Save(); seen = -1; });
+        Hook("sizeup", () => { UiSettings.Scale = Mathf.Clamp(Mathf.Round((UiSettings.Scale + 0.2f) * 10f) / 10f, 0.5f, 4f); UiSettings.Save(); seen = -1; });
     }
 
     UiThrall At(int row)
@@ -102,7 +107,10 @@ public class XUiC_AzraelBaitRoster : XUiController
                 return true;
             case "status": value = BaitData.StatusText; return true;
             case "pagetext": value = "Page " + (page + 1) + "/" + Math.Max(1, (BaitData.Thralls.Count + Rows - 1) / Rows); return true;
-            case "adminvis": value = BaitData.Admin ? "true" : "false"; return true;
+            case "tagstxt": value = "Name tags: " + (UiSettings.Nameplates ? "on" : "off"); return true;
+            case "partytxt": value = "Party list: " + (UiSettings.Party ? "on" : "off"); return true;
+            case "fedtxt": value = "Fed tags: " + (UiSettings.Feed ? "on" : "off"); return true;
+            case "sizetxt": value = "Size " + UiSettings.Scale.ToString("0.0", CultureInfo.InvariantCulture); return true;            case "adminvis": value = BaitData.Admin ? "true" : "false"; return true;
             case "emptytext":
                 value = BaitData.HasData ? (BaitData.Thralls.Count == 0 ? "You have no thralls yet. Throw bait at a zombie or animal and let it eat." : "")
                                          : "No data from the server yet. This needs the Zombie and Animal Bait mod on the server.";

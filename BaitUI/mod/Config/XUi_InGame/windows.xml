@@ -1,6 +1,6 @@
 <configs>
 	<append xpath="/windows">
-		<window name="windowAzraelBaitRoster" anchor="Center" pos="-440, 295" width="880" height="590" depth="15" controller="AzraelBaitRoster, AzraelBaitUI" cursor_area="true">
+		<window name="windowAzraelBaitRoster" anchor="Center" pos="-440, 318" width="880" height="636" depth="15" controller="AzraelBaitRoster, AzraelBaitUI" cursor_area="true">
 			<sprite depth="1" name="background" sprite="menu_empty" color="[darkestGrey]" type="sliced" />
 			<sprite depth="8" name="border" sprite="menu_empty3px" color="[black]" type="sliced" fillcenter="false" />
 			<label depth="3" pos="12,-8" width="856" height="34" font_size="28" text="{title}" />
@@ -365,6 +365,32 @@
 				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
 				<button name="stayall" depth="3" width="110" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
 				<label depth="4" text="Stay all" width="110" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="12,-586" width="190" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="tgltags" depth="3" width="190" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{tagstxt}" width="190" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="210,-586" width="190" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="tglparty" depth="3" width="190" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{partytxt}" width="190" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="408,-586" width="170" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="tglfed" depth="3" width="170" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="{fedtxt}" width="170" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<label depth="3" pos="592,-590" width="130" height="30" font_size="20" justify="right" text="{sizetxt}" />
+			<rect pos="730,-586" width="60" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="sizedown" depth="3" width="60" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="-" width="60" height="28" pos="0,-5" justify="center" font_size="22" />
+			</rect>
+			<rect pos="796,-586" width="60" height="36" depth="3">
+				<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />
+				<button name="sizeup" depth="3" width="60" height="36" sprite="menu_empty" defaultcolor="[mediumGrey]" hoversprite="ui_game_select_row" hovercolor="[white]" type="sliced" hoverscale="1.0" />
+				<label depth="4" text="+" width="60" height="28" pos="0,-5" justify="center" font_size="22" />
 			</rect>
 		</window>
 		<window name="windowAzraelBaitName" anchor="Center" pos="-200, 80" width="400" height="150" depth="15" controller="AzraelBaitName, AzraelBaitUI" cursor_area="true" lock_navigation="true">
