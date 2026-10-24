@@ -308,7 +308,7 @@ Setup: copy `discord.example.txt` to `discord.txt` **on the server**, paste the 
 
 ## Bait UI
 
-Optional client add-on for Zombie and Animal Bait: roster window (F7), name tags with HP bars, party list, fed tags and an admin window. Players only; needs Bait 1.3.0+ on the server. See [BaitUI/README.md](BaitUI/README.md).
+Optional client add-on for Zombie and Animal Bait: roster window (\ key), name tags with HP bars, party list, fed tags and an admin window. Players only; needs Bait 1.3.0+ on the server. See [BaitUI/README.md](BaitUI/README.md).
 
 ## Zombie and Animal Bait
 

@@ -68,9 +68,17 @@ public class BaitHud : MonoBehaviour
     {
         try
         {
-            if (Event.current.type != EventType.Repaint) return;
             Camera cam; EntityPlayerLocal p;
-            if (!HudVisible(out cam, out p)) return;
+            bool hud = HudVisible(out cam, out p);
+            bool edit = false;   // a cursor window (inventory, roster...) is open: the party list can be dragged
+            if (p != null && !p.IsDead())
+            {
+                var ui = LocalPlayerUI.GetUIForPrimaryPlayer();
+                if (ui != null && ui.windowManager != null && !ui.windowManager.IsFullHUDDisabled())
+                    edit = ui.windowManager.IsCursorWindowOpen() || ui.windowManager.IsModalWindowOpen();
+            }
+            if (Event.current.type != EventType.Repaint) { if (edit && UiSettings.Party) DragParty(); return; }
+            if (!hud && !(edit && UiSettings.Party)) return;
             if (label == null || Mathf.Abs(styleScale - Sc) > 0.01f)
             {
                 styleScale = Sc;
@@ -84,18 +92,27 @@ public class BaitHud : MonoBehaviour
                 foreach (var t in BaitData.Thralls)
                 {
                     var e = BaitData.Live(t.EntityId);
-                    if (UiSettings.Nameplates && e != null && t.Active) Plate(cam, p, e, Title(t), HpFrac(e), HpColor(HpFrac(e)), t.Stay ? "hold" : null, 45f);
+                    if (hud && UiSettings.Nameplates && e != null && t.Active) Plate(cam, p, e, Title(t), HpFrac(e), HpColor(HpFrac(e)), t.Stay ? "hold" : null, 45f);
                     if (UiSettings.Party && t.Active)
                     {
-                        float s = Sc, y = 150 * Screen.height / 1080f + row * 36 * s;
+                        float s = Sc, y = PartyRect.y + 22 * s + row * 36 * s;
+                        if (row == 0 && edit)
+                        {
+                            var pr = PartyRect;
+                            var old = GUI.color;
+                            GUI.color = new Color(0, 0, 0, dragging ? 0.55f : 0.35f);
+                            GUI.DrawTexture(pr, Texture2D.whiteTexture);
+                            GUI.color = old;
+                            Shadow(new Rect(pr.x + 4, pr.y + 1, pr.width, 20 * s), "drag to move", small);
+                        }
                         float f = e != null ? HpFrac(e) : 0f;
-                        Shadow(new Rect(12, y, 320 * s, 20 * s), (t.Tether ? "[T] " : "") + Title(t) + (e == null ? " (away)" : ""), small);
-                        Bar(new Rect(12, y + 21 * s, 220 * s, 7 * s), f, HpColor(f));
+                        Shadow(new Rect(PartyRect.x + 4, y, 320 * s, 20 * s), (t.Tether ? "[T] " : "") + Title(t) + (e == null ? " (away)" : ""), small);
+                        Bar(new Rect(PartyRect.x + 4, y + 21 * s, 220 * s, 7 * s), f, HpColor(f));
                         row++;
                     }
                 }
             }
-            if (UiSettings.Feed)
+            if (hud && UiSettings.Feed)
             {
                 foreach (var kv in BaitData.Feeds)
                 {
@@ -110,6 +127,37 @@ public class BaitHud : MonoBehaviour
             }
         }
         catch (Exception e) { Log.Warning("[BaitUI] draw: " + e.Message); }
+    }
+
+    // The party list box: top-left corner is saved as a fraction of the screen so it survives resolution changes.
+    static Rect PartyRect
+    {
+        get
+        {
+            int n = 0;
+            foreach (var t in BaitData.Thralls) if (t.Active) n++;
+            float s = Sc;
+            return new Rect(UiSettings.PartyX * Screen.width, UiSettings.PartyY * Screen.height, 340 * s, 22 * s + Mathf.Max(1, n) * 36 * s);
+        }
+    }
+
+    bool dragging;
+    Vector2 dragOff;
+
+    void DragParty()
+    {
+        var ev = Event.current;
+        if (ev == null) return;
+        Vector2 m = new Vector2(ev.mousePosition.x, ev.mousePosition.y);
+        var r = PartyRect;
+        if (ev.type == EventType.MouseDown && ev.button == 0 && r.Contains(m)) { dragging = true; dragOff = m - new Vector2(r.x, r.y); ev.Use(); }
+        else if (dragging && ev.type == EventType.MouseDrag)
+        {
+            float x = Mathf.Clamp(m.x - dragOff.x, 0, Screen.width - r.width), y = Mathf.Clamp(m.y - dragOff.y, 0, Screen.height - r.height);
+            UiSettings.PartyX = x / Screen.width; UiSettings.PartyY = y / Screen.height;
+            ev.Use();
+        }
+        else if (dragging && ev.type == EventType.MouseUp) { dragging = false; UiSettings.Save(); ev.Use(); }
     }
 
     static string Title(UiThrall t) { return (t.Level > 0 ? "Lv" + t.Level + " " : "") + t.Label; }
@@ -190,19 +238,22 @@ public class ConsoleCmdBaitUI : ConsoleCmdAbstract
                "baitui party on|off          - the HP list on the left\n" +
                "baitui feed on|off           - 'Fed x/y' tags over creatures you are taming\n" +
                "baitui scale <number>       - size of the tags and party list (default 1.6)\n" +
+               "baitui reset                - party list back to the default spot and size\n" +
                "baitui key <key>             - roster window hotkey (default Backslash, the backslash key), 'none' to disable";
     }
 
     public override void Execute(List<string> p, CommandSenderInfo info)
     {
         var con = SingletonMonoBehaviour<SdtdConsole>.Instance;
-        if (p.Count >= 2)
+        if (p.Count == 1 && p[0].ToLowerInvariant() == "reset") { UiSettings.PartyX = 0.006f; UiSettings.PartyY = 0.14f; UiSettings.Scale = 1.6f; UiSettings.Save(); }
+        else if (p.Count >= 2)
         {
             string what = p[0].ToLowerInvariant(), v = p[1].ToLowerInvariant();
             bool on = v == "on" || v == "true" || v == "1";
             if (what == "nameplates") UiSettings.Nameplates = on;
             else if (what == "party") UiSettings.Party = on;
             else if (what == "feed") UiSettings.Feed = on;
+            else if (what == "reset") { UiSettings.PartyX = 0.006f; UiSettings.PartyY = 0.14f; UiSettings.Scale = 1.6f; }
             else if (what == "scale")
             {
                 float sc;

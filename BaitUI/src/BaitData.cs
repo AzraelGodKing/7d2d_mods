@@ -168,6 +168,7 @@ public static class UiSettings
 {
     public static KeyCode Key = KeyCode.Backslash;
     public static bool Nameplates = true, Party = true, Feed = true;
+    public static float PartyX = 0.006f, PartyY = 0.14f;   // party list position (fraction of the screen)
     public static float Scale = 1.6f;   // size of the name tags and party list
 
     static string FilePath { get { try { return Path.Combine(GameIO.GetUserGameDataDir(), "AzraelBaitUI.txt"); } catch { return null; } } }
@@ -199,6 +200,8 @@ public static class UiSettings
                     case "nameplates": Nameplates = on; break;
                     case "party": Party = on; break;
                     case "feed": Feed = on; break;
+                    case "partyx": float px; if (float.TryParse(v, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out px)) PartyX = Mathf.Clamp01(px); break;
+                    case "partyy": float py; if (float.TryParse(v, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out py)) PartyY = Mathf.Clamp01(py); break;
                     case "scale": float sc; if (float.TryParse(v, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out sc)) Scale = Mathf.Clamp(sc, 0.5f, 4f); break;
                 }
             }
@@ -212,7 +215,8 @@ public static class UiSettings
         {
             var p = FilePath;
             if (p == null) return;
-            File.WriteAllText(p, "key=" + Key + "\nnameplates=" + (Nameplates ? "on" : "off") + "\nparty=" + (Party ? "on" : "off") + "\nfeed=" + (Feed ? "on" : "off") + "\nscale=" + Scale.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + "\n");
+            File.WriteAllText(p, "key=" + Key + "\nnameplates=" + (Nameplates ? "on" : "off") + "\nparty=" + (Party ? "on" : "off") + "\nfeed=" + (Feed ? "on" : "off") + "\nscale=" + Scale.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) +
+                "\npartyx=" + PartyX.ToString("0.####", System.Globalization.CultureInfo.InvariantCulture) + "\npartyy=" + PartyY.ToString("0.####", System.Globalization.CultureInfo.InvariantCulture) + "\n");
         }
         catch (Exception e) { Log.Warning("[BaitUI] settings save: " + e.Message); }
     }
