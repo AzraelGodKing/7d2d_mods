@@ -152,6 +152,21 @@ public static class BaitData
     public static string ModeName(int m) { return m == 1 ? "Def" : m == 2 ? "Pass" : m == 3 ? "Inv" : "Aggr"; }
     public static string ModeWord(int m) { return m == 1 ? "defensive" : m == 2 ? "passive" : m == 3 ? "invulnerable" : "aggressive"; }
 
+    // The thrall's own entity, or null if the saved id now points at something else (ids are reused after a respawn or relog,
+    // which put the name tag and HP bar over a stranger). The entity class has to match the one the server reported.
+    public static EntityAlive LiveThrall(UiThrall t)
+    {
+        var e = Live(t.EntityId);
+        if (e == null) return null;
+        try
+        {
+            EntityClass ec;
+            if (!string.IsNullOrEmpty(t.Cls) && EntityClass.list.TryGetValue(e.entityClass, out ec) && !string.Equals(ec.entityClassName, t.Cls, StringComparison.OrdinalIgnoreCase)) return null;
+        }
+        catch { }
+        return e;
+    }
+
     public static EntityAlive Live(int entityId)
     {
         if (entityId < 0) return null;

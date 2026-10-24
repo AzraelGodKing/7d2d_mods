@@ -91,7 +91,7 @@ public class BaitHud : MonoBehaviour
                 int row = 0;
                 foreach (var t in BaitData.Thralls)
                 {
-                    var e = BaitData.Live(t.EntityId);
+                    var e = BaitData.LiveThrall(t);
                     if (hud && UiSettings.Nameplates && e != null && t.Active) Plate(cam, p, e, Title(t), HpFrac(e), t.Mode == 3 ? InvColor : HpColor(HpFrac(e)), t.Mode == 3 ? (t.Stay ? "invulnerable, hold" : "invulnerable") : (t.Stay ? "hold" : null), 45f);
                     if (UiSettings.Party && t.Active)
                     {

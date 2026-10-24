@@ -87,7 +87,7 @@ public class XUiC_AzraelBaitRoster : XUiController
     static string Hp(UiThrall t)
     {
         if (t.Down > 0) return "downed " + t.Down + "s";
-        var e = BaitData.Live(t.EntityId);
+        var e = BaitData.LiveThrall(t);
         if (e == null) return t.Active ? "away" : "";
         return Mathf.CeilToInt(e.Stats.Health.Value) + "/" + e.GetMaxHealth();
     }

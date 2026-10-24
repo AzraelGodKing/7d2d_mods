@@ -29,3 +29,5 @@ The buttons send the normal `/thrall` chat commands (they are hidden from other 
 - The window layout is plain game UI built from XML; if a button looks off on your screen size, tell Azrael.
 - Install: copy the `AzraelBaitUI` folder into `Mods`. Single player and host games work too (the Bait mod must be installed there as well).
 **1.2.0:** shows the new invulnerable mode: the roster mode button cycles Aggr / Def / Pass / Inv, the name tag reads [invulnerable] with a light-blue health bar, and the party list marks [Inv].
+
+**1.2.1:** A name tag or HP bar is only drawn over an entity of the same class the server reported for that thrall. Before, a saved id that had been reused after a respawn or relog could put a thrall's tag over some other creature.
