@@ -52,7 +52,9 @@ public static class BaitConfig
     public static int FeedsPerLevelStep = 17;   // +1 meal per this many levels of the target (0 = off)
     // thrall care
     public static int ReviveSeconds = 300;      // a fallen thrall returns after this long (0 = gone for good)
-    public static int ReviveBaitCost = 3;       // bait to bring a fallen thrall back at once
+    public static int ReviveCostPlain = 3;        // /thrall revive costs this many Plain bait...
+    public static int ReviveCostRich = 2;         // ...or this many Rich bait...
+    public static int ReviveCostFeast = 1;        // ...or this many Feast bait. Tried in that order; the first you can afford is taken.
     public static int HealBaitCost = 1;         // bait for /thrall heal
     public static float HealPct = 40f;          // health restored by /thrall heal
     public static float RegenPctPerTick = 1f;   // health a thrall regains every 5 s while not fighting

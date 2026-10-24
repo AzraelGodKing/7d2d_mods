@@ -99,6 +99,33 @@ public static partial class Thralls
         return TakeItems(p, BaitCheck.BaitItem, usePlain) && TakeItems(p, BaitCheck.RichItem, useRich) && TakeItems(p, BaitCheck.FeastItem, useFeast);
     }
 
+    // ---- revive: 3 Plain, or 2 Rich, or 1 Feast. Plain is preferred, then Rich, then Feast.
+    static string ReviveCostText()
+    {
+        return BaitConfig.ReviveCostPlain + " Plain, " + BaitConfig.ReviveCostRich + " Rich or " + BaitConfig.ReviveCostFeast + " Feast bait";
+    }
+
+    static bool TakeRevive(EntityPlayer p)
+    {
+        int b, g;
+        var items = new[] { BaitCheck.BaitItem, BaitCheck.RichItem, BaitCheck.FeastItem };
+        var costs = new[] { BaitConfig.ReviveCostPlain, BaitConfig.ReviveCostRich, BaitConfig.ReviveCostFeast };
+        for (int i = 0; i < 3; i++)
+        {
+            if (costs[i] <= 0) return true;
+            if (ItemCount(p, items[i], out b, out g) >= costs[i]) return TakeItems(p, items[i], costs[i]);
+        }
+        return false;
+    }
+
+    static string NeedReviveText(EntityPlayer p)
+    {
+        int b1, g1, b2, g2, b3, g3;
+        int plain = ItemCount(p, BaitCheck.BaitItem, out b1, out g1);
+        int rich = ItemCount(p, BaitCheck.RichItem, out b2, out g2);
+        int feast = ItemCount(p, BaitCheck.FeastItem, out b3, out g3);
+        return "Reviving costs " + ReviveCostText() + ". The server sees " + plain + " plain, " + rich + " Rich, " + feast + " Feast (toolbelt " + (b1 + b2 + b3) + ", bag " + (g1 + g2 + g3) + ").";
+    }
     static string NeedBaitText(EntityPlayer p, int n)
     {
         int b1, g1, b2, g2, b3, g3;

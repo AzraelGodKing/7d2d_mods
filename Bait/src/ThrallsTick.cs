@@ -411,9 +411,9 @@ public static partial class Thralls
             case "revive":
             {
                 var t = Pick(arg, list);
-                if (t.Count != 1) { Tell(me, "Usage: /thrall revive <number>   (costs " + BaitConfig.ReviveBaitCost + " bait)"); break; }
+                if (t.Count != 1) { Tell(me, "Usage: /thrall revive <number>   (costs " + ReviveCostText() + ")"); break; }
                 if (t[0].ReviveAt <= NowSec()) { Tell(me, Label(t[0]) + " is not downed."); break; }
-                if (!TakeBait(owner, BaitConfig.ReviveBaitCost)) { Tell(me, NeedBaitText(owner, BaitConfig.ReviveBaitCost)); break; }
+                if (!TakeRevive(owner)) { Tell(me, NeedReviveText(owner)); break; }
                 t[0].ReviveAt = 0; dirty = true; nextSpawn.Remove(t[0].Id); nextSlow = 0f;
                 Tell(me, Label(t[0]) + " is back on its feet.");
                 break;

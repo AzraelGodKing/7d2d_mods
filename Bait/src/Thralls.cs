@@ -553,7 +553,7 @@ public static partial class Thralls
                     rec.ReviveAt = NowSec() + BaitConfig.ReviveSeconds;
                     nextSpawn.Remove(rec.Id);
                     Notify(lt.OwnerEntityId, Label(rec) + " died: " + why + ". It rises again in " + BaitConfig.ReviveSeconds + "s, or /thrall revive "
-                        + (RosterOf(rec.OwnerKey).IndexOf(rec) + 1) + " (" + BaitConfig.ReviveBaitCost + " bait).");
+                        + (RosterOf(rec.OwnerKey).IndexOf(rec) + 1) + " (" + ReviveCostText() + ").");
                 }
                 else
                 {

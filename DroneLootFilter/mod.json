@@ -1,0 +1,10 @@
+﻿{
+  "slug": "drone-loot-filter",
+  "name": "Drone Loot Filter",
+  "game": "7-days-to-die",
+  "description": "Companion for Drone Automation. Choose items your Auto-Loot drone leaves alone (bags, containers and loose items) with /dai. Server-side: players install nothing.",
+  "version": "1.0.0",
+  "screenshots": [],
+  "download": { "file": "AzraelDroneLootFilter-v1.0.0.zip" },
+  "links": { "steam": null, "thunderstore": null, "nexus": null }
+}
