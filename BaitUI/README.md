@@ -13,7 +13,7 @@ It needs the Bait mod (1.3.0 or newer) on the server. Players without it lose no
 
 ## Options
 
-Console (F1): `baitui` shows them. `baitui nameplates on|off`, `baitui party on|off`, `baitui feed on|off`, `baitui key <key>` (default F7, `none` to turn it off).
+Console (F1): `baitui` shows them. `baitui nameplates on|off`, `baitui party on|off`, `baitui feed on|off`, `baitui scale <number>` (size of tags and list, default 1.6), `baitui key <key>` (default F7, `none` to turn it off).
 Saved in `%APPDATA%\7DaysToDie\AzraelBaitUI.txt`.
 
 ## How it works

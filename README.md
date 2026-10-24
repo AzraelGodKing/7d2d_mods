@@ -13,7 +13,7 @@ Small mods for 7 Days to Die, built and tested on **V3.3**.
 | [Keep Backpacks](#keep-backpacks) | Code | Server only | 1.3.0 |
 | [Blood Moon Sound](#blood-moon-sound) | Code (Harmony) | Players (own sound); server optional (sound for everyone, Discord posts) | 1.2.2 |
 | [Zombie and Animal Bait](#zombie-and-animal-bait) | Code (Harmony) + XML | Server only | 1.3.0 |
-| [Bait UI](#bait-ui) | Code + UI | Players only (optional, needs Bait on the server) | 1.0.0 |
+| [Bait UI](#bait-ui) | Code + UI | Players only (optional, needs Bait on the server) | 1.0.1 |
 
 Download the zips from the Releases page, unzip, and put the folder inside the game's `Mods` folder
 (or the server's `Mods` folder). Code that a player installs needs EasyAntiCheat turned off.

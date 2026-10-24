@@ -9,6 +9,8 @@ public class BaitHud : MonoBehaviour
     float nextHello;
     int helloTries;
     GUIStyle label, small;
+    float styleScale;
+    static float Sc { get { return UiSettings.Scale * Screen.height / 1080f; } }
 
     void Update()
     {
@@ -69,10 +71,11 @@ public class BaitHud : MonoBehaviour
             if (Event.current.type != EventType.Repaint) return;
             Camera cam; EntityPlayerLocal p;
             if (!HudVisible(out cam, out p)) return;
-            if (label == null)
+            if (label == null || Mathf.Abs(styleScale - Sc) > 0.01f)
             {
-                label = new GUIStyle(GUI.skin.label) { fontSize = 13, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter, clipping = TextClipping.Overflow };
-                small = new GUIStyle(label) { fontSize = 12, alignment = TextAnchor.MiddleLeft };
+                styleScale = Sc;
+                label = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(13 * Sc), fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter, clipping = TextClipping.Overflow };
+                small = new GUIStyle(label) { fontSize = Mathf.RoundToInt(14 * Sc), alignment = TextAnchor.MiddleLeft };
             }
 
             if (UiSettings.Nameplates || UiSettings.Party)
@@ -84,10 +87,10 @@ public class BaitHud : MonoBehaviour
                     if (UiSettings.Nameplates && e != null && t.Active) Plate(cam, p, e, Title(t), HpFrac(e), HpColor(HpFrac(e)), t.Stay ? "hold" : null, 45f);
                     if (UiSettings.Party && t.Active)
                     {
-                        float y = 150 + row * 22;
+                        float s = Sc, y = 150 * Screen.height / 1080f + row * 36 * s;
                         float f = e != null ? HpFrac(e) : 0f;
-                        Shadow(new Rect(12, y, 200, 18), (t.Tether ? "[T] " : "") + Title(t) + (e == null ? " (away)" : ""), small);
-                        Bar(new Rect(12, y + 17, 150, 4), f, HpColor(f));
+                        Shadow(new Rect(12, y, 320 * s, 20 * s), (t.Tether ? "[T] " : "") + Title(t) + (e == null ? " (away)" : ""), small);
+                        Bar(new Rect(12, y + 21 * s, 220 * s, 7 * s), f, HpColor(f));
                         row++;
                     }
                 }
@@ -119,8 +122,9 @@ public class BaitHud : MonoBehaviour
         Vector3 sp = cam.WorldToScreenPoint(e.position + Vector3.up * (e.height + 0.35f));
         if (sp.z <= 0.1f) return;
         float x = sp.x, y = Screen.height - sp.y;
-        Shadow(new Rect(x - 90, y - 18, 180, 16), text + (extra != null ? " [" + extra + "]" : ""), label);
-        Bar(new Rect(x - 40, y - 1, 80, 6), frac, col);
+        float s = Sc;
+        Shadow(new Rect(x - 120 * s, y - 20 * s, 240 * s, 18 * s), text + (extra != null ? " [" + extra + "]" : ""), label);
+        Bar(new Rect(x - 50 * s, y - 1, 100 * s, 8 * s), frac, col);
     }
 
     static void Shadow(Rect r, string text, GUIStyle st)
@@ -185,6 +189,7 @@ public class ConsoleCmdBaitUI : ConsoleCmdAbstract
                "baitui nameplates on|off     - name tags and HP bars over your thralls\n" +
                "baitui party on|off          - the HP list on the left\n" +
                "baitui feed on|off           - 'Fed x/y' tags over creatures you are taming\n" +
+               "baitui scale <number>       - size of the tags and party list (default 1.6)\n" +
                "baitui key <key>             - roster window hotkey (default F7), 'none' to disable";
     }
 
@@ -198,6 +203,12 @@ public class ConsoleCmdBaitUI : ConsoleCmdAbstract
             if (what == "nameplates") UiSettings.Nameplates = on;
             else if (what == "party") UiSettings.Party = on;
             else if (what == "feed") UiSettings.Feed = on;
+            else if (what == "scale")
+            {
+                float sc;
+                if (!float.TryParse(p[1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out sc)) { con.Output("baitui scale <number>, e.g. 1.6 (default), 2.2 for bigger"); return; }
+                UiSettings.Scale = Mathf.Clamp(sc, 0.5f, 4f);
+            }
             else if (what == "key")
             {
                 KeyCode k;
@@ -209,6 +220,6 @@ public class ConsoleCmdBaitUI : ConsoleCmdAbstract
             UiSettings.Save();
         }
         con.Output("Bait UI: name tags " + (UiSettings.Nameplates ? "on" : "off") + ", party list " + (UiSettings.Party ? "on" : "off") +
-                   ", fed tags " + (UiSettings.Feed ? "on" : "off") + ", roster key " + UiSettings.Key + ".");
+                   ", fed tags " + (UiSettings.Feed ? "on" : "off") + ", size " + UiSettings.Scale + ", roster key " + UiSettings.Key + ".");
     }
 }

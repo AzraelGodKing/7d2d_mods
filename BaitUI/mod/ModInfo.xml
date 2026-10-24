@@ -4,6 +4,6 @@
 	<DisplayName value="Zombie and Animal Bait - Client UI" />
 	<Description value="Optional client side add-on for Zombie and Animal Bait: a thrall roster window (F7), name tags with HP bars, a party list, fed progress tags and an admin settings window. Needs the Bait mod on the server. The server does not need this." />
 	<Author value="Azrael" />
-	<Version value="1.0.0" />
+	<Version value="1.0.1" />
 	<Website value="" />
 </xml>
