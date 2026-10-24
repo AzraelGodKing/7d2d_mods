@@ -278,7 +278,7 @@ public class ConsoleCmdBaitUI : ConsoleCmdAbstract
                "baitui feed on|off           - 'Fed x/y' tags over creatures you are taming\n" +
                "baitui scale <number>       - size of the tags and party list (default 1.6)\n" +
                "baitui reset                - party list back to the default spot and size\n" +
-               "baitui key <key>             - roster window hotkey (default Backslash, the backslash key), 'none' to disable";
+               "baitui key <key>             - roster window hotkey (default Home), 'none' to disable";
     }
 
     public override void Execute(List<string> p, CommandSenderInfo info)
@@ -304,7 +304,7 @@ public class ConsoleCmdBaitUI : ConsoleCmdAbstract
                 KeyCode k;
                 if (v == "none") UiSettings.Key = KeyCode.None;
                 else if (UiSettings.TryParseKey(p[1], out k)) UiSettings.Key = k;
-                else { con.Output("'" + p[1] + "' is not a key name I know. Examples: Backslash, F8, Home, K, Keypad5."); return; }
+                else { con.Output("'" + p[1] + "' is not a key name I know. Examples: Home, Backslash, End, K, Keypad5."); return; }
             }
             else { con.Output(getHelp()); return; }
             UiSettings.Save();

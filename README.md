@@ -15,7 +15,7 @@ Small mods for 7 Days to Die, built and tested on **V3.3**.
 | [Zombie and Animal Bait](#zombie-and-animal-bait) | Code (Harmony) + XML | Server only | 1.7.5 |
 | [Gyro Safe](#gyro-safe) | Code (Harmony) | Server and players who fly | 1.0.0 |
 | [Drone Loot Filter](#drone-loot-filter) | Code (Harmony), needs Drone Automation | Server only | 1.2.0 |
-| [Bait UI](#bait-ui) | Code + UI | Players only (optional, needs Bait on the server) | 1.5.0 |
+| [Bait UI](#bait-ui) | Code + UI | Players only (optional, needs Bait on the server) | 1.5.1 |
 
 Download the zips from the Releases page, unzip, and put the folder inside the game's `Mods` folder
 (or the server's `Mods` folder). Code that a player installs needs EasyAntiCheat turned off.
@@ -310,7 +310,7 @@ Setup: copy `discord.example.txt` to `discord.txt` **on the server**, paste the 
 
 ## Bait UI
 
-Optional client add-on for Zombie and Animal Bait: roster window (\ key), name tags with HP bars, party list, fed tags and an admin window. Players only; needs Bait 1.3.0+ on the server. See [BaitUI/README.md](BaitUI/README.md).
+Optional client add-on for Zombie and Animal Bait: roster window (Home key), name tags with HP bars, party list, fed tags and an admin window. Players only; needs Bait 1.3.0+ on the server. See [BaitUI/README.md](BaitUI/README.md).
 
 ## Gyro Safe
 

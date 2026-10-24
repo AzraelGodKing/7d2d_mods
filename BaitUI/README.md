@@ -5,7 +5,7 @@ It needs the Bait mod (1.3.0 or newer) on the server. Players without it lose no
 
 ## What you get
 
-- **Roster window (backslash key):** every thrall as a row with buttons: Call/Stow, Stay/Follow, mode (Aggr, Def, Pass cycles), Tether/Untether (tethers where you stand), Heal/Revive, Rename (a small box to type the name, empty clears it), Release (asks twice). Stow all, Stow active (only the ones following you), Stow tethered, Follow all and Stay all along the bottom. Replies from the server show in a status line instead of chat.
+- **Roster window (Home key):** every thrall as a row with buttons: Call/Stow, Stay/Follow, mode (Aggr, Def, Pass cycles), Tether/Untether (tethers where you stand), Heal/Revive, Rename (a small box to type the name, empty clears it), Release (asks twice). Stow all, Stow active (only the ones following you), Stow tethered, Follow all and Stay all along the bottom. Replies from the server show in a status line instead of chat.
 - **Name tags:** level, name and an HP bar over your active thralls (within 45 m).
 - **Party list:** your active thralls and their HP down the left side of the screen. Open any window with a cursor (the roster, your inventory) and drag the list with the left mouse button to move it; the spot is saved. `baitui reset` puts it back.
 - **Fed tags:** "Fed 2/4" and a bar over a creature you are taming, so you do not need the toast.
@@ -17,7 +17,7 @@ The server sends this mod the entity ids of every thrall, so your turrets, mini 
 
 ## Options
 
-Console (F1): `baitui` shows them. `baitui nameplates on|off`, `baitui party on|off`, `baitui feed on|off`, `baitui scale <number>` (size of tags and list, default 1.6), `baitui key <key>` (default Backslash, `none` to turn it off).
+Console (F1): `baitui` shows them. `baitui nameplates on|off`, `baitui party on|off`, `baitui feed on|off`, `baitui scale <number>` (size of tags and list, default 1.6), `baitui key <key>` (default Home, `none` to turn it off).
 Saved in `%APPDATA%\7DaysToDie\AzraelBaitUI.txt`.
 
 ## How it works
@@ -39,3 +39,5 @@ The buttons send the normal `/thrall` chat commands (they are hidden from other 
 **1.4.0:** Name tags and HP bars now also show over thralls that belong to members of your party (switch: `Party members' bars` in the roster window; needs Bait 1.7.3 on the server, and the owner's thralls within 45 blocks). New roster-window buttons pick the colour of the name text and of the HP bar (Auto keeps the green-to-red health colour). Thralls no longer show an enemy marker on the compass or map.
 
 **1.5.0:** Name and bar colours can be set per thrall. In the roster window, click the `Colors apply to` button to pick a thrall (or all thralls for the default), then the Name color and Bar color buttons; `Default` follows the all-thralls setting. Saved on your own computer by roster number and class, so releasing or reordering thralls can shift which colour goes with which.
+
+**1.5.1:** The roster window now opens with the Home key, since the backslash key is missing or elsewhere on some keyboard layouts. Settings files that still held the old default are moved to Home; `baitui key <key>` picks any other key (Backslash included).

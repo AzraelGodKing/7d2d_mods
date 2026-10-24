@@ -5,7 +5,7 @@ using System.IO;
 using HarmonyLib;
 using UnityEngine;
 
-// Azrael's Bait UI: the optional client side of Zombie and Animal Bait. A roster window (\ key), name tags with HP
+// Azrael's Bait UI: the optional client side of Zombie and Animal Bait. A roster window (Home key), name tags with HP
 // bars over your thralls, a small party list, a "fed x/y" tag over creatures you are taming, and an admin window.
 // It only talks to the Bait mod on the server through the normal /thrall chat commands; the server mod sends
 // the data back as hidden whispers that this mod swallows before they reach the chat window.
@@ -193,7 +193,8 @@ public static class BaitChatPatch
 
 public static class UiSettings
 {
-    public static KeyCode Key = KeyCode.Backslash;
+    public static KeyCode Key = KeyCode.Home;   // was Backslash, which not every keyboard layout has
+    static bool keyChosen;   // the settings file was written by a version that knew the new default (keyver=2)
     public static bool Nameplates = true, Party = true, Feed = true;
     public static float PartyX = 0.006f, PartyY = 0.14f;   // party list position (fraction of the screen)
     public static float Scale = 1.6f;   // size of the name tags and party list
@@ -246,6 +247,7 @@ public static class UiSettings
                 bool on = !v.Equals("off", StringComparison.OrdinalIgnoreCase);
                 switch (k)
                 {
+                    case "keyver": keyChosen = true; break;
                     case "key": KeyCode kc; if (TryParseKey(v, out kc)) Key = kc; break;
                     case "nameplates": Nameplates = on; break;
                     case "party": Party = on; break;
@@ -267,6 +269,7 @@ public static class UiSettings
             }
         }
         catch (Exception e) { Log.Warning("[BaitUI] settings: " + e.Message); }
+        if (!keyChosen && Key == KeyCode.Backslash) Key = KeyCode.Home;   // an older settings file only holds the old default: move it to the new one
     }
 
     public static void Save()
@@ -277,7 +280,7 @@ public static class UiSettings
             if (p == null) return;
             var per = new System.Text.StringBuilder();
             foreach (var kvp in PerThrall) if (kvp.Value[0] >= 0 || kvp.Value[1] >= 0) per.Append("thrall=").Append(kvp.Key).Append('=').Append(kvp.Value[0]).Append(',').Append(kvp.Value[1]).Append('\n');
-            File.WriteAllText(p, per.ToString() + "key=" + Key + "\nnameplates=" + (Nameplates ? "on" : "off") + "\nparty=" + (Party ? "on" : "off") + "\nfeed=" + (Feed ? "on" : "off") + "\npartybars=" + (PartyBars ? "on" : "off") + "\nbarcolor=" + BarColorNames[Mathf.Clamp(BarColorIdx, 0, BarColorNames.Length - 1)] + "\nnamecolor=" + ColorNames[Mathf.Clamp(NameColorIdx, 0, ColorNames.Length - 1)] + "\nscale=" + Scale.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) +
+            File.WriteAllText(p, per.ToString() + "keyver=2\nkey=" + Key + "\nnameplates=" + (Nameplates ? "on" : "off") + "\nparty=" + (Party ? "on" : "off") + "\nfeed=" + (Feed ? "on" : "off") + "\npartybars=" + (PartyBars ? "on" : "off") + "\nbarcolor=" + BarColorNames[Mathf.Clamp(BarColorIdx, 0, BarColorNames.Length - 1)] + "\nnamecolor=" + ColorNames[Mathf.Clamp(NameColorIdx, 0, ColorNames.Length - 1)] + "\nscale=" + Scale.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) +
                 "\npartyx=" + PartyX.ToString("0.####", System.Globalization.CultureInfo.InvariantCulture) + "\npartyy=" + PartyY.ToString("0.####", System.Globalization.CultureInfo.InvariantCulture) + "\n");
         }
         catch (Exception e) { Log.Warning("[BaitUI] settings save: " + e.Message); }
