@@ -81,6 +81,37 @@ public static class BaitConfig
 
     static string modPath;
 
+    // Meals each kind of animal needs (AnimalFeedsToTame is the fallback for anything not listed).
+    // Set in AzraelBait.cfg:  AnimalFeeds=animalChicken:1,animalBear:6
+    public static readonly Dictionary<string, int> AnimalFeeds = DefaultAnimalFeeds();
+
+    static Dictionary<string, int> DefaultAnimalFeeds()
+    {
+        var d = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        const string s = "animalChicken:1,animalRabbit:1,animalSnake:2,animalPig:2,animalStag:2,animalDoe:2,animalBoar:3,animalCoyote:3,"
+                       + "animalBearSmall:4,animalWolf:4,animalZombieDog:4,animalZombieVulture:4,animalMountainLion:5,animalZombieBoar:5,"
+                       + "animalBear:6,animalZombieVultureRadiated:6,animalDireWolf:8,animalZombieBear:8";
+        ReadFeedList(d, s);
+        return d;
+    }
+
+    static void ReadFeedList(Dictionary<string, int> d, string v)
+    {
+        foreach (string pair in v.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+        {
+            int c = pair.IndexOf(':');
+            int n;
+            if (c <= 0 || !int.TryParse(pair.Substring(c + 1).Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out n) || n < 1) continue;
+            d[pair.Substring(0, c).Trim()] = n;
+        }
+    }
+
+    public static int FeedsForAnimal(string cls)
+    {
+        int n;
+        return cls != null && AnimalFeeds.TryGetValue(cls, out n) ? n : AnimalFeedsToTame;
+    }
+
     static IEnumerable<FieldInfo> Fields()
     {
         foreach (FieldInfo f in typeof(BaitConfig).GetFields(BindingFlags.Public | BindingFlags.Static))
@@ -114,6 +145,7 @@ public static class BaitConfig
                     foreach (string n in v.Split(',')) if (n.Trim().Length > 0) Exclude.Add(n.Trim());
                     continue;
                 }
+                if (string.Equals(k, "AnimalFeeds", StringComparison.OrdinalIgnoreCase)) { ReadFeedList(AnimalFeeds, v); continue; }
                 string err; Set(k, v, out err);
             }
         }

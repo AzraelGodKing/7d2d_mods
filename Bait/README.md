@@ -76,3 +76,5 @@ Set the meal counts with `RichBaitMeals` and `FeastBaitMeals`. `giveself azraelB
 **Tame handoff (1.5.0):** a zombie tamed out of a POI sleeper volume is swapped for a fresh thrall at the same spot, so the red quest dot on the map goes away (it already counted as dead for the POI). Every new or called thrall is untargetable and unhurtable for `NewThrallGraceSeconds` (8) so it can walk back to you. Mode (aggressive/defensive/passive), stay and tether are stored with the thrall and survive stow, call, grab and revive.
 
 **No harvesting (1.5.1):** a fallen thrall's body drops no loot bag and has nothing to butcher or search; it comes back from its record anyway.
+
+**Animal feed rates (1.6.0):** each animal now needs its own number of meals instead of a flat 3: chicken and rabbit 1; snake, pig, stag, doe 2; boar, coyote 3; wolf, small bear, zombie dog, zombie vulture 4; mountain lion, zombie boar 5; bear, radiated vulture 6; dire wolf, zombie bear 8. Change them with `AnimalFeeds=animalBear:6,animalChicken:1` in `AzraelBait.cfg`; `AnimalFeedsToTame` is used for any animal not listed. Level bonuses and `MaxFeeds` still apply.

@@ -74,7 +74,7 @@ public static partial class Thralls
     {
         int extra = BaitConfig.FeedsPerLevelStep > 0 ? level / BaitConfig.FeedsPerLevelStep : 0;
         int need;
-        if (IsAnimalClass(cls)) need = BaitConfig.AnimalFeedsToTame + extra;
+        if (IsAnimalClass(cls)) need = BaitConfig.FeedsForAnimal(cls) + extra;
         else
         {
             int t = TierOf(cls);
