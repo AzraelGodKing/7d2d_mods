@@ -30,6 +30,7 @@ $mods = @(
     @{ Dir = 'UpgradeBench';       Name = 'AzraelUpgradeBench';       Project = 'src/UpgradeBench.csproj' },
     @{ Dir = 'Bait';               Name = 'AzraelBait';               Project = 'src/AzraelBait.csproj' },
     @{ Dir = 'BaitUI';             Name = 'AzraelBaitUI';             Project = 'src/AzraelBaitUI.csproj' },
+    @{ Dir = 'GyroSafe';           Name = 'AzraelGyroSafe';           Project = 'src/AzraelGyroSafe.csproj' },
     @{ Dir = 'DroneLootFilter';    Name = 'AzraelDroneLootFilter';    Project = 'src/AzraelDroneLootFilter.csproj' },
     # Private = gitignored files (e.g. a copyrighted sound clip) kept OUT of the public zip.
     # If present, a second "-with-sound" zip is made and -Install uses that version.
