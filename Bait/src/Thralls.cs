@@ -581,6 +581,8 @@ public static partial class Thralls
             LiveThrall klt;
             if (killer != null && Live.TryGetValue(killer.entityId, out klt) && !(victim is EntityPlayer) && !Live.ContainsKey(victim.entityId))
                 ThrallKilledSomething(klt, killer);
+            else if (killer is EntityPlayer && !(victim is EntityPlayer) && !Live.ContainsKey(victim.entityId))
+                ShareKill((EntityPlayer)killer, victim);
             else if (killer is EntityZombie && !Live.ContainsKey(killer.entityId) && BaitConfig.ZombieLevels
                      && (victim is EntityPlayer || Live.ContainsKey(victim.entityId)))
                 LevelUp(killer);
@@ -624,6 +626,22 @@ public static partial class Thralls
         catch (Exception ex) { Dbg("no-harvest failed: " + ex.Message); }
     }
 
+    // Thralls level up from kills. A thrall that is out with its owner shares in the owner's kills of hostile creatures
+    // (so a POI cleared mostly by the player still counts), as long as it or the owner is within OwnerKillShareRange.
+    static void ShareKill(EntityPlayer owner, EntityAlive victim)
+    {
+        float r = BaitConfig.OwnerKillShareRange;
+        if (r <= 0f || owner == null || victim == null || W == null) return;
+        if (victim.EntityClass == null || !victim.EntityClass.bIsEnemyEntity) return;
+        foreach (var kv in new List<KeyValuePair<int, LiveThrall>>(Live))
+        {
+            if (kv.Value.OwnerEntityId != owner.entityId) continue;
+            var th = W.GetEntity(kv.Key) as EntityAlive;
+            if (th == null || th.IsDead()) continue;
+            if ((th.position - victim.position).sqrMagnitude > r * r && (th.position - owner.position).sqrMagnitude > r * r) continue;
+            ThrallKilledSomething(kv.Value, th);
+        }
+    }
     static void ThrallKilledSomething(LiveThrall lt, EntityAlive killer)
     {
         var rec = Find(lt.RecordId);

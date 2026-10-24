@@ -45,6 +45,7 @@ public static class BaitConfig
     public static bool ZombieLevels = true;     // wild zombies spawn with a level and grow by killing
     public static int MaxLevel = 300;   // vanilla player level cap
     public static int DaysPerLevel = 5;         // game days per starting level
+    public static float OwnerKillShareRange = 30f;   // an active thrall gets credit for a hostile kill its owner makes within this many blocks (0 = off)
     public static int KillsPerLevel = 8;        // thralls gain a level per this many kills
     public static int TierLevelBonus = 5;       // starting levels added per tier (feral 1, radiated 2, charged/infernal 3)
     public static float LevelDamagePct = 3f;   // extra damage dealt per level
