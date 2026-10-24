@@ -203,6 +203,21 @@ public static class UiSettings
     public static int BarColorIdx = 0;    // 0 = auto (green to red by health), 1.. = a fixed colour from the list below
     public static readonly string[] BarColorNames = { "Auto", "White", "Yellow", "Cyan", "Green", "Orange", "Pink", "Red" };
     public static Color BarColor(float frac, Color auto) { return BarColorIdx <= 0 ? auto : ColorValues[Mathf.Clamp(BarColorIdx - 1, 0, ColorValues.Length - 1)]; }
+    // Per-thrall colours (client only, matched by roster number + class). -1 = use the default above.
+    public static readonly Dictionary<string, int[]> PerThrall = new Dictionary<string, int[]>();
+    public static int ColorTarget = -1;   // roster position the colour buttons act on; -1 = the default for every thrall
+    public static string ThrallKey(UiThrall t) { return t.Idx + "|" + t.Cls; }
+    public static UiThrall TargetThrall { get { return ColorTarget >= 0 && ColorTarget < BaitData.Thralls.Count ? BaitData.Thralls[ColorTarget] : null; } }
+    public static int NameIdxFor(UiThrall t) { int[] c; return t != null && PerThrall.TryGetValue(ThrallKey(t), out c) && c[0] >= 0 ? c[0] : NameColorIdx; }
+    public static int BarIdxFor(UiThrall t) { int[] c; return t != null && PerThrall.TryGetValue(ThrallKey(t), out c) && c[1] >= 0 ? c[1] : BarColorIdx; }
+    public static Color NameColorFor(UiThrall t) { return ColorValues[Mathf.Clamp(NameIdxFor(t), 0, ColorValues.Length - 1)]; }
+    public static Color BarColorFor(UiThrall t, Color auto) { int i = BarIdxFor(t); return i <= 0 ? auto : ColorValues[Mathf.Clamp(i - 1, 0, ColorValues.Length - 1)]; }
+    static int[] Slot(UiThrall t) { int[] c; string k = ThrallKey(t); if (!PerThrall.TryGetValue(k, out c)) { c = new[] { -1, -1 }; PerThrall[k] = c; } return c; }
+    public static void CycleName() { var t = TargetThrall; if (t == null) NameColorIdx = (NameColorIdx + 1) % ColorNames.Length; else { var c = Slot(t); c[0] = c[0] + 1 >= ColorNames.Length ? -1 : c[0] + 1; } Save(); }
+    public static void CycleBar() { var t = TargetThrall; if (t == null) BarColorIdx = (BarColorIdx + 1) % BarColorNames.Length; else { var c = Slot(t); c[1] = c[1] + 1 >= BarColorNames.Length ? -1 : c[1] + 1; } Save(); }
+    public static void NextTarget() { int n = BaitData.Thralls.Count; ColorTarget = ColorTarget + 1 >= n ? -1 : ColorTarget + 1; }
+    public static string NameLabel() { var t = TargetThrall; int[] c; if (t == null || !PerThrall.TryGetValue(ThrallKey(t), out c) || c[0] < 0) return t == null ? ColorNames[NameColorIdx] : "Default (" + ColorNames[NameColorIdx] + ")"; return ColorNames[c[0]]; }
+    public static string BarLabel() { var t = TargetThrall; int[] c; if (t == null || !PerThrall.TryGetValue(ThrallKey(t), out c) || c[1] < 0) return t == null ? BarColorNames[BarColorIdx] : "Default (" + BarColorNames[BarColorIdx] + ")"; return BarColorNames[c[1]]; }
     public static int NameColorIdx = 0;   // colour of the name tag text
     public static Color NameColor { get { return ColorValues[Mathf.Clamp(NameColorIdx, 0, ColorValues.Length - 1)]; } }
 
@@ -225,7 +240,7 @@ public static class UiSettings
             if (p == null || !File.Exists(p)) return;
             foreach (string raw in File.ReadAllLines(p))
             {
-                var kv = raw.Split('=');
+                var kv = raw.Split(new[] { '=' }, 2);
                 if (kv.Length != 2) continue;
                 string k = kv[0].Trim().ToLowerInvariant(), v = kv[1].Trim();
                 bool on = !v.Equals("off", StringComparison.OrdinalIgnoreCase);
@@ -236,6 +251,13 @@ public static class UiSettings
                     case "party": Party = on; break;
                     case "feed": Feed = on; break;
                     case "partybars": PartyBars = on; break;
+                    case "thrall":
+                    {
+                        var tv = v.Split('='); if (tv.Length != 2) break;
+                        var nb = tv[1].Split(','); int n0, b0;
+                        if (nb.Length == 2 && int.TryParse(nb[0], out n0) && int.TryParse(nb[1], out b0)) PerThrall[tv[0]] = new[] { Mathf.Clamp(n0, -1, ColorNames.Length - 1), Mathf.Clamp(b0, -1, BarColorNames.Length - 1) };
+                        break;
+                    }
                     case "barcolor": { int bi = Array.FindIndex(BarColorNames, n => n.Equals(v, StringComparison.OrdinalIgnoreCase)); if (bi >= 0) BarColorIdx = bi; break; }
                     case "namecolor": { int ci = Array.FindIndex(ColorNames, n => n.Equals(v, StringComparison.OrdinalIgnoreCase)); if (ci >= 0) NameColorIdx = ci; break; }
                     case "partyx": float px; if (float.TryParse(v, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out px)) PartyX = Mathf.Clamp01(px); break;
@@ -253,7 +275,9 @@ public static class UiSettings
         {
             var p = FilePath;
             if (p == null) return;
-            File.WriteAllText(p, "key=" + Key + "\nnameplates=" + (Nameplates ? "on" : "off") + "\nparty=" + (Party ? "on" : "off") + "\nfeed=" + (Feed ? "on" : "off") + "\npartybars=" + (PartyBars ? "on" : "off") + "\nbarcolor=" + BarColorNames[Mathf.Clamp(BarColorIdx, 0, BarColorNames.Length - 1)] + "\nnamecolor=" + ColorNames[Mathf.Clamp(NameColorIdx, 0, ColorNames.Length - 1)] + "\nscale=" + Scale.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) +
+            var per = new System.Text.StringBuilder();
+            foreach (var kvp in PerThrall) if (kvp.Value[0] >= 0 || kvp.Value[1] >= 0) per.Append("thrall=").Append(kvp.Key).Append('=').Append(kvp.Value[0]).Append(',').Append(kvp.Value[1]).Append('\n');
+            File.WriteAllText(p, per.ToString() + "key=" + Key + "\nnameplates=" + (Nameplates ? "on" : "off") + "\nparty=" + (Party ? "on" : "off") + "\nfeed=" + (Feed ? "on" : "off") + "\npartybars=" + (PartyBars ? "on" : "off") + "\nbarcolor=" + BarColorNames[Mathf.Clamp(BarColorIdx, 0, BarColorNames.Length - 1)] + "\nnamecolor=" + ColorNames[Mathf.Clamp(NameColorIdx, 0, ColorNames.Length - 1)] + "\nscale=" + Scale.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) +
                 "\npartyx=" + PartyX.ToString("0.####", System.Globalization.CultureInfo.InvariantCulture) + "\npartyy=" + PartyY.ToString("0.####", System.Globalization.CultureInfo.InvariantCulture) + "\n");
         }
         catch (Exception e) { Log.Warning("[BaitUI] settings save: " + e.Message); }

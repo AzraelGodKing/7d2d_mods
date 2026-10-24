@@ -58,8 +58,9 @@ public class XUiC_AzraelBaitRoster : XUiController
         Hook("tglparty", () => { UiSettings.Party = !UiSettings.Party; UiSettings.Save(); seen = -1; });
         Hook("tglfed", () => { UiSettings.Feed = !UiSettings.Feed; UiSettings.Save(); seen = -1; });
         Hook("tglpbars", () => { UiSettings.PartyBars = !UiSettings.PartyBars; UiSettings.Save(); seen = -1; });
-        Hook("cyclecolor", () => { UiSettings.NameColorIdx = (UiSettings.NameColorIdx + 1) % UiSettings.ColorNames.Length; UiSettings.Save(); seen = -1; });
-        Hook("cyclebar", () => { UiSettings.BarColorIdx = (UiSettings.BarColorIdx + 1) % UiSettings.BarColorNames.Length; UiSettings.Save(); seen = -1; });
+        Hook("cyclecolor", () => { UiSettings.CycleName(); seen = -1; });
+        Hook("cycletarget", () => { UiSettings.NextTarget(); seen = -1; });
+        Hook("cyclebar", () => { UiSettings.CycleBar(); seen = -1; });
         Hook("sizedown", () => { UiSettings.Scale = Mathf.Clamp(Mathf.Round((UiSettings.Scale - 0.2f) * 10f) / 10f, 0.5f, 4f); UiSettings.Save(); seen = -1; });
         Hook("sizeup", () => { UiSettings.Scale = Mathf.Clamp(Mathf.Round((UiSettings.Scale + 0.2f) * 10f) / 10f, 0.5f, 4f); UiSettings.Save(); seen = -1; });
     }
@@ -111,8 +112,9 @@ public class XUiC_AzraelBaitRoster : XUiController
             case "status": value = BaitData.StatusText; return true;
             case "pagetext": value = "Page " + (page + 1) + "/" + Math.Max(1, (BaitData.Thralls.Count + Rows - 1) / Rows); return true;
             case "pbarstxt": value = "Party members' bars: " + (UiSettings.PartyBars ? "on" : "off"); return true;
-            case "colortxt": value = "Name color: " + UiSettings.ColorNames[UiSettings.NameColorIdx]; return true;
-            case "bartxt": value = "Bar color: " + UiSettings.BarColorNames[UiSettings.BarColorIdx]; return true;
+            case "colortxt": value = "Name color: " + UiSettings.NameLabel(); return true;
+            case "bartxt": value = "Bar color: " + UiSettings.BarLabel(); return true;
+            case "targettxt": { var tt = UiSettings.TargetThrall; value = "Colors apply to: " + (tt == null ? "all thralls (default)" : tt.Idx + ". " + tt.Label) + "   (click to change)"; return true; }
             case "tagstxt": value = "Name tags: " + (UiSettings.Nameplates ? "on" : "off"); return true;
             case "partytxt": value = "Party list: " + (UiSettings.Party ? "on" : "off"); return true;
             case "fedtxt": value = "Fed tags: " + (UiSettings.Feed ? "on" : "off"); return true;

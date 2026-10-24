@@ -37,3 +37,5 @@ The buttons send the normal `/thrall` chat commands (they are hidden from other 
 **1.3.1:** Name tags and HP bars sat in the wrong place on screen once you had travelled a few hundred blocks from where the world loaded: the game recentres its scene as you move, and the tag position did not allow for that. They now line up with the thrall.
 
 **1.4.0:** Name tags and HP bars now also show over thralls that belong to members of your party (switch: `Party members' bars` in the roster window; needs Bait 1.7.3 on the server, and the owner's thralls within 45 blocks). New roster-window buttons pick the colour of the name text and of the HP bar (Auto keeps the green-to-red health colour). Thralls no longer show an enemy marker on the compass or map.
+
+**1.5.0:** Name and bar colours can be set per thrall. In the roster window, click the `Colors apply to` button to pick a thrall (or all thralls for the default), then the Name color and Bar color buttons; `Default` follows the all-thralls setting. Saved on your own computer by roster number and class, so releasing or reordering thralls can shift which colour goes with which.
