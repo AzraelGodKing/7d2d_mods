@@ -48,6 +48,8 @@ public class XUiC_AzraelBaitRoster : XUiController
         Hook("prev", () => { if (page > 0) page--; seen = -1; });
         Hook("next", () => { if ((page + 1) * Rows < BaitData.Thralls.Count) page++; seen = -1; });
         Hook("stowall", () => BaitData.Cmd("/thrall stow all"));
+        Hook("stowactive", () => BaitData.Cmd("/thrall stow active"));
+        Hook("stowtethered", () => BaitData.Cmd("/thrall stow tethered"));
         Hook("followall", () => BaitData.Cmd("/thrall follow all"));
         Hook("stayall", () => BaitData.Cmd("/thrall stay all"));
         Hook("admin", () => { var wm = xui.playerUI.windowManager; wm.Close("azraelBaitRoster"); wm.Open("azraelBaitAdmin", true); });

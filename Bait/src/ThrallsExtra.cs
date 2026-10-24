@@ -55,18 +55,125 @@ public static partial class Thralls
     }
 
     // Takes n bait from the toolbelt first, then the backpack. False (and nothing taken) when there isn't enough.
-    static bool TakeBait(EntityPlayer p, int n)
+    // Bait counts in meals: plain bait is 1 each, Rich and Feast count for what they are worth when fed.
+    static int ItemCount(EntityPlayer p, string item, out int belt, out int bag)
     {
+        belt = 0; bag = 0;
         try
         {
-            var iv = ItemClass.GetItem(BaitCheck.BaitItem);
-            if (iv == null || p.inventory == null || p.bag == null) return false;
-            if (p.inventory.GetItemCount(iv) + p.bag.GetItemCount(iv) < n) return false;
+            var iv = ItemClass.GetItem(item);
+            if (iv == null || p == null) return 0;
+            if (p.inventory != null) belt = p.inventory.GetItemCount(iv);
+            if (p.bag != null) bag = p.bag.GetItemCount(iv);
+        }
+        catch (Exception e) { Log.Warning("[Bait] could not count " + item + ": " + e.Message); }
+        return belt + bag;
+    }
+
+    static bool TakeItems(EntityPlayer p, string item, int n)
+    {
+        if (n <= 0) return true;
+        try
+        {
+            var iv = ItemClass.GetItem(item);
             int left = n - p.inventory.DecItem(iv, n);
             if (left > 0) p.bag.DecItem(iv, left);
             return true;
         }
-        catch (Exception e) { Log.Warning("[Bait] could not take bait: " + e.Message); return false; }
+        catch (Exception e) { Log.Warning("[Bait] could not take " + item + ": " + e.Message); return false; }
+    }
+
+    // Pays n meals of bait: plain first, then Rich, then Feast (an overpay is not refunded).
+    static bool TakeBait(EntityPlayer p, int n)
+    {
+        int b, g;
+        int plain = ItemCount(p, BaitCheck.BaitItem, out b, out g);
+        int rich = ItemCount(p, BaitCheck.RichItem, out b, out g);
+        int feast = ItemCount(p, BaitCheck.FeastItem, out b, out g);
+        int rm = BaitCheck.Meals(BaitCheck.RichItem), fm = BaitCheck.Meals(BaitCheck.FeastItem);
+        if (plain + rich * rm + feast * fm < n) return false;
+        int usePlain = Math.Min(plain, n), rem = n - usePlain;
+        int useRich = rem > 0 ? Math.Min(rich, (rem + rm - 1) / rm) : 0;
+        rem -= useRich * rm;
+        int useFeast = rem > 0 ? (rem + fm - 1) / fm : 0;
+        return TakeItems(p, BaitCheck.BaitItem, usePlain) && TakeItems(p, BaitCheck.RichItem, useRich) && TakeItems(p, BaitCheck.FeastItem, useFeast);
+    }
+
+    static string NeedBaitText(EntityPlayer p, int n)
+    {
+        int b1, g1, b2, g2, b3, g3;
+        int plain = ItemCount(p, BaitCheck.BaitItem, out b1, out g1);
+        int rich = ItemCount(p, BaitCheck.RichItem, out b2, out g2);
+        int feast = ItemCount(p, BaitCheck.FeastItem, out b3, out g3);
+        return "You need " + n + " meals of bait (plain = 1, Rich = " + BaitCheck.Meals(BaitCheck.RichItem) + ", Feast = " + BaitCheck.Meals(BaitCheck.FeastItem) +
+               "). The server sees " + plain + " plain, " + rich + " Rich, " + feast + " Feast (toolbelt " + (b1 + b2 + b3) + ", bag " + (g1 + g2 + g3) + ").";
+    }
+
+    // ---- why a thrall died: the last hit it took is remembered
+    class LastHit { public string Cause; public int Amount; public float At; }
+    static readonly Dictionary<int, LastHit> lastHit = new Dictionary<int, LastHit>();
+
+    public static void NoteHit(EntityAlive victim, DamageSource ds, EntityAlive attacker, int strength)
+    {
+        try
+        {
+            if (lastHit.Count > 300) lastHit.Clear();
+            lastHit[victim.entityId] = new LastHit { Cause = CauseOf(ds, attacker), Amount = strength, At = Time.time };
+        }
+        catch { }
+    }
+
+    static string CauseOf(DamageSource ds, EntityAlive attacker)
+    {
+        if (attacker != null)
+        {
+            if (attacker is EntityPlayer) return "a player";
+            string n = Pretty(ClassName(attacker));
+            int lv = LevelOf(attacker.entityId);
+            return n + (lv > 0 ? " Lv" + lv : "") + (Live.ContainsKey(attacker.entityId) ? " (another thrall)" : "");
+        }
+        try
+        {
+            if (ds.BuffClass != null) return "the " + ds.BuffClass.Name + " effect";
+            if (ds.BlockPosition != Vector3i.zero && W != null)
+            {
+                var bv = W.GetBlock(ds.BlockPosition);
+                if (bv.type != 0) return "a block (" + bv.Block.GetBlockName() + ")";
+            }
+            if (ds.AttackingItem != null && ds.ItemClass != null) return ds.ItemClass.GetItemName();
+        }
+        catch { }
+        switch (ds.damageType.ToString())
+        {
+            case "Falling": return "a fall";
+            case "Heat": return "fire or heat";
+            case "Cold": return "the cold";
+            case "Radiation": return "radiation";
+            case "Starvation": return "starvation";
+            case "Dehydration": return "thirst";
+            case "Suffocation": return "suffocation";
+            case "BloodLoss": return "bleeding";
+            case "Electrical": return "electricity";
+            case "Crushing": return "something crushing it";
+            case "Weather": return "the weather";
+            case "Disease": case "Infection": return "disease";
+            case "Suicide": return "being killed on command";
+        }
+        return ds.damageType + " damage";
+    }
+
+    // Text for the death toast and the server log.
+    public static string DeathReason(EntityAlive victim, EntityAlive killer)
+    {
+        LastHit h;
+        string why;
+        if (lastHit.TryGetValue(victim.entityId, out h) && Time.time - h.At < 60f)
+            why = "killed by " + h.Cause + " (last hit " + h.Amount + ", " + Mathf.RoundToInt(Time.time - h.At) + "s ago)";
+        else if (killer != null) why = "killed by " + Pretty(ClassName(killer));
+        else why = "died with no recorded hit";
+        if (victim.position.y < 2f) why += "; it was at the bottom of the world";
+        lastHit.Remove(victim.entityId);
+        return why;
     }
 
     static void Regen(EntityAlive e)

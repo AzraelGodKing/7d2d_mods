@@ -71,7 +71,19 @@ public static partial class Thralls
         {
             var e = world.GetEntity(lt.EntityId) as EntityAlive;
             var rec = Find(lt.RecordId);
-            if (e == null || e.IsDead()) { ForgetLive(lt.EntityId); continue; }
+            if (e == null || e.IsDead())
+            {
+                if (rec != null && lt.OwnerEntityId >= 0)
+                {
+                    if (e == null && rec.Active && !rec.Tether)
+                    {
+                        Log.Out("[Bait] " + Label(rec) + " (#" + lt.EntityId + ") is gone from the world with no death event (despawned or its chunk unloaded).");
+                        Notify(lt.OwnerEntityId, Label(rec) + " vanished from the world (despawned or its area unloaded). It will be brought back.");
+                    }
+                    else if (e != null) Log.Out("[Bait] " + Label(rec) + " (#" + lt.EntityId + ") is dead but no kill event was seen.");
+                }
+                ForgetLive(lt.EntityId); continue;
+            }
             EntityPlayer owner;
             bool has = online.TryGetValue(lt.OwnerKey, out owner);
             if (rec == null || !rec.Active || (!has && !rec.Tether)) { ForgetLive(lt.EntityId); RemoveFromWorld(e); continue; }
@@ -281,11 +293,19 @@ public static partial class Thralls
             }
             case "stow":
             {
-                var t = arg == null ? new List<ThrallRecord>(list) : Pick(arg, list);
-                if (t.Count == 0) { Tell(me, "Usage: /thrall stow [number|all]"); break; }
+                // stow all = every thrall (tethered ones too); stow active = the ones following you; stow tethered = the ones in a daycare
+                string sub2 = a.Length > 3 ? a[3].ToLowerInvariant() : null;
+                string what = arg == "all" && sub2 != null ? sub2 : arg;
+                List<ThrallRecord> t;
+                string none = null;
+                if (what == null || what == "all") t = new List<ThrallRecord>(list);
+                else if (what == "active") { t = list.FindAll(r => r.Active && !r.Tether); none = "Nothing is active (following you) right now."; }
+                else if (what == "tethered") { t = list.FindAll(r => r.Tether); none = "Nothing is tethered."; }
+                else t = Pick(arg, list);
+                if (t.Count == 0) { Tell(me, none ?? "Usage: /thrall stow [number|all|active|tethered]"); break; }
                 foreach (var r in t) { r.Active = false; r.Tether = false; DespawnLive(r.Id); }
                 dirty = true;
-                Tell(me, t.Count == 1 ? Label(t[0]) + " is now inactive." : t.Count + " thralls are now inactive.");
+                Tell(me, t.Count == 1 ? Label(t[0]) + " is now inactive." : t.Count + " thralls are now inactive" + (what == "active" ? " (the active ones)." : what == "tethered" ? " (the tethered ones)." : "."));
                 break;
             }
             case "tether":
@@ -382,7 +402,7 @@ public static partial class Thralls
                 var he = liveByRecord.TryGetValue(t[0].Id, out lid) && W != null ? W.GetEntity(lid) as EntityAlive : null;
                 if (he == null || he.IsDead()) { Tell(me, Label(t[0]) + " is not out."); break; }
                 if (HpFrac(he) >= 0.99f) { Tell(me, Label(t[0]) + " is already healthy."); break; }
-                if (!TakeBait(owner, BaitConfig.HealBaitCost)) { Tell(me, "You need " + BaitConfig.HealBaitCost + " Zombie and Animal Bait."); break; }
+                if (!TakeBait(owner, BaitConfig.HealBaitCost)) { Tell(me, NeedBaitText(owner, BaitConfig.HealBaitCost)); break; }
                 float hmax = he.GetMaxHealth();
                 he.Stats.Health.Value = Mathf.Min(hmax, he.Stats.Health.Value + hmax * BaitConfig.HealPct / 100f);
                 Tell(me, Label(t[0]) + " healed. " + HpText(t[0]));
@@ -393,7 +413,7 @@ public static partial class Thralls
                 var t = Pick(arg, list);
                 if (t.Count != 1) { Tell(me, "Usage: /thrall revive <number>   (costs " + BaitConfig.ReviveBaitCost + " bait)"); break; }
                 if (t[0].ReviveAt <= NowSec()) { Tell(me, Label(t[0]) + " is not downed."); break; }
-                if (!TakeBait(owner, BaitConfig.ReviveBaitCost)) { Tell(me, "You need " + BaitConfig.ReviveBaitCost + " Zombie and Animal Bait."); break; }
+                if (!TakeBait(owner, BaitConfig.ReviveBaitCost)) { Tell(me, NeedBaitText(owner, BaitConfig.ReviveBaitCost)); break; }
                 t[0].ReviveAt = 0; dirty = true; nextSpawn.Remove(t[0].Id); nextSlow = 0f;
                 Tell(me, Label(t[0]) + " is back on its feet.");
                 break;
@@ -485,7 +505,7 @@ public static partial class Thralls
                 break;
             }
             default:
-                Tell(me, "/thrall list | hp | name <n> <name> | call <n> | stow [n|all] | stay/follow <n|all> | mode <n|all> aggressive|defensive|passive | heal <n> | revive <n> | tether <n|all> [radius] | untether <n|all> | release <n> | kill <n|all> | exclude list|add|remove <class> | config [name value] | admin ...");
+                Tell(me, "/thrall list | hp | name <n> <name> | call <n> | stow [n|all|active|tethered] | stay/follow <n|all> | mode <n|all> aggressive|defensive|passive | heal <n> | revive <n> | tether <n|all> [radius] | untether <n|all> | release <n> | kill <n|all> | exclude list|add|remove <class> | config [name value] | admin ...");
                 break;
         }
         Flush();

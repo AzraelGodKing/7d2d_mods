@@ -12,6 +12,7 @@ public static partial class Thralls
     static readonly HashSet<int> uiClients = new HashSet<int>();
     static readonly Dictionary<int, string> uiRoster = new Dictionary<int, string>();
     static readonly Dictionary<int, string> uiCfg = new Dictionary<int, string>();
+    static readonly Dictionary<int, string> uiAll = new Dictionary<int, string>();
 
     static string Clean(string s)
     {
@@ -82,6 +83,14 @@ public static partial class Thralls
         var cfg = UiConfigRecords();
         sig = string.Join("~", cfg.ToArray());
         if (force || !uiCfg.TryGetValue(id, out old) || old != sig) { uiCfg[id] = sig; UiSend(id, cfg); }
+
+        // every thrall entity id on the server (any owner), so the client can keep turrets from aiming at them
+        var ids = new List<int>(Live.Keys);
+        ids.Sort();
+        var sbIds = new StringBuilder("A|");
+        for (int i = 0; i < ids.Count; i++) { if (i > 0) sbIds.Append(','); sbIds.Append(ids[i]); }
+        sig = sbIds.ToString();
+        if (force || !uiAll.TryGetValue(id, out old) || old != sig) { uiAll[id] = sig; UiSend(id, new List<string> { sig }); }
     }
 
     // Called once a second.
@@ -91,7 +100,7 @@ public static partial class Thralls
         foreach (int id in new List<int>(uiClients))
         {
             var p = W.GetEntity(id) as EntityPlayer;
-            if (p == null) { uiClients.Remove(id); uiRoster.Remove(id); uiCfg.Remove(id); continue; }
+            if (p == null) { uiClients.Remove(id); uiRoster.Remove(id); uiCfg.Remove(id); uiAll.Remove(id); continue; }
             try { UiPushTo(id, p, false); } catch (Exception e) { Dbg("ui push: " + e.Message); }
         }
     }

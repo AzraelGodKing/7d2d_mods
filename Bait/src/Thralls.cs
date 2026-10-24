@@ -544,19 +544,21 @@ public static partial class Thralls
             if (!Live.TryGetValue(victim.entityId, out lt)) return;
             var rec = Find(lt.RecordId);
             ForgetLive(victim.entityId);
+            string why = DeathReason(victim, killer);
             if (rec != null)
             {
+                Log.Out("[Bait] thrall died: " + Label(rec) + " (#" + victim.entityId + ") " + why + " at " + victim.position);
                 if (BaitConfig.ReviveSeconds > 0)
                 {
                     rec.ReviveAt = NowSec() + BaitConfig.ReviveSeconds;
                     nextSpawn.Remove(rec.Id);
-                    Notify(lt.OwnerEntityId, Label(rec) + " fell. It rises again in " + BaitConfig.ReviveSeconds + "s, or /thrall revive "
+                    Notify(lt.OwnerEntityId, Label(rec) + " died: " + why + ". It rises again in " + BaitConfig.ReviveSeconds + "s, or /thrall revive "
                         + (RosterOf(rec.OwnerKey).IndexOf(rec) + 1) + " (" + BaitConfig.ReviveBaitCost + " bait).");
                 }
                 else
                 {
                     RosterOf(rec.OwnerKey).Remove(rec);
-                    Notify(lt.OwnerEntityId, Label(rec) + " fell and is gone for good.");
+                    Notify(lt.OwnerEntityId, Label(rec) + " died: " + why + ". It is gone for good.");
                 }
                 dirty = true;
                 Flush();

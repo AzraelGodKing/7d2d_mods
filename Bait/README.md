@@ -59,6 +59,16 @@ Set the meal counts with `RichBaitMeals` and `FeastBaitMeals`. `giveself azraelB
 
 **Spawn caps:** live thralls are not counted against `MaxSpawnedZombies` / `MaxSpawnedAnimals`, so tamed creatures do not shrink how many wild ones the server can spawn (`ThrallsCountTowardSpawnCap=true` counts them again).
 
+**Stow variants (1.4.0):** `/thrall stow all` stows every thrall (tethered ones too), `/thrall stow active` only the ones following you, `/thrall stow tethered` only the tethered ones. `/thrall stow <n>` is one.
+
+**Death reasons (1.4.0):** when a thrall dies you get a toast saying how ("killed by Zombie Lv3 (last hit 40, 2s ago)", "a fall", "a block (spikes)", "fire or heat"...), and the server log has a line `[Bait] thrall died: ...` with the position. If a thrall just vanishes with no death (despawned or its area unloaded) you are told that too.
+
+**No digging (1.4.0):** thralls never break blocks while following you or going home to a tether; only entities, depending on their mode.
+
+**Traps (1.4.0):** motion sensors (which set off dart traps and other powered traps) skip thralls the same way turrets do. Spikes and other damage blocks do not hurt drones (`DronesIgnoreSpikes`). Turrets and sensors also aim on every client, so the optional BaitUI mod stops that on screen too (the server sends it the thrall ids).
+
+**Revive and heal costs (1.4.0):** pay with plain bait, Rich bait or Feast bait (they count as the meals they are worth). If you are short, the reply says how many the server sees in your toolbelt and bag.
+
 **Client UI (1.3.0):** the optional BaitUI client mod gives players a roster window, name tags, a party list, fed tags and an admin window. The server sends it data only after the client says `/thrall hello` (hidden from chat), so players without it see nothing new.
 
-**Grabbing:** picking up a thrall (a chicken, with an empty hand) leaves it in your inventory as the item and marks it inactive on your roster. Place the item down and it is that thrall again, tethered where you put it if it was tethered, otherwise following you. Or use `/thrall call <n>` (that takes the item back). Before, the roster respawned it and you ended up with a copy.
+**Grabbing (fixed in 1.4.0 for multiplayer):** picking up a thrall (a chicken, with an empty hand) leaves it in your inventory as the item and marks it inactive on your roster. Place the item down and it is that thrall again, tethered where you put it if it was tethered, otherwise following you. Or use `/thrall call <n>` (that takes the item back). Before, the roster respawned it and you ended up with a copy.

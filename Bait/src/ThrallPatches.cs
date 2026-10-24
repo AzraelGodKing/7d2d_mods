@@ -64,6 +64,8 @@ public static class ThrallDamagePatch
                 _strength = Math.Max(1, (int)(_strength / (1f + BaitConfig.LevelToughPct * lv / 100f) + 0.5f));
         }
 
+        if (victimThrall) Thralls.NoteHit(__instance, _damageSource, attacker, _strength);
+
         if (Thralls.Live.Count > 0 && (attackerThrall || victimThrall) && attacker != null && (attacker.entityFlags & EntityFlags.Zombie) != 0)
         {
             __state = attacker;
@@ -208,11 +210,48 @@ public static class ThrallSpawnCapPatch
 }
 // Grabbing a creature (a chicken) turns it into an item and removes it. Without this the roster would respawn it,
 // leaving the player with both the item and a copy.
-[HarmonyPatch(typeof(Entity), "Collect")]
+// The server runs OnCollectServer when a client grabs (Entity.Collect only runs on the host), so the hook goes there.
+[HarmonyPatch(typeof(EntityAnimal), "OnCollectServer")]
 public static class ThrallGrabPatch
 {
     static void Prefix(Entity __instance, int _playerId)
     {
         if (Thralls.IsServer && Thralls.Live.Count > 0) Thralls.OnGrabbed(__instance, _playerId);
+    }
+}
+
+// Thralls never dig through or hit blocks: the move helper starts "digging" when a path is blocked and breaking is allowed.
+[HarmonyPatch(typeof(EntityMoveHelper), "DigStart")]
+public static class ThrallNoDigPatch
+{
+    static bool Prefix(EntityMoveHelper __instance)
+    {
+        try
+        {
+            var e = __instance.entity;
+            return !(e != null && Thralls.IsServer && Thralls.IsThrall(e.entityId));
+        }
+        catch { return true; }
+    }
+}
+
+// Motion sensors (what sets off dart traps and other powered traps) skip thralls like the turrets do.
+[HarmonyPatch(typeof(MotionSensorController), nameof(MotionSensorController.shouldIgnoreTarget))]
+public static class BaitMotionSensorIgnore
+{
+    static void Postfix(Entity _target, ref bool __result)
+    {
+        if (!__result && _target != null && (BaitCheck.ActiveBait(_target) != null || Thralls.IsThrall(_target.entityId))) __result = true;
+    }
+}
+
+// Spikes and the other damage blocks do not hurt drones.
+[HarmonyPatch(typeof(BlockDamage), nameof(BlockDamage.OnEntityCollidedWithBlock))]
+public static class DroneSpikePatch
+{
+    static bool Prefix(Entity _targetEntity, ref bool __result)
+    {
+        if (BaitConfig.DronesIgnoreSpikes && _targetEntity is EntityDrone) { __result = false; return false; }
+        return true;
     }
 }

@@ -44,6 +44,7 @@ public static class BaitData
     public static readonly List<string[]> Config = new List<string[]>();   // name, value, type (i f b)
     public static readonly List<string> Exclude = new List<string>();
     public static readonly Dictionary<int, UiFeedInfo> Feeds = new Dictionary<int, UiFeedInfo>();
+    public static readonly HashSet<int> All = new HashSet<int>();   // every thrall on the server (any owner): turrets and motion sensors skip them
     public static int MaxOwned, MaxActive, ActiveCount, Power;
     public static bool Admin, HasData;
     public static string Status = "";
@@ -58,7 +59,7 @@ public static class BaitData
 
     public static void Reset()
     {
-        Thralls.Clear(); Config.Clear(); Exclude.Clear(); Feeds.Clear();
+        Thralls.Clear(); Config.Clear(); Exclude.Clear(); Feeds.Clear(); All.Clear();
         HasData = false; Admin = false; Status = ""; Version++;
     }
 
@@ -110,6 +111,10 @@ public static class BaitData
                 case "C": if (pendC == null) break; pendC.Add(new[] { At(f, 1), At(f, 2), At(f, 3) }); if (pendC.Count >= pendCn) CommitC(); break;
                 case "XS": pendX = new List<string>(); pendXn = I(At(f, 1)); if (pendXn == 0) CommitX(); break;
                 case "X": if (pendX == null) break; pendX.Add(At(f, 1)); if (pendX.Count >= pendXn) CommitX(); break;
+                case "A":
+                    All.Clear();
+                    foreach (string s in At(f, 1).Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)) All.Add(I(s));
+                    break;
                 case "F":
                     Feeds[I(At(f, 1))] = new UiFeedInfo { Cur = I(At(f, 2)), Need = I(At(f, 3)), At = Time.time };
                     Version++;
