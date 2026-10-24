@@ -49,6 +49,8 @@ public static class BaitData
     public static string Status = "";
     public static float StatusAt, LastCmd;
     public static int Version;
+    public static int RenameIdx;
+    public static string RenameFrom = "";
 
     static List<UiThrall> pendT; static int pendTn;
     static List<string[]> pendC; static int pendCn;

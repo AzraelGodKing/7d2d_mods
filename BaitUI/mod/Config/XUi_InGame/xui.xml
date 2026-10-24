@@ -3,6 +3,9 @@
 		<window_group name="azraelBaitRoster" defaultselected="close">
 			<window name="windowAzraelBaitRoster" />
 		</window_group>
+		<window_group name="azraelBaitName" defaultselected="txtName">
+			<window name="windowAzraelBaitName" />
+		</window_group>
 		<window_group name="azraelBaitAdmin" defaultselected="close">
 			<window name="windowAzraelBaitAdmin" />
 		</window_group>

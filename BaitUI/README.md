@@ -5,7 +5,7 @@ It needs the Bait mod (1.3.0 or newer) on the server. Players without it lose no
 
 ## What you get
 
-- **Roster window (backslash key):** every thrall as a row with buttons: Call/Stow, Stay/Follow, mode (Aggr, Def, Pass cycles), Tether/Untether (tethers where you stand), Heal/Revive, Release (asks twice). Stow all, Follow all and Stay all along the bottom. Replies from the server show in a status line instead of chat.
+- **Roster window (backslash key):** every thrall as a row with buttons: Call/Stow, Stay/Follow, mode (Aggr, Def, Pass cycles), Tether/Untether (tethers where you stand), Heal/Revive, Rename (a small box to type the name, empty clears it), Release (asks twice). Stow all, Follow all and Stay all along the bottom. Replies from the server show in a status line instead of chat.
 - **Name tags:** level, name and an HP bar over your active thralls (within 45 m).
 - **Party list:** your active thralls and their HP down the left side of the screen. Open any window with a cursor (the roster, your inventory) and drag the list with the left mouse button to move it; the spot is saved. `baitui reset` puts it back.
 - **Fed tags:** "Fed 2/4" and a bar over a creature you are taming, so you do not need the toast.

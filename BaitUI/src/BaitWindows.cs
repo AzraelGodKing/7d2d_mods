@@ -29,6 +29,13 @@ public class XUiC_AzraelBaitRoster : XUiController
             Hook("r" + i + "mode", () => { var t = At(row); if (t != null) BaitData.Cmd("/thrall mode " + t.Idx + " " + BaitData.ModeWord((t.Mode + 1) % 3)); });
             Hook("r" + i + "teth", () => { var t = At(row); if (t != null) BaitData.Cmd((t.Tether ? "/thrall untether " : "/thrall tether ") + t.Idx); });
             Hook("r" + i + "heal", () => { var t = At(row); if (t != null) BaitData.Cmd((t.Down > 0 ? "/thrall revive " : "/thrall heal ") + t.Idx); });
+            Hook("r" + i + "name", () =>
+            {
+                var t = At(row);
+                if (t == null) return;
+                BaitData.RenameIdx = t.Idx; BaitData.RenameFrom = t.Label;
+                var wm = xui.playerUI.windowManager; wm.Close("azraelBaitRoster"); wm.Open("azraelBaitName", true);
+            });
             Hook("r" + i + "rel", () =>
             {
                 var t = At(row);
@@ -119,9 +126,50 @@ public class XUiC_AzraelBaitRoster : XUiController
                 case "modetxt": value = t == null ? "" : BaitData.ModeName(t.Mode); return true;
                 case "tethtxt": value = t == null ? "" : t.Tether ? "Untether" : "Tether"; return true;
                 case "healtxt": value = t == null ? "" : t.Down > 0 ? "Revive" : "Heal"; return true;
+                case "nametxt": value = t == null ? "" : "Rename"; return true;
                 case "reltxt": value = t == null ? "" : (relRow == row && Time.time - relAt < 4f) ? "Sure?" : "Release"; return true;
             }
         }
+        return base.GetBindingValueInternal(ref value, name);
+    }
+}
+
+// Small popup with a text box for renaming one thrall. Referenced as controller="AzraelBaitName, AzraelBaitUI".
+public class XUiC_AzraelBaitName : XUiController
+{
+    XUiC_TextInput txt;
+
+    void Back()
+    {
+        var wm = xui.playerUI.windowManager;
+        wm.Close("azraelBaitName");
+        wm.Open("azraelBaitRoster", true);
+    }
+
+    void Ok()
+    {
+        string name = txt != null ? (txt.Text ?? "") : "";
+        name = name.Replace("|", " ").Replace("~", " ").Trim();
+        BaitData.Cmd("/thrall name " + BaitData.RenameIdx + " " + (name.Length == 0 ? "clear" : name));
+        Back();
+    }
+
+    public override void Init()
+    {
+        base.Init();
+        txt = GetChildById("txtName") as XUiC_TextInput;
+        if (txt != null) txt.OnSubmitHandler += (s, t) => Ok();
+        var ok = GetChildById("btnOk") as XUiC_SimpleButton;
+        if (ok != null) { ok.Text = "Rename"; ok.OnPressed += (s, b) => Ok(); }
+        var cancel = GetChildById("btnCancel") as XUiC_SimpleButton;
+        if (cancel != null) { cancel.Text = "Cancel"; cancel.OnPressed += (s, b) => Back(); }
+    }
+
+    public override void OnOpen() { base.OnOpen(); RefreshBindings(); }
+
+    public override bool GetBindingValueInternal(ref string value, string name)
+    {
+        if (name == "nametitle") { value = "Rename " + BaitData.RenameFrom + "  (empty clears the name)"; return true; }
         return base.GetBindingValueInternal(ref value, name);
     }
 }
