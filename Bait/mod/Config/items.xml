@@ -7,6 +7,7 @@
 	-->
 	<append xpath="/items">
 		<item name="azraelBait">
+			<property name="Tags" value="azrbaitplain"/>
 			<property name="HoldType" value="40"/>
 			<property name="Meshfile" value="@:Other/Items/Food/parcelGenericPrefab.prefab"/>
 			<property name="DropMeshfile" value="@:Other/Items/Misc/sack_droppedPrefab.prefab"/>
@@ -40,6 +41,7 @@
 			<property name="Group" value="Resources"/>
 		</item>
 		<item name="azraelBaitRich">
+			<property name="Tags" value="azrbaitrich"/>
 			<property name="HoldType" value="40"/>
 			<property name="Meshfile" value="@:Other/Items/Food/parcelGenericPrefab.prefab"/>
 			<property name="DropMeshfile" value="@:Other/Items/Misc/sack_droppedPrefab.prefab"/>
@@ -73,6 +75,7 @@
 			<property name="Group" value="Resources"/>
 		</item>
 		<item name="azraelBaitFeast">
+			<property name="Tags" value="azrbaitfeast"/>
 			<property name="HoldType" value="40"/>
 			<property name="Meshfile" value="@:Other/Items/Food/parcelGenericPrefab.prefab"/>
 			<property name="DropMeshfile" value="@:Other/Items/Misc/sack_droppedPrefab.prefab"/>

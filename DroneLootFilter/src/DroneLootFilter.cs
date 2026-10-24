@@ -28,8 +28,13 @@ public class AzraelDroneLootFilterMod : IModApi
     static void OnStart(ref ModEvents.SGameStartDoneData d)
     {
         TryPatch();
+        ReportIfMissing();
         DroneFilter.Load();
     }
+
+    // Drone Automation version this was written and checked against.
+    const string TestedAgainst = "0.11.0";
+    static bool announcedMissing;
 
     static void TryPatch()
     {
@@ -37,27 +42,114 @@ public class AzraelDroneLootFilterMod : IModApi
         try
         {
             Type vac = null, compat = null;
+            string asmPath = null;
             foreach (var a in AppDomain.CurrentDomain.GetAssemblies())
             {
                 if (a.GetName().Name != "DroneAutomation") continue;
+                asmPath = a.Location;
                 foreach (var t in a.GetTypes())
                 {
                     if (t.Name == "VacuumCore") vac = t;
                     else if (t.Name == "StorageCompat") compat = t;
                 }
             }
-            if (vac == null) { Log.Out("[DroneLootFilter] Drone Automation not loaded (yet)."); return; }
-            DroneFilter.BindCompat(compat);
-            var me = typeof(DroneFilterPatches);
-            harmony.Patch(AccessTools.Method(vac, "Tick"), prefix: new HarmonyMethod(me.GetMethod("TickPre")), finalizer: new HarmonyMethod(me.GetMethod("TickEnd")));
-            harmony.Patch(AccessTools.Method(vac, "Absorb"), prefix: new HarmonyMethod(me.GetMethod("AbsorbPre")), postfix: new HarmonyMethod(me.GetMethod("AbsorbPost")));
-            harmony.Patch(AccessTools.Method(vac, "IsSettledLoot"), postfix: new HarmonyMethod(me.GetMethod("SettledPost")));
-            var lockM = AccessTools.Method(typeof(LockManager), "IsLockedServer");
-            if (lockM != null) harmony.Patch(lockM, prefix: new HarmonyMethod(me.GetMethod("LockPre")));
+            if (asmPath == null)
+            {
+                // Not loaded yet at InitMod; the GameStartDone retry reports it if it is really absent.
+                DroneFilter.Health = "Drone Automation is not installed, so the filter does nothing.";
+                return;
+            }
+            DroneFilter.DroneVersion = ReadVersion(asmPath);
+            var problems = new List<string>();
+            if (vac == null) problems.Add("class VacuumCore not found");
+            else
+            {
+                var me = typeof(DroneFilterPatches);
+                Hook(problems, "VacuumCore.Tick", () => {
+                    var m = AccessTools.Method(vac, "Tick");
+                    Need(m != null && HasParam(m, "_ownerData", typeof(PersistentPlayerData)), "Tick(_ownerData)");
+                    harmony.Patch(m, prefix: new HarmonyMethod(me.GetMethod("TickPre")), finalizer: new HarmonyMethod(me.GetMethod("TickEnd")));
+                });
+                Hook(problems, "VacuumCore.Absorb", () => {
+                    var m = AccessTools.Method(vac, "Absorb");
+                    Need(m != null && HasParam(m, "_moving", typeof(ItemStack)) && m.ReturnType == typeof(bool), "Absorb(_moving) : bool");
+                    harmony.Patch(m, prefix: new HarmonyMethod(me.GetMethod("AbsorbPre")), postfix: new HarmonyMethod(me.GetMethod("AbsorbPost")));
+                });
+                Hook(problems, "VacuumCore.IsSettledLoot", () => {
+                    var m = AccessTools.Method(vac, "IsSettledLoot");
+                    Need(m != null && HasParam(m, "_item", typeof(EntityItem)) && m.ReturnType == typeof(bool), "IsSettledLoot(_item) : bool");
+                    harmony.Patch(m, postfix: new HarmonyMethod(me.GetMethod("SettledPost")));
+                });
+                Hook(problems, "LockManager.IsLockedServer", () => {
+                    var m = AccessTools.Method(typeof(LockManager), "IsLockedServer");
+                    Need(m != null && m.ReturnType == typeof(bool) && m.GetParameters().Length >= 1 && m.GetParameters()[0].ParameterType == typeof(ILockTarget), "IsLockedServer(ILockTarget, ...) : bool");
+                    harmony.Patch(m, prefix: new HarmonyMethod(me.GetMethod("LockPre")));
+                });
+            }
+            if (compat == null) problems.Add("class StorageCompat not found (bags and containers holding only ignored items will be re-opened)");
+            else
+            {
+                DroneFilter.BindCompat(compat);
+                foreach (var miss in DroneFilter.MissingCompat()) problems.Add("StorageCompat." + miss + " not found (bags and containers holding only ignored items will be re-opened)");
+            }
+
             patched = true;
-            Log.Out("[DroneLootFilter] Hooked Drone Automation Auto-Loot. Players use " + DroneFilter.Prefix + ".");
+            if (problems.Count > 0)
+            {
+                DroneFilter.Problems.AddRange(problems);
+                DroneFilter.Health = "Drone Automation " + (DroneFilter.DroneVersion ?? "?") + " no longer matches what this filter expects (" + string.Join("; ", problems.ToArray()) + "). Update Drone Loot Filter.";
+                Log.Error("[DroneLootFilter] BROKEN: " + DroneFilter.Health);
+            }
+            else if (DroneFilter.DroneVersion != null && DroneFilter.DroneVersion != TestedAgainst)
+            {
+                DroneFilter.Health = null;
+                Log.Warning("[DroneLootFilter] Drone Automation is " + DroneFilter.DroneVersion + " but this filter was checked against " + TestedAgainst + ". All hooks still resolved, but test that /dai still works.");
+            }
+            else
+            {
+                DroneFilter.Health = null;
+                Log.Out("[DroneLootFilter] Hooked Drone Automation " + DroneFilter.DroneVersion + " Auto-Loot. Players use " + DroneFilter.Prefix + ".");
+            }
         }
-        catch (Exception e) { Log.Warning("[DroneLootFilter] could not hook Drone Automation: " + e.Message); }
+        catch (Exception e)
+        {
+            DroneFilter.Health = "could not hook Drone Automation: " + e.Message;
+            Log.Error("[DroneLootFilter] BROKEN: " + DroneFilter.Health);
+        }
+    }
+
+    static void Hook(List<string> problems, string label, Action a)
+    {
+        try { a(); }
+        catch (Exception e) { problems.Add(label + " (" + e.Message.Split('\n')[0] + ")"); }
+    }
+
+    static void Need(bool ok, string what) { if (!ok) throw new Exception("expected " + what); }
+
+    static bool HasParam(MethodInfo m, string name, Type type)
+    {
+        foreach (var p in m.GetParameters()) if (p.Name == name && p.ParameterType == type) return true;
+        return false;
+    }
+
+    static string ReadVersion(string dllPath)
+    {
+        try
+        {
+            string info = Path.Combine(Path.GetDirectoryName(dllPath), "ModInfo.xml");
+            var m = Regex.Match(File.ReadAllText(info), "<Version\\s+value=\"([^\"]+)\"");
+            return m.Success ? m.Groups[1].Value : null;
+        }
+        catch { return null; }
+    }
+
+    // Called once the world has loaded, when every mod is certainly loaded.
+    public static void ReportIfMissing()
+    {
+        if (patched || announcedMissing) return;
+        announcedMissing = true;
+        DroneFilter.Health = "Drone Automation is not installed (or failed to load), so the filter does nothing.";
+        Log.Error("[DroneLootFilter] " + DroneFilter.Health);
     }
 }
 
@@ -65,7 +157,8 @@ public static class DroneFilterPatches
 {
     public static void TickPre(PersistentPlayerData _ownerData)
     {
-        DroneFilter.CurrentOwner = _ownerData != null && _ownerData.PrimaryId != null ? _ownerData.PrimaryId.CombinedString : null;
+        try { DroneFilter.CurrentOwner = _ownerData != null && _ownerData.PrimaryId != null ? _ownerData.PrimaryId.CombinedString : null; }
+        catch (Exception e) { DroneFilter.Fail("Tick", e); }
     }
 
     public static void TickEnd() { DroneFilter.CurrentOwner = null; }
@@ -73,24 +166,33 @@ public static class DroneFilterPatches
     public static bool AbsorbPre(ItemStack _moving, ref bool __result, ref string __state)
     {
         __state = null;
-        if (DroneFilter.CurrentOwner == null) return true;
-        string name = DroneFilter.NameOf(_moving);
-        if (name == null) return true;
-        if (DroneFilter.Ignored(DroneFilter.CurrentOwner, name)) { __result = false; return false; }
-        __state = name;
+        try
+        {
+            if (DroneFilter.CurrentOwner == null) return true;
+            string name = DroneFilter.NameOf(_moving);
+            if (name == null) return true;
+            if (DroneFilter.Ignored(DroneFilter.CurrentOwner, name)) { __result = false; return false; }
+            __state = name;
+        }
+        catch (Exception e) { DroneFilter.Fail("Absorb", e); }
         return true;
     }
 
     public static void AbsorbPost(bool __result, string __state)
     {
-        if (__result && __state != null && DroneFilter.CurrentOwner != null) DroneFilter.NoteTaken(DroneFilter.CurrentOwner, __state);
+        try { if (__result && __state != null && DroneFilter.CurrentOwner != null) DroneFilter.NoteTaken(DroneFilter.CurrentOwner, __state); }
+        catch (Exception e) { DroneFilter.Fail("Absorb post", e); }
     }
 
     public static void SettledPost(EntityItem _item, ref bool __result)
     {
-        if (!__result || DroneFilter.CurrentOwner == null || _item == null) return;
-        string name = DroneFilter.NameOf(_item.itemStack);
-        if (name != null && DroneFilter.Ignored(DroneFilter.CurrentOwner, name)) __result = false;
+        try
+        {
+            if (!__result || DroneFilter.CurrentOwner == null || _item == null) return;
+            string name = DroneFilter.NameOf(_item.itemStack);
+            if (name != null && DroneFilter.Ignored(DroneFilter.CurrentOwner, name)) __result = false;
+        }
+        catch (Exception e) { DroneFilter.Fail("IsSettledLoot", e); }
     }
 
     // Containers/bags holding only ignored items are treated like locked ones, so the drone stops re-opening them.
@@ -101,13 +203,38 @@ public static class DroneFilterPatches
         {
             if (DroneFilter.OnlyIgnoredLeft(DroneFilter.CurrentOwner, __0)) { __result = true; return false; }
         }
-        catch { }
+        catch (Exception e) { DroneFilter.Fail("IsLockedServer", e); }
         return true;
     }
 }
 
 public static class DroneFilter
 {
+    // Set when the companion could not hook Drone Automation or a hook starts failing. Shown to players on /dai.
+    public static string Health;
+    public static string DroneVersion;
+    public static readonly List<string> Problems = new List<string>();
+    static int failures;
+
+    public static void Fail(string where, Exception e)
+    {
+        failures++;
+        if (failures == 1 || failures % 500 == 0)
+            Log.Error("[DroneLootFilter] BROKEN: hook '" + where + "' threw (" + failures + " time(s) so far). Drone Automation " + (DroneVersion ?? "?") +
+                      " probably changed; update Drone Loot Filter. " + e);
+        if (Health == null) Health = "a hook failed at runtime (" + where + "): " + e.Message + ". Update Drone Loot Filter.";
+    }
+
+    public static List<string> MissingCompat()
+    {
+        var l = new List<string>();
+        if (teItems == null) l.Add("Items");
+        if (teTouched == null) l.Add("Touched");
+        if (bagSlots == null) l.Add("BagSlots");
+        if (bagTouched == null) l.Add("BagTouched");
+        return l;
+    }
+
     public static string Prefix = "/dai";
     public static string CurrentOwner;
     static readonly List<string> defaults = new List<string>();
@@ -324,6 +451,7 @@ public static class DroneFilter
     {
         string who = KeyOf(id);
         if (who == null) return;
+        if (Health != null) Tell(id, "[ff6060]WARNING:[-] " + Health + " Tell the server admin.");
         string sub = parts.Length > 1 ? parts[1].ToLowerInvariant() : "help";
         string rest = parts.Length > 2 ? string.Join(" ", parts, 2, parts.Length - 2) : null;
         string p = Prefix;

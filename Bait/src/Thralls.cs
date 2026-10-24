@@ -558,7 +558,7 @@ public static partial class Thralls
             Vector3 pos;
             if (at.HasValue) pos = at.Value + new Vector3(0f, 0.3f, 0f);
             else if (rec.Tether) pos = new Vector3(rec.TX, rec.TY + 0.5f, rec.TZ);
-            else if (owner != null) pos = owner.position + new Vector3(UnityEngine.Random.Range(-3f, 3f), 0.5f, UnityEngine.Random.Range(-3f, 3f));
+            else if (owner != null) pos = BehindOwner(owner);
             else return;
             var e = EntityFactory.CreateEntity(cid, pos, Vector3.zero) as EntityAlive;
             if (e == null) { Log.Warning("[Bait] could not create " + rec.ClassName); return; }

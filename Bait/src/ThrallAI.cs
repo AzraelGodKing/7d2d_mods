@@ -48,7 +48,8 @@ public class EAIFollowMaster : EAIBase
         float dist = (o.position - theEntity.position).magnitude;
         if (dist > BaitConfig.TeleportDistance)
         {
-            theEntity.SetPosition(o.position + new Vector3(UnityEngine.Random.Range(-2f, 2f), 0.5f, UnityEngine.Random.Range(-2f, 2f)));
+            if (o.AttachedToEntity != null) return;   // riding: thralls are stowed, and one must never be dropped in front of a vehicle
+            theEntity.SetPosition(Thralls.BehindOwner(o));
             return;
         }
         if (Time.time >= nextRepath || (lastGoal - o.position).sqrMagnitude > 9f)

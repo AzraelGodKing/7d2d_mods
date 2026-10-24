@@ -36,6 +36,8 @@ public static class BaitConfig
     public static bool DronesIgnoreSpikes = true;   // spikes and other damage blocks do not hurt drones
     // (AutoStowInVehicle above: thralls go inactive while you ride a vehicle and come back when you get off)
     public static bool OwnerCanHurtThralls = false;
+    public static bool DroneWarnsOnThralls = true;      // a drone says "enemy detected" for another player's thrall near it (it never attacks one)
+    public static bool DroneWarnsOnOwnThralls = false;  // ...and also for its own owner's thralls (they are always near, so it would bark every ~90 s)
     // tether (daycare)
     public static float TetherRadius = 8f;      // default radius for /thrall tether
     public static float TetherMaxRadius = 40f;

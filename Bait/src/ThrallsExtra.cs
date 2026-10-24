@@ -56,7 +56,88 @@ public static partial class Thralls
 
     // Takes n bait from the toolbelt first, then the backpack. False (and nothing taken) when there isn't enough.
     // Bait counts in meals: plain bait is 1 each, Rich and Feast count for what they are worth when fed.
+    // On a dedicated server (or for a guest in a hosted game) a remote player's backpack and toolbelt are not live here:
+    // the server only keeps the saved copy their game sends whenever it changes. So counts are read from that copy, and
+    // bait is taken by a game event that runs on the player's own game (Config/gameevents.xml), so no client mod is needed.
+    class PendingTake { public int N; public float Until; }
+    static readonly Dictionary<string, PendingTake> pendingTakes = new Dictionary<string, PendingTake>();
+
+    static ClientInfo ClientOf(EntityPlayer p)
+    {
+        try
+        {
+            if (p == null || p is EntityPlayerLocal) return null;
+            var cm = SingletonMonoBehaviour<ConnectionManager>.Instance;
+            var ci = cm != null && cm.Clients != null ? cm.Clients.ForEntityId(p.entityId) : null;
+            return ci != null && ci.latestPlayerData != null ? ci : null;
+        }
+        catch { return null; }
+    }
+
+    // The toolbelt blob has the same item grid as the backpack blob, with a different version byte at the front.
+    static int BlobCount(System.IO.MemoryStream ms, bool toolbelt, ItemValue iv)
+    {
+        if (ms == null || ms.Length < 2) return 0;
+        byte[] d = ms.ToArray();
+        if (toolbelt) d[0] = 2;
+        using (var br = MemoryPools.poolBinaryReader.AllocSync(false))
+        {
+            br.SetBaseStream(new System.IO.MemoryStream(d));
+            var b = Bag.Read(br, XUiC_ItemStack.StackLocationTypes.Backpack, StreamModeRead.Persistency, null);
+            return b.GetItemCount(iv);
+        }
+    }
+
     static int ItemCount(EntityPlayer p, string item, out int belt, out int bag)
+    {
+        var ci = ClientOf(p);
+        if (ci == null) return ItemCountLocal(p, item, out belt, out bag);
+        belt = 0; bag = 0;
+        try
+        {
+            var iv = ItemClass.GetItem(item);
+            if (iv == null) return 0;
+            belt = BlobCount(ci.latestPlayerData.inventoryData, true, iv);
+            bag = BlobCount(ci.latestPlayerData.bagData, false, iv);
+            PendingTake pt;
+            string key = p.entityId + "|" + item;
+            if (pendingTakes.TryGetValue(key, out pt))
+            {
+                if (Time.time > pt.Until) pendingTakes.Remove(key);
+                else
+                {
+                    int left = pt.N, fromBelt = Math.Min(belt, left);
+                    belt -= fromBelt; left -= fromBelt;
+                    bag = Math.Max(0, bag - left);
+                }
+            }
+        }
+        catch (Exception e) { Log.Warning("[Bait] could not read " + item + " from the player's saved inventory: " + e.Message); }
+        return belt + bag;
+    }
+
+    static bool TakeItems(EntityPlayer p, string item, int n)
+    {
+        if (n <= 0) return true;
+        if (ClientOf(p) == null) return TakeItemsLocal(p, item, n);
+        try
+        {
+            string kind = item == BaitCheck.BaitItem ? "Plain" : item == BaitCheck.RichItem ? "Rich" : "Feast";
+            p.Buffs.SetCustomVar("azrTake" + kind, n, true);
+            if (!GameEventManager.Current.HandleAction("azrael_take_" + kind.ToLowerInvariant(), p, p, false))
+            {
+                Log.Error("[Bait] the game event azrael_take_" + kind.ToLowerInvariant() + " did not run. Is Config/gameevents.xml from the Bait mod loaded?");
+                return false;
+            }
+            PendingTake pt;
+            string key = p.entityId + "|" + item;
+            if (pendingTakes.TryGetValue(key, out pt) && Time.time <= pt.Until) { pt.N += n; pt.Until = Time.time + 5f; }
+            else pendingTakes[key] = new PendingTake { N = n, Until = Time.time + 5f };
+            return true;
+        }
+        catch (Exception e) { Log.Warning("[Bait] could not take " + item + " from the player: " + e.Message); return false; }
+    }
+    static int ItemCountLocal(EntityPlayer p, string item, out int belt, out int bag)
     {
         belt = 0; bag = 0;
         try
@@ -70,7 +151,7 @@ public static partial class Thralls
         return belt + bag;
     }
 
-    static bool TakeItems(EntityPlayer p, string item, int n)
+    static bool TakeItemsLocal(EntityPlayer p, string item, int n)
     {
         if (n <= 0) return true;
         try
@@ -463,6 +544,18 @@ public static partial class Thralls
         float max = e.GetMaxHealth();
         int n = Mathf.RoundToInt(Mathf.Clamp01(max <= 0f ? 0f : hp / max) * 10f);
         return name + "  " + new string('#', n) + new string('-', 10 - n) + "  " + hp + "/" + Mathf.RoundToInt(max) + (rec == null ? "" : rec.OwnerKey == viewerKey ? "  (yours)" : "  (owned by " + NameOfKey(rec.OwnerKey) + ")");
+    }
+    // A spot a few blocks behind and to the side of the player (behind = opposite to the way they are moving or facing),
+    // so a thrall that is called or teleported never lands in front of a vehicle or a charging player.
+    public static Vector3 BehindOwner(EntityAlive o)
+    {
+        Vector3 fwd = o.motion; fwd.y = 0f;
+        if (fwd.sqrMagnitude < 0.25f) fwd = Quaternion.Euler(0f, o.rotation.y, 0f) * Vector3.forward;
+        fwd.y = 0f;
+        if (fwd.sqrMagnitude < 0.0001f) fwd = Vector3.forward;
+        fwd.Normalize();
+        Vector3 side = new Vector3(-fwd.z, 0f, fwd.x);
+        return o.position - fwd * 4f + side * UnityEngine.Random.Range(-2f, 2f) + new Vector3(0f, 0.5f, 0f);
     }
     static string NameOfKey(string key)
     {

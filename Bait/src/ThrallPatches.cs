@@ -57,7 +57,8 @@ public static class ThrallDamagePatch
             && _damageSource.damageType != EnumDamageTypes.Suicide) { __result = -1; return false; }
 
         // other players can't hurt it either
-        if (victimThrall && !BaitConfig.OthersCanHurtThralls && attacker is EntityPlayer && _damageSource.damageType != EnumDamageTypes.Suicide)
+        EntityPlayer actor = attacker as EntityPlayer ?? (world != null ? (world.GetEntity(_damageSource.ownerEntityId) as EntityPlayer ?? world.GetEntity(_damageSource.CreatorEntityId) as EntityPlayer) : null);
+        if (victimThrall && !BaitConfig.OthersCanHurtThralls && actor != null && _damageSource.damageType != EnumDamageTypes.Suicide)
         { __result = -1; return false; }
 
         // levels
@@ -261,5 +262,44 @@ public static class DroneSpikePatch
     {
         if (BaitConfig.DronesIgnoreSpikes && _targetEntity is EntityDrone) { __result = false; return false; }
         return true;
+    }
+}
+// Drones bark "enemy detected" for enemies near them, but thralls are hidden from that check so the drone never shoots them.
+// This adds the bark back for thralls (bark only: the attack check is untouched).
+[HarmonyPatch]
+public static class ThrallDroneWarnPatch
+{
+    static IEnumerable<MethodBase> TargetMethods()
+    {
+        foreach (Type n in typeof(EntityDrone).GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic))
+        {
+            if (AccessTools.DeclaredMethod(n, "barkEnemyDetected") == null) continue;
+            var m = AccessTools.DeclaredMethod(n, "Update", Type.EmptyTypes);
+            if (m != null) yield return m;
+        }
+    }
+
+    static void Postfix(object __instance)
+    {
+        try
+        {
+            if (!BaitConfig.DroneWarnsOnThralls || Thralls.Live.Count == 0) return;
+            var t = Traverse.Create(__instance);
+            if (!t.Field("canBarkEnemyDetected").GetValue<bool>()) return;
+            var drone = t.Field("drone").GetValue<EntityDrone>();
+            if (drone == null || drone.world == null || drone.state.ToString() == "Shutdown") return;
+            float r = t.Field("EnemyDetectionRadius").GetValue<float>();
+            var owner = drone.Owner;
+            foreach (int id in new List<int>(Thralls.Live.Keys))
+            {
+                var e = drone.world.GetEntity(id) as EntityAlive;
+                if (e == null || e.IsDead()) continue;
+                if (owner != null && !BaitConfig.DroneWarnsOnOwnThralls && Thralls.OwnedBy(id, owner.entityId)) continue;
+                if ((e.position - drone.position).sqrMagnitude > r * r) continue;
+                t.Method("barkEnemyDetected").GetValue();
+                return;
+            }
+        }
+        catch (Exception ex) { Log.Warning("[Bait] drone warn: " + ex.Message); }
     }
 }

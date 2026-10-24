@@ -1,4 +1,4 @@
-﻿# Drone Loot Filter
+# Drone Loot Filter
 
 Companion for **Drone Automation** by tehAon (it must be installed). Lets every player choose which items their Auto-Loot drone leaves alone. Applies to loot bags, containers and loose ground items. Server-side only: players install nothing.
 
@@ -17,3 +17,5 @@ A container or bag holding only ignored items is left alone completely (the dron
 Build: `.\build.ps1 -Only DroneLootFilter -Install`
 
 **Guards (1.1.0):** checked against Drone Automation 0.11.0. At startup every hook is verified; if tehAon's update renames or changes something, the server log gets a `[DroneLootFilter] BROKEN: ...` error naming what failed, a version mismatch with all hooks intact logs a warning, and players who use `/dai` see a red warning in chat. Hooks that throw at runtime are logged as errors too (throttled) instead of failing silently.
+
+**Locked containers (1.2.0):** the drone leaves locked containers alone, even ones its owner has access to. Set `SkipLocked=false` in `DroneLootFilter.cfg` to go back to the old behaviour. This adds one more hook (`TEFeatureLockable.IsUserAllowed`), verified at startup like the others.
