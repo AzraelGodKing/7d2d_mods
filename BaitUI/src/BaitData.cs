@@ -149,8 +149,8 @@ public static class BaitData
 
     public static string StatusText { get { return Time.time - StatusAt < 8f ? Status : ""; } }
 
-    public static string ModeName(int m) { return m == 1 ? "Def" : m == 2 ? "Pass" : "Aggr"; }
-    public static string ModeWord(int m) { return m == 1 ? "defensive" : m == 2 ? "passive" : "aggressive"; }
+    public static string ModeName(int m) { return m == 1 ? "Def" : m == 2 ? "Pass" : m == 3 ? "Inv" : "Aggr"; }
+    public static string ModeWord(int m) { return m == 1 ? "defensive" : m == 2 ? "passive" : m == 3 ? "invulnerable" : "aggressive"; }
 
     public static EntityAlive Live(int entityId)
     {

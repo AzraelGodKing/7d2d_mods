@@ -26,7 +26,7 @@ public class XUiC_AzraelBaitRoster : XUiController
             int row = i;
             Hook("r" + i + "call", () => { var t = At(row); if (t != null) BaitData.Cmd(t.Active ? "/thrall stow " + t.Idx : "/thrall call " + t.Idx); });
             Hook("r" + i + "stay", () => { var t = At(row); if (t != null) BaitData.Cmd((t.Stay ? "/thrall follow " : "/thrall stay ") + t.Idx); });
-            Hook("r" + i + "mode", () => { var t = At(row); if (t != null) BaitData.Cmd("/thrall mode " + t.Idx + " " + BaitData.ModeWord((t.Mode + 1) % 3)); });
+            Hook("r" + i + "mode", () => { var t = At(row); if (t != null) BaitData.Cmd("/thrall mode " + t.Idx + " " + BaitData.ModeWord((t.Mode + 1) % 4)); });
             Hook("r" + i + "teth", () => { var t = At(row); if (t != null) BaitData.Cmd((t.Tether ? "/thrall untether " : "/thrall tether ") + t.Idx); });
             Hook("r" + i + "heal", () => { var t = At(row); if (t != null) BaitData.Cmd((t.Down > 0 ? "/thrall revive " : "/thrall heal ") + t.Idx); });
             Hook("r" + i + "name", () =>

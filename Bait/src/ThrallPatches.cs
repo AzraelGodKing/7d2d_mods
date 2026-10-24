@@ -43,6 +43,10 @@ public static class ThrallDamagePatch
         bool victimThrall = Thralls.IsThrall(__instance.entityId);
         bool attackerThrall = attacker != null && Thralls.IsThrall(attacker.entityId);
 
+        // invulnerable mode: nothing hurts it (despawn and other suicide-type damage still go through)
+        LiveThrall invl;
+        if (victimThrall && Thralls.Live.TryGetValue(__instance.entityId, out invl) && invl.Mode == 3 && _damageSource.damageType != EnumDamageTypes.Suicide) { __result = -1; return false; }
+
         // a thrall that was just tamed or called is untouchable for a few seconds
         if (victimThrall && Thralls.InGrace(__instance.entityId) && _damageSource.damageType != EnumDamageTypes.Suicide) { __result = -1; return false; }
 
@@ -101,7 +105,7 @@ public static class ThrallTargetPatch
         if (Thralls.Live.TryGetValue(__instance.entityId, out lt))
         {
             if (_attackTarget is EntityPlayer || Thralls.IsThrall(_attackTarget.entityId)) return false;
-            if (lt.Mode == 2) return false;
+            if (lt.Mode >= 2) return false;
             if (lt.Mode == 1 && !Thralls.DefendOk(__instance, lt, _attackTarget)) return false;
             return true;
         }
@@ -161,7 +165,7 @@ public static class ThrallPassivePatch
         {
             LiveThrall lt;
             var e = __instance.theEntity;
-            if (e != null && Thralls.IsServer && Thralls.Live.TryGetValue(e.entityId, out lt) && lt.Mode == 2) { __result = false; return false; }
+            if (e != null && Thralls.IsServer && Thralls.Live.TryGetValue(e.entityId, out lt) && lt.Mode >= 2) { __result = false; return false; }
         }
         catch { }
         return true;

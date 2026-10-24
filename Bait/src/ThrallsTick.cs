@@ -31,7 +31,7 @@ public static partial class Thralls
         foreach (var lt in new List<LiveThrall>(Live.Values))
         {
             var th = world.GetEntity(lt.EntityId) as EntityAlive;
-            if (th == null || th.IsDead() || th is EntityAnimal || lt.Mode == 2) continue;
+            if (th == null || th.IsDead() || th is EntityAnimal || lt.Mode >= 2) continue;
             float r = BaitConfig.TauntRadius;
             world.GetEntitiesInBounds(typeof(EntityEnemy), new Bounds(th.position, new Vector3(r * 2f, 8f, r * 2f)), tmp);
             foreach (var o in tmp)
@@ -382,8 +382,8 @@ public static partial class Thralls
             {
                 var t = Pick(arg, list);
                 string m = arg2 != null ? arg2.ToLowerInvariant() : "";
-                int mode = m.StartsWith("agg") ? 0 : m.StartsWith("def") ? 1 : m.StartsWith("pas") ? 2 : -1;
-                if (t.Count == 0 || mode < 0) { Tell(me, "Usage: /thrall mode <number|all> aggressive|defensive|passive"); break; }
+                int mode = m.StartsWith("agg") ? 0 : m.StartsWith("def") ? 1 : m.StartsWith("pas") ? 2 : (m.StartsWith("inv") || m.StartsWith("unk") || m.StartsWith("god")) ? 3 : -1;
+                if (t.Count == 0 || mode < 0) { Tell(me, "Usage: /thrall mode <number|all> aggressive|defensive|passive|invulnerable"); break; }
                 foreach (var r in t)
                 {
                     r.Mode = mode;
@@ -391,7 +391,7 @@ public static partial class Thralls
                     if (liveByRecord.TryGetValue(r.Id, out lid) && Live.TryGetValue(lid, out l)) l.Mode = mode;
                 }
                 dirty = true;
-                Tell(me, "Mode: " + (mode == 0 ? "aggressive (attacks hostiles it sees)" : mode == 1 ? "defensive (fights only what comes close to it or you)" : "passive (never starts a fight)") + ".");
+                Tell(me, "Mode: " + (mode == 0 ? "aggressive (attacks hostiles it sees)" : mode == 1 ? "defensive (fights only what comes close to it or you)" : mode == 2 ? "passive (never starts a fight)" : "invulnerable (never attacks and cannot be killed)") + ".");
                 break;
             }
             case "heal":
@@ -506,7 +506,7 @@ public static partial class Thralls
                 break;
             }
             default:
-                Tell(me, "/thrall list | hp | name <n> <name> | call <n> | stow [n|all|active|tethered] | stay/follow <n|all> | mode <n|all> aggressive|defensive|passive | heal <n> | revive <n> | tether <n|all> [radius] | untether <n|all> | release <n> | kill <n|all> | exclude list|add|remove <class> | config [name value] | admin ...");
+                Tell(me, "/thrall list | hp | name <n> <name> | call <n> | stow [n|all|active|tethered] | stay/follow <n|all> | mode <n|all> aggressive|defensive|passive|invulnerable | heal <n> | revive <n> | tether <n|all> [radius] | untether <n|all> | release <n> | kill <n|all> | exclude list|add|remove <class> | config [name value] | admin ...");
                 break;
         }
         Flush();

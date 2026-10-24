@@ -92,7 +92,7 @@ public class BaitHud : MonoBehaviour
                 foreach (var t in BaitData.Thralls)
                 {
                     var e = BaitData.Live(t.EntityId);
-                    if (hud && UiSettings.Nameplates && e != null && t.Active) Plate(cam, p, e, Title(t), HpFrac(e), HpColor(HpFrac(e)), t.Stay ? "hold" : null, 45f);
+                    if (hud && UiSettings.Nameplates && e != null && t.Active) Plate(cam, p, e, Title(t), HpFrac(e), t.Mode == 3 ? InvColor : HpColor(HpFrac(e)), t.Mode == 3 ? (t.Stay ? "invulnerable, hold" : "invulnerable") : (t.Stay ? "hold" : null), 45f);
                     if (UiSettings.Party && t.Active)
                     {
                         float s = Sc, y = PartyRect.y + 22 * s + row * 36 * s;
@@ -106,8 +106,8 @@ public class BaitHud : MonoBehaviour
                             Shadow(new Rect(pr.x + 4, pr.y + 1, pr.width, 20 * s), "drag to move", small);
                         }
                         float f = e != null ? HpFrac(e) : 0f;
-                        Shadow(new Rect(PartyRect.x + 4, y, 320 * s, 20 * s), (t.Tether ? "[T] " : "") + Title(t) + (e == null ? " (away)" : ""), small);
-                        Bar(new Rect(PartyRect.x + 4, y + 21 * s, 220 * s, 7 * s), f, HpColor(f));
+                        Shadow(new Rect(PartyRect.x + 4, y, 320 * s, 20 * s), (t.Tether ? "[T] " : "") + (t.Mode == 3 ? "[Inv] " : "") + Title(t) + (e == null ? " (away)" : ""), small);
+                        Bar(new Rect(PartyRect.x + 4, y + 21 * s, 220 * s, 7 * s), f, t.Mode == 3 ? InvColor : HpColor(f));
                         row++;
                     }
                 }
@@ -162,6 +162,7 @@ public class BaitHud : MonoBehaviour
 
     static string Title(UiThrall t) { return (t.Level > 0 ? "Lv" + t.Level + " " : "") + t.Label; }
     static float HpFrac(EntityAlive e) { float m = e.GetMaxHealth(); return m <= 0 ? 0f : Mathf.Clamp01(e.Stats.Health.Value / m); }
+    static readonly Color InvColor = new Color(0.45f, 0.85f, 1f);
     static Color HpColor(float f) { return f > 0.5f ? Color.Lerp(Color.yellow, Color.green, (f - 0.5f) * 2f) : Color.Lerp(Color.red, Color.yellow, f * 2f); }
 
     void Plate(Camera cam, EntityPlayerLocal p, EntityAlive e, string text, float frac, Color col, string extra, float maxDist)

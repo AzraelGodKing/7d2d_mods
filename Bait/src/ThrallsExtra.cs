@@ -406,9 +406,10 @@ public static partial class Thralls
     {
         foreach (var lt in new List<LiveThrall>(Live.Values))
         {
-            if (lt.Mode != 2) continue;
+            if (lt.Mode < 2) continue;
             var e = W != null ? W.GetEntity(lt.EntityId) as EntityAlive : null;
             if (e == null || e.IsDead()) continue;
+            if (lt.Mode == 3) e.Stats.Health.Value = e.GetMaxHealth();   // invulnerable: also covers bleeding, poison and fire
             if (e.GetAttackTarget() != null) e.SetAttackTarget(null, 0);
             e.SetRevengeTarget(null);
         }
