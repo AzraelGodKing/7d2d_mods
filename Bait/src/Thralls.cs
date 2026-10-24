@@ -500,6 +500,14 @@ public static partial class Thralls
     {
         try
         {
+            // Called while its item is still in the inventory: take the item back so there is only one of it.
+            var cr = carried.Find(x => x.RecId == rec.Id);
+            if (cr != null)
+            {
+                carried.Remove(cr);
+                var ci = EntityClass.list[EntityClass.FromString(rec.ClassName)];
+                if (!string.IsNullOrEmpty(ci.PickupItem)) grabItems.Add(new GrabItem { PlayerId = cr.PlayerId, Item = ci.PickupItem, At = Time.time });
+            }
             if (rec.ReviveAt != 0) { rec.ReviveAt = 0; dirty = true; }
             int cid = EntityClass.FromString(rec.ClassName);
             Vector3 pos;

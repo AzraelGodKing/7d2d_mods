@@ -64,6 +64,7 @@ public static partial class Thralls
         ScanZombies(world);
         EnsureBaitAi(world);
         ProcessGrabs();
+        AdoptPlaced();
 
         // keep or drop the live thralls
         foreach (var lt in new List<LiveThrall>(Live.Values))

@@ -119,6 +119,43 @@ public static partial class Thralls
     static readonly Dictionary<int, LookState> looks = new Dictionary<int, LookState>();
     static readonly List<Entity> lookTmp = new List<Entity>();
 
+    class Carried { public string RecId, ClassName; public int PlayerId, MaxId; public bool WasTether; public float Radius, At; }
+    static readonly List<Carried> carried = new List<Carried>();
+
+    // A carried thrall that gets put down again: the freshly spawned creature of that class beside the player becomes it.
+    static void AdoptPlaced()
+    {
+        if (carried.Count == 0) return;
+        for (int i = carried.Count - 1; i >= 0; i--)
+        {
+            var c = carried[i];
+            try
+            {
+                var rec = Find(c.RecId);
+                var p = W.GetEntity(c.PlayerId) as EntityPlayer;
+                if (rec == null || rec.Active) { carried.RemoveAt(i); continue; }
+                if (p == null) continue;
+                int cid = EntityClass.FromString(c.ClassName);
+                EntityAlive found = null;
+                foreach (var en in W.Entities.list)
+                {
+                    var ea = en as EntityAlive;
+                    if (ea == null || ea.entityId <= c.MaxId || ea.entityClass != cid || ea.IsDead() || Live.ContainsKey(ea.entityId)) continue;
+                    if ((ea.position - p.position).magnitude > 10f) continue;
+                    found = ea; break;
+                }
+                if (found == null) continue;
+                carried.RemoveAt(i);
+                rec.Active = true;
+                if (c.WasTether) { rec.Tether = true; rec.TX = found.position.x; rec.TY = found.position.y; rec.TZ = found.position.z; rec.TR = c.Radius; }
+                dirty = true;
+                MakeLive(found, rec, p);
+                Notify(p.entityId, Label(rec) + (rec.Tether ? " is tethered here again." : " is back with you."));
+            }
+            catch (Exception ex) { Dbg("adopt: " + ex.Message); carried.RemoveAt(i); }
+        }
+    }
+
     class GrabItem { public int PlayerId; public string Item; public float At; }
     static readonly List<GrabItem> grabItems = new List<GrabItem>();
 
@@ -163,11 +200,15 @@ public static partial class Thralls
             ForgetLive(e.entityId);
             if (rec == null) return;
             // Picking it up stows it: it stays on the roster (still tamed, with its level and name), inactive.
+            // The item stays in the inventory. Placing it again hands the new creature back to this record:
+            // tethered where it is put down if it was tethered, otherwise following.
+            int maxId = 0;
+            foreach (var en in W.Entities.list) if (en != null && en.entityId > maxId) maxId = en.entityId;
+            var c = new Carried { RecId = rec.Id, PlayerId = playerId, ClassName = rec.ClassName, WasTether = rec.Tether, Radius = rec.TR, MaxId = maxId, At = Time.time };
+            carried.RemoveAll(x => x.RecId == rec.Id);
+            carried.Add(c);
             rec.Active = false; rec.Tether = false; dirty = true;
-            var ec = e as EntityAlive;
-            string item = ec != null && ec.EntityClass != null ? ec.EntityClass.PickupItem : null;
-            if (!string.IsNullOrEmpty(item)) grabItems.Add(new GrabItem { PlayerId = playerId, Item = item, At = Time.time });
-            if (lt.OwnerEntityId >= 0) Notify(lt.OwnerEntityId, Label(rec) + " is stowed. Bring it back with /thrall call " + (RosterOf(rec.OwnerKey).IndexOf(rec) + 1));
+            if (lt.OwnerEntityId >= 0) Notify(lt.OwnerEntityId, Label(rec) + " is in your inventory. Place it down to bring it back" + (c.WasTether ? " (tethered there)." : "."));
         }
         catch (Exception ex) { Dbg("grab: " + ex.Message); }
     }
