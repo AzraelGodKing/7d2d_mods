@@ -11,6 +11,7 @@ Small mods for 7 Days to Die, built and tested on **V3.3**.
 | [Speedometer](#speedometer) | Code + UI | Players only | 1.1.1 |
 | [Craft From Chests](#craft-from-chests) | Code (Harmony) | Players only | 1.2.0 |
 | [Upgrade Bench](#upgrade-bench) | Code + XML | Server **and** every player | 1.0.2 |
+| [No Ding Sound](#no-ding-sound) | XML only | Server only | 1.0.0 |
 | [Keep Backpacks](#keep-backpacks) | Code | Server only | 1.2.2 |
 | [Blood Moon Sound](#blood-moon-sound) | Code (Harmony) | Players (own sound); server optional (sound for everyone, Discord posts) | 1.2.2 |
 | [Zombie and Animal Bait](#zombie-and-animal-bait) | Code (Harmony) + XML | Server only | 1.7.6 |
@@ -459,3 +460,9 @@ on this repo. Without them the release still continues and the website file stay
 Releases that run at the same time each rewrite `downloads.json`, so the script reads it back
 after a pause and writes its entry again until it stays (AZR-453). If the file cannot be read,
 it is left alone rather than replaced.
+
+## No Ding Sound
+
+Replaces the ding you hear when your tool hits a block that can't be broken (bedrock, the map edge) with a bicycle horn. It changes the game's keystone_impact_overlay sound. The server sends sound settings to players, so only the server needs the mod.
+
+To use a different sound, edit the ClipName in `Config/sounds.xml` (any clip path from the game's `Data/Config/sounds.xml`).

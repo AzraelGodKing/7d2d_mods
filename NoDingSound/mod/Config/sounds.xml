@@ -1,0 +1,10 @@
+<configs>
+	<!--
+		The "ding" when a tool hits a block that cannot be broken (bedrock, the world edge) is the sound named
+		keystone_impact_overlay. This swaps its clip for the bicycle horn.
+		To use another sound, change the ClipName below to any clip path from Data/Config/sounds.xml, for example
+		@:Sounds/Twitch/Silly/Silly Vehicle Sounds/bike_silly_horn.wav
+		The server sends this file to players, so only the server needs the mod.
+	-->
+	<set xpath="/Sounds/SoundDataNode[@name='keystone_impact_overlay']/AudioClip/@ClipName">@:Sounds/Vehicles/Bicycle/bicycle_horn.wav</set>
+</configs>

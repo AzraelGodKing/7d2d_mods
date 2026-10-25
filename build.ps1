@@ -33,6 +33,7 @@ $mods = @(
     @{ Dir = 'GyroSafe';           Name = 'AzraelGyroSafe';           Project = 'src/AzraelGyroSafe.csproj' },
     @{ Dir = 'DroneLootFilter';    Name = 'AzraelDroneLootFilter';    Project = 'src/AzraelDroneLootFilter.csproj' },
     @{ Dir = 'CraftableSigns';     Name = 'AzraelCraftableSigns' },
+    @{ Dir = 'NoDingSound';        Name = 'AzraelNoDingSound' },
     # Private = gitignored files (e.g. a copyrighted sound clip) kept OUT of the public zip.
     # If present, a second "-with-sound" zip is made and -Install uses that version.
     # Exclude = gitignored files kept out of EVERY zip (e.g. discord.txt holds a secret webhook URL).
