@@ -18,6 +18,7 @@ Small mods for 7 Days to Die, built and tested on **V3.3**.
 | [Gyro Safe](#gyro-safe) | Code (Harmony) | Server and players who fly | 1.0.0 |
 | [Drone Loot Filter](#drone-loot-filter) | Code (Harmony), needs Drone Automation | Server only | 1.2.0 |
 | [Bait UI](#bait-ui) | Code + UI | Players only (optional, needs Bait on the server) | 1.6.3 |
+| [Spawn Tuner](#spawn-tuner) | Code (Harmony) | Server only | 1.0.0 |
 
 **Mod manager:** [ModManager/](ModManager/README.md) is a Windows app that turns mods on and off, installs them
 from zips, keeps modlists and reads the game's log. See its README.
@@ -400,6 +401,50 @@ People already connected keep the old times until they rejoin. Anyone who connec
 - 1.2.0: dropped items and vehicle storage bags last 24 hours (were permanent).
 - 1.1.0: zombie loot bags last 24 hours (was vanilla 1 hour).
 - 1.0.0: death backpacks, dropped items and vehicle storage bags never despawn.
+
+---
+
+## Spawn Tuner
+
+Change spawn rates while the game runs, with no restart. Type the commands in the server console
+(F1 in single player). Each change is saved to `spawns.txt` in the mod folder, so it's still there
+after a restart.
+
+```
+spawns                      list every setting: the value now, and the world's own value
+spawns NightDensity 4       up to 4 zombies per spawn spot at night
+spawns NightRespawn fast    cleared areas refill faster at night
+spawns BloodMoonCount 16    16 zombies per player at the next blood moon
+spawns MaxZombies 100       allow 100 zombies alive at once
+spawns NightDensity world   back to the world's own setting
+spawns refresh              apply density and respawn changes to the areas already loaded
+```
+
+| Setting | Values | What it is |
+|---|---|---|
+| `DayDensity`, `NightDensity` | `none`, `default`, 1-100 | Zombies each spawn spot in an area can hold. The game's own sandbox range is 1-5. |
+| `DayRespawn`, `NightRespawn` | `default`, `veryslow`, `slow`, `normal`, `fast`, `veryfast` | How fast a cleared area fills up again. |
+| `AnimalDayDensity`, `AnimalNightDensity`, `AnimalDayRespawn`, `AnimalNightRespawn` | as above | The same for animals. |
+| `BloodMoonCount` | 0-1000 | Zombies per player at a blood moon (the game offers 4-64). |
+| `MaxZombies`, `MaxAnimals` | 0-1000 | Most zombies / animals alive in the whole world at once. |
+
+These are the same values as the Sandbox Options you pick when making a world (`MaxZombies` and
+`MaxAnimals` are the server's `MaxSpawnedZombies` / `MaxSpawnedAnimals`). Spawn Tuner sets them on
+top of the world's options, and a setting you never change keeps the world's value.
+
+- Each 80x80 area keeps its own spawn timer, which can run for a few game days. A new density or
+  respawn speed is used as each timer runs out. `spawns refresh` restarts the timers in the areas
+  around players now, so they fill up with the new settings within seconds. Cleared areas fill up again too.
+- `MaxZombies` and `MaxAnimals` apply straight away. `BloodMoonCount` applies from the next blood
+  moon: one that has already started keeps its count.
+- High numbers cost server performance. `MaxZombies` is the cap that protects the server: density
+  can't push past it.
+- Edited `spawns.txt` by hand? Type `spawns reload`.
+
+**Server only**: spawning is decided by the server, so players install nothing.
+
+**Changelog**
+- 1.0.0: first version.
 
 ---
 
