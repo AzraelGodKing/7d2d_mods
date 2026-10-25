@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xml>
+	<Name value="AzraelDroneLootFilter"/>
+	<DisplayName value="Drone Loot Filter"/>
+	<Description value="Companion for Drone Automation (tehAon). Each player picks items the Auto-Loot drone must leave alone, in game with /dai. Works on loot bags, containers and loose ground items. Server only: players install nothing. Needs Drone Automation installed."/>
+	<Author value="Azrael"/>
+	<Version value="1.2.0"/>
+	<Website value="https://github.com/AzraelGodKing/7d2d_mods"/>
+</xml>

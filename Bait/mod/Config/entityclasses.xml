@@ -1,0 +1,6 @@
+<configs>
+	<!--
+		Animals get the bait task from the mod's code (Thralls.EnsureBaitAi), not from XML. An earlier version replaced each
+		animal's whole AI list here, which dropped their attack and flee settings. Nothing is patched in this file now.
+	-->
+</configs>

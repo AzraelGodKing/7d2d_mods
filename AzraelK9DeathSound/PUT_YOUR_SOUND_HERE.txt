@@ -1,0 +1,8 @@
+Optional: put your own death sound in this folder, named:
+
+  k9death.ogg   (or k9death.wav / k9death.mp3)
+
+With it, you hear your clip when a wolf, dire wolf, coyote or zombie dog dies.
+Without it (or without this mod on your PC), you hear the bicycle horn like everyone else.
+
+Your clip only plays on your PC. Other players hear the horn unless they add their own clip.

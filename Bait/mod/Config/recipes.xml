@@ -1,0 +1,18 @@
+<configs>
+	<append xpath="/recipes">
+		<recipe name="azraelBait" count="2" craft_time="3" always_unlocked="true">
+			<ingredient name="foodRottingFlesh" count="2"/>
+			<ingredient name="resourceYuccaFibers" count="1"/>
+		</recipe>
+		<recipe name="azraelBaitRich" count="1" craft_time="8" always_unlocked="true">
+			<ingredient name="azraelBait" count="5"/>
+			<ingredient name="foodRawMeat" count="1"/>
+			<ingredient name="foodHoney" count="1"/>
+		</recipe>
+		<recipe name="azraelBaitFeast" count="1" craft_time="20" craft_area="campfire" always_unlocked="true">
+			<ingredient name="azraelBaitRich" count="5"/>
+			<ingredient name="foodRawMeat" count="3"/>
+			<ingredient name="resourceAcid" count="1"/>
+		</recipe>
+	</append>
+</configs>

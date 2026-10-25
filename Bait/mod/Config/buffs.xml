@@ -1,0 +1,47 @@
+<configs>
+	<!--
+		Perk buffs for Thrall Perks. The mod puts exactly one of these on a player, by how much "thrall power"
+		their tamed zombies add up to (walker 1, feral 2, radiated 3, charged or infernal 4):
+			Horde Bond I   at 3+     Horde Bond II  at 8+     Horde Bond III at 16+
+		They are hidden (no HUD icon) so no client text is needed. Change the numbers here to rebalance.
+		Each tier replaces the one below it, so every tier lists the full bonus.
+	-->
+	<append xpath="/buffs">
+		<buff name="azraelThrallPerk1" hidden="true" remove_on_death="false">
+			<stack_type value="ignore"/>
+			<effect_group>
+				<passive_effect name="HealthMax" operation="base_add" value="10"/>
+				<passive_effect name="StaminaMax" operation="base_add" value="10"/>
+			</effect_group>
+		</buff>
+		<buff name="azraelThrallPerk2" hidden="true" remove_on_death="false">
+			<stack_type value="ignore"/>
+			<effect_group>
+				<passive_effect name="HealthMax" operation="base_add" value="20"/>
+				<passive_effect name="StaminaMax" operation="base_add" value="20"/>
+				<passive_effect name="CarryCapacity" operation="base_add" value="6"/>
+				<passive_effect name="EntityDamage" operation="perc_add" value="0.05"/>
+			</effect_group>
+		</buff>
+		<buff name="azraelThrallPerk3" hidden="true" remove_on_death="false">
+			<stack_type value="ignore"/>
+			<effect_group>
+				<passive_effect name="HealthMax" operation="base_add" value="35"/>
+				<passive_effect name="StaminaMax" operation="base_add" value="35"/>
+				<passive_effect name="CarryCapacity" operation="base_add" value="12"/>
+				<passive_effect name="EntityDamage" operation="perc_add" value="0.1"/>
+				<passive_effect name="GeneralDamageResist" operation="base_add" value="0.05"/>
+			</effect_group>
+		</buff>
+	</append>
+
+	<!-- Pack animals: the mod sets the player's cvar $azraelPackSlots; this buff turns it into extra bag slots. -->
+	<append xpath="/buffs">
+		<buff name="azraelPackPerk" hidden="true" remove_on_death="false">
+			<stack_type value="ignore"/>
+			<effect_group>
+				<passive_effect name="CarryCapacity" operation="base_add" value="@$azraelPackSlots"/>
+			</effect_group>
+		</buff>
+	</append>
+</configs>
