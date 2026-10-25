@@ -246,7 +246,6 @@ public static class RaeTwitchPatch
     }
 }
 
-// Console: rae  (shows what's removed and what happened at load)
 public class ConsoleCmdAzraelRemoveAnyEntity : ConsoleCmdAbstract
 {
     public override bool IsExecuteOnClient => false;
