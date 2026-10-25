@@ -1,0 +1,16 @@
+{
+  "slug": "no-ding-sound",
+  "name": "No Ding Sound",
+  "game": "7-days-to-die",
+  "description": "Replaces the ding you hear when your tool hits a block that cannot be broken (bedrock, the map edge) with a bicycle horn. Server only: the server sends the sound setting to players, so nobody installs anything.",
+  "version": "1.0.0",
+  "screenshots": [],
+  "download": {
+    "file": "AzraelNoDingSound-v1.0.0.zip"
+  },
+  "links": {
+    "steam": null,
+    "thunderstore": null,
+    "nexus": null
+  }
+}

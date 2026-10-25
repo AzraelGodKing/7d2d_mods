@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xml>
+	<Name value="AzraelNoDingSound"/>
+	<DisplayName value="No Ding Sound"/>
+	<Description value="Replaces the ding you hear when your tool hits a block that cannot be broken (bedrock, the map edge) with a bicycle horn. Server only: the server sends the sound setting to players, so nobody installs anything."/>
+	<Author value="Azrael"/>
+	<Version value="1.0.0"/>
+	<Website value="https://github.com/AzraelGodKing/7d2d_mods"/>
+</xml>
