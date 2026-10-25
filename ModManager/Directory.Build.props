@@ -9,6 +9,8 @@
     <LangVersion>latest</LangVersion>
     <Authors>Azrael</Authors>
     <Version>0.1.0</Version>
+    <!-- Keep the product version plain ("0.1.0", not "0.1.0+commit"): the self-update compares it with the release tag. -->
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <Copyright>Copyright (c) 2026 Azrael</Copyright>
     <!-- Lets the Windows app build on Linux CI runners too (it still only runs on Windows). -->
     <EnableWindowsTargeting>true</EnableWindowsTargeting>

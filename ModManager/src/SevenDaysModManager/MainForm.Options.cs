@@ -84,10 +84,15 @@ public sealed partial class MainForm
             Row(_backupSave),
             Row(Muted($"Save backups go to {AppSettings.SaveBackupFolder} (the newest 10 of each save are kept)."))));
 
+        var checkUpdates = new CheckBox { Text = "Check for a new version when the app starts", AutoSize = true, Checked = _s.CheckForUpdates };
+        checkUpdates.CheckedChanged += (_, _) => { _s.CheckForUpdates = checkUpdates.Checked; SaveSettings(); };
+        var checkNow = Btn("Check now", async (_, _) => await CheckForUpdateAsync(quiet: false));
+        Tip(checkUpdates, "Only GitHub's public list of releases is read; nothing about you or your mods is sent");
         var settings = new LinkLabel { Text = AppSettings.Folder, AutoSize = true, UseMnemonic = false };
         settings.LinkClicked += (_, _) => { Directory.CreateDirectory(AppSettings.Folder); Ui.Open(this, AppSettings.Folder); };
         stack.Controls.Add(Card("About", null,
-            Row(Lbl("7 Days Mod Manager " + Version)),
+            Row(Lbl("7 Days Mod Manager " + Version), checkNow),
+            Row(checkUpdates),
             Row(Lbl("Settings, modlists and backups"), settings),
             Row(Muted("Command line: run SevenDaysModManager help in a terminal for list, problems, switch, play and install."))));
 
