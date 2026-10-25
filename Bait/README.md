@@ -96,3 +96,8 @@ Set the meal counts with `RichBaitMeals` and `FeastBaitMeals`. `giveself azraelB
 **1.7.5:** Zombies never start at level 0 any more: a wild zombie spawns at level 1 or higher, and a zombie thrall that was level 0 (it came from a one-in-three roll on the low game days) becomes level 1 when it next comes out. Animals and dogs are unchanged.
 
 **1.7.6:** Bait UI is told which Bait version the server runs (a new last field in the first record it sends), so the UI can warn when the server is too old.
+
+**1.7.7:** Three thrall fixes.
+- Players on a dedicated server could kill anyone's thrall. A client's hit is worked out on that client and sent to the server as a finished result, which skipped the damage check, so it is now checked when it arrives. Thralls also carry a hidden ward buff (`azraelThrallWard`) that makes player hits do nothing on every screen, so the attacker no longer sees a thrall die that is alive on the server. The ward is only on while both `OwnerCanHurtThralls` and `OthersCanHurtThralls` are false. With `OwnerCanHurtThralls=true`, the owner can now hurt their own thrall even when `OthersCanHurtThralls` is false.
+- Dead thralls could still be butchered. Harvesting a body happens on the client, so a fallen thrall's body is now removed half a second after it dies (it comes back from its record as before). `/thrall kill` bodies too.
+- Thralls "randomly died" with no recorded hit. The game gives every zombie and zombie dog a lifetime and kills it when that runs out (a few game hours for a spawned one). Thralls no longer have one.

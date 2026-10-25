@@ -52,13 +52,9 @@ public static class ThrallDamagePatch
 
         // a thrall never hurts a player or another thrall
         if (attackerThrall && (__instance is EntityPlayer || victimThrall)) { __result = -1; return false; }
-        // optionally the owner can't hurt their own thrall
-        if (victimThrall && !BaitConfig.OwnerCanHurtThralls && attacker != null && Thralls.OwnedBy(__instance.entityId, attacker.entityId)
-            && _damageSource.damageType != EnumDamageTypes.Suicide) { __result = -1; return false; }
-
-        // other players can't hurt it either
+        // players: the owner only with OwnerCanHurtThralls, anyone else only with OthersCanHurtThralls
         EntityPlayer actor = attacker as EntityPlayer ?? (world != null ? (world.GetEntity(_damageSource.ownerEntityId) as EntityPlayer ?? world.GetEntity(_damageSource.CreatorEntityId) as EntityPlayer) : null);
-        if (victimThrall && !BaitConfig.OthersCanHurtThralls && actor != null && _damageSource.damageType != EnumDamageTypes.Suicide)
+        if (victimThrall && actor != null && !Thralls.PlayerMayHurt(__instance.entityId, actor.entityId) && _damageSource.damageType != EnumDamageTypes.Suicide)
         { __result = -1; return false; }
 
         // levels
@@ -86,6 +82,35 @@ public static class ThrallDamagePatch
     {
         var a = __state as EntityAlive;
         if (a != null) a.entityFlags |= EntityFlags.Zombie;
+    }
+}
+
+// A client's hit never reaches DamageEntity on the server: the client works the hit out on its own copy of the
+// thrall and sends the result, which the server applies straight through ProcessDamageResponse. So the player rules
+// above have to be checked here as well, or any player on a dedicated server can kill anyone's thrall.
+[HarmonyPatch(typeof(NetPackageDamageEntity), nameof(NetPackageDamageEntity.ProcessPackage))]
+public static class ThrallRemoteHitPatch
+{
+    static bool Prefix(NetPackageDamageEntity __instance, World _world)
+    {
+        try
+        {
+            if (_world == null || !Thralls.IsServer || Thralls.Live.Count == 0) return true;
+            int victimId = __instance.entityId;
+            if (!Thralls.IsThrall(victimId) || __instance.damageTyp == EnumDamageTypes.Suicide) return true;
+            var victim = _world.GetEntity(victimId) as EntityAlive;
+            if (victim == null) return true;
+            var actor = _world.GetEntity(__instance.attackerEntityId) as EntityPlayer;
+            bool blocked = Thralls.InGrace(victimId) || (actor != null && !Thralls.PlayerMayHurt(victimId, actor.entityId));
+            if (!blocked) return true;
+            // the attacker's copy already took the hit; send the real health back so its screen agrees
+            if (actor != null)
+                SingletonMonoBehaviour<ConnectionManager>.Instance.SendPackage(
+                    NetPackageManager.GetPackage<NetPackageEntityStatChanged>().Setup(victim, actor.entityId, NetPackageEntityStatChanged.EnumStat.Health),
+                    false, actor.entityId);
+            return false;
+        }
+        catch (Exception e) { Log.Warning("[Bait] remote hit patch: " + e); return true; }
     }
 }
 
