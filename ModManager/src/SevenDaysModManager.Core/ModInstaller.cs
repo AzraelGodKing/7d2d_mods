@@ -4,7 +4,8 @@ namespace SevenDaysModManager.Core;
 
 /// <summary>One mod an install put in place.</summary>
 /// <param name="Replaced">The folder of the older copy it replaced (zipped into the backups first), or null for a new mod.</param>
-public sealed record InstalledResult(string Name, string Folder, string? Replaced);
+/// <param name="Key">The mod's ModInfo Name.</param>
+public sealed record InstalledResult(string Name, string Folder, string? Replaced, string Key = "");
 
 /// <summary>
 /// Installs mods from a .zip or a folder: every folder inside that holds a ModInfo.xml is a mod, however deep the zip
@@ -67,7 +68,7 @@ public static class ModInstaller
                 else dest = Path.Combine(modsFolder, name);
                 if (Directory.Exists(dest)) throw new IOException($"Can't install {info.DisplayName}: {dest} already exists and is a different mod.");
                 Backups.CopyFolder(folder, dest);
-                results.Add(new InstalledResult(info.DisplayName, dest, replaced));
+                results.Add(new InstalledResult(info.DisplayName, dest, replaced, info.Name));
             }
             return results;
         }

@@ -11,6 +11,8 @@ public sealed class AppSettings
     public static string BackupFolder => Path.Combine(Folder, "mod-backups");
     public static string SaveBackupFolder => Path.Combine(Folder, "save-backups");
     public static string ModlistFolder => Path.Combine(Folder, "modlists");
+    /// <summary>The player's own copies of mod settings files, put back when a mod is updated.</summary>
+    public static string ModSettingsFolder => Path.Combine(Folder, "mod-settings");
 
     /// <summary>The game's install folder when picked by hand, else null (found through Steam).</summary>
     public string? GameFolder { get; set; }
@@ -25,6 +27,8 @@ public sealed class AppSettings
     public bool InstallToUserData { get; set; }
     /// <summary>The modlist last picked.</summary>
     public string? Modlist { get; set; }
+    /// <summary>Sides the player set by hand, by mod Name (overrides what the mod says or its files suggest).</summary>
+    public Dictionary<string, ModSide> Sides { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>The player's notes, by mod Name.</summary>
     public Dictionary<string, string> Notes { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>The colour tag on a mod's row, by mod Name.</summary>
@@ -42,6 +46,7 @@ public sealed class AppSettings
             {
                 s.Notes = new Dictionary<string, string>(s.Notes, StringComparer.OrdinalIgnoreCase);
                 s.Colours = new Dictionary<string, string>(s.Colours, StringComparer.OrdinalIgnoreCase);
+                s.Sides = new Dictionary<string, ModSide>(s.Sides, StringComparer.OrdinalIgnoreCase);
                 return s;
             }
         }

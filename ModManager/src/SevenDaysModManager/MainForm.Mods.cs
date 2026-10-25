@@ -9,8 +9,8 @@ namespace SevenDaysModManager;
 /// </summary>
 public sealed partial class MainForm
 {
-    static readonly string[] Columns = { "Name", "Version", "Author", "Folder", "Where", "Code", "Load order", "Note" };
-    const int NoteColumn = 7;
+    static readonly string[] Columns = { "Name", "Version", "Author", "Side", "Folder", "Where", "Code", "Load order", "Note" };
+    const int NoteColumn = 8, LoadOrderColumn = 7;
 
     readonly Label _gameText = new() { AutoSize = true, UseMnemonic = false, Tag = "fill" };
     readonly Label _note = new() { AutoSize = true, UseMnemonic = false, MaximumSize = new Size(1100, 0), Visible = false };
@@ -79,7 +79,7 @@ public sealed partial class MainForm
 
         // ---- Mods
         for (var i = 0; i < Columns.Length; i++)
-            _list.Columns.Add(Columns[i], (int)(new[] { 250, 80, 130, 170, 90, 60, 80, 200 }[i] * Theme.TextScale));
+            _list.Columns.Add(Columns[i], (int)(new[] { 250, 80, 130, 80, 170, 90, 60, 80, 200 }[i] * Theme.TextScale));
         _list.ItemCheck += (_, e) =>
         {
             if (_filling) return;
@@ -113,6 +113,7 @@ public sealed partial class MainForm
         _details.NoteChanged += SetNote;
         _details.OpenFolder += m => Ui.Open(this, m.Folder);
         _details.Uninstall += async m => await UninstallAsync(m);
+        _details.EditSettings += EditSettings;
         var modsCard = Card("Mods", new Control[] { _count, install, _undo, _save, _filter }, split);
         modsCard.Dock = DockStyle.Fill;
         page.Controls.Add(modsCard, 0, 1);
@@ -155,6 +156,7 @@ public sealed partial class MainForm
                 return;
             }
             _scan = await Task.Run(() => ModLibrary.Scan(install));
+            _sides.Clear();
             _gameText.Text = $"{install.GameFolder}    ·    data: {install.UserDataFolder}";
             _gameText.ForeColor = Theme.Of(Tone.Normal);
             _history.Clear();
@@ -207,21 +209,21 @@ public sealed partial class MainForm
                 || (m.Info?.Author.Contains(f, StringComparison.OrdinalIgnoreCase) ?? false) || Note(m).Contains(f, StringComparison.OrdinalIgnoreCase));
             var rows = mods.Select(m => (Mod: m, Cells: new[]
             {
-                m.DisplayName, m.Info?.Version ?? "", m.Info?.Author ?? "", m.FolderName,
+                m.DisplayName, m.Info?.Version ?? "", m.Info?.Author ?? "", m.Locked ? "" : Side(m).Short, m.FolderName,
                 m.Location == ModLocation.Game ? "Game" : "AppData", m.HasCode ? "Yes" : "",
                 order.TryGetValue(m.Id, out var o) ? o.ToString() : "", Note(m),
             })).ToList();
             rows = _sortColumn switch
             {
                 < 0 => rows.OrderByDescending(r => r.Mod.Locked).ThenBy(r => r.Mod.DisplayName, StringComparer.OrdinalIgnoreCase).ToList(),
-                6 => rows.OrderBy(r => r.Cells[6].Length == 0 ? int.MaxValue : int.Parse(r.Cells[6])).ToList(),
+                LoadOrderColumn => rows.OrderBy(r => r.Cells[LoadOrderColumn].Length == 0 ? int.MaxValue : int.Parse(r.Cells[LoadOrderColumn])).ToList(),
                 var c => rows.OrderBy(r => r.Cells[c], StringComparer.OrdinalIgnoreCase).ToList(),
             };
             var problemIds = _found.Where(p => p.ModId != null).GroupBy(p => p.ModId!).ToDictionary(g => g.Key, g => g.Max(p => p.Severity));
             foreach (var (m, cells) in rows)
             {
                 var item = new ListViewItem(cells) { Tag = m, Checked = _enabled.Contains(m.Id), UseItemStyleForSubItems = true };
-                item.ToolTipText = m.Locked ? "Part of the game; always on" : m.Error ?? m.Info?.Description ?? "";
+                item.ToolTipText = m.Locked ? "Part of the game; always on" : m.Error ?? $"{Side(m).Label}: {Side(m).Why}";
                 if (TagColor(_s.Colours.GetValueOrDefault(m.Key)) is { } tag) item.BackColor = Theme.Blend(Theme.Current.Input, tag, 0.28);
                 if (problemIds.TryGetValue(m.Id, out var sev)) item.ForeColor = Theme.Of(sev == Severity.Error ? Tone.Error : Tone.Warn);
                 else if (!_enabled.Contains(m.Id)) item.ForeColor = Theme.Current.Muted;
@@ -299,7 +301,7 @@ public sealed partial class MainForm
     void ShowDetails()
     {
         var m = Selected();
-        _details.Show(m, m == null ? null : Note(m));
+        _details.Show(m, m == null ? null : Note(m), m == null || m.Locked ? null : Side(m), m != null && ModSettingsStore.FilesOf(m.Folder).Count > 0);
     }
 
     void SelectMod(string id)
@@ -323,6 +325,34 @@ public sealed partial class MainForm
 
     string Note(InstalledMod m) => _s.Notes.GetValueOrDefault(m.Key) ?? "";
 
+    /// <summary>Each mod's side, worked out once per scan (a guess reads the mod's files).</summary>
+    readonly Dictionary<string, SideInfo> _sides = new();
+
+    SideInfo Side(InstalledMod m)
+    {
+        if (!_sides.TryGetValue(m.Id, out var side))
+            _sides[m.Id] = side = ModSides.Of(m, _s.Sides.TryGetValue(m.Key, out var chosen) ? chosen : null);
+        return side;
+    }
+
+    ModSettingsStore SettingsStore => new(AppSettings.ModSettingsFolder);
+
+    void EditSettings(InstalledMod m)
+    {
+        if (ModSettingsStore.FilesOf(m.Folder).Count == 0) { Info(this, $"{m.DisplayName} has no settings files."); return; }
+        using var f = new SettingsForm(m, SettingsStore);
+        f.ShowDialog(this);
+        ShowDetails();
+    }
+
+    void SetSide(InstalledMod m, ModSide? side)
+    {
+        if (side is { } s) _s.Sides[m.Key] = s; else _s.Sides.Remove(m.Key);
+        SaveSettings();
+        _sides.Clear();
+        FillList();
+    }
+
     void SetNote(string key, string note)
     {
         if (note.Length == 0) _s.Notes.Remove(key); else _s.Notes[key] = note;
@@ -336,6 +366,18 @@ public sealed partial class MainForm
         menu.Items.Clear();
         if (Selected() is not { } m) return false;
         menu.Items.Add("Open folder", null, (_, _) => Ui.Open(this, m.Folder));
+        if (ModSettingsStore.FilesOf(m.Folder).Count > 0) menu.Items.Add("Edit settings...", null, (_, _) => EditSettings(m));
+        if (!m.Locked)
+        {
+            var side = new ToolStripMenuItem("Side");
+            var found = ModSides.Of(m, null);
+            var chosen = _s.Sides.TryGetValue(m.Key, out var c) ? c : (ModSide?)null;
+            side.DropDownItems.Add(new ToolStripMenuItem($"As detected: {found.Label}", null, (_, _) => SetSide(m, null)) { Checked = chosen == null });
+            side.DropDownItems.Add(new ToolStripSeparator());
+            foreach (var (s, label) in new[] { (ModSide.Server, "Server only"), (ModSide.Client, "Client only"), (ModSide.Both, "Server and clients") })
+                side.DropDownItems.Add(new ToolStripMenuItem(label, null, (_, _) => SetSide(m, s)) { Checked = chosen == s });
+            menu.Items.Add(side);
+        }
         if (m.Info?.Website is { Length: > 0 } site) menu.Items.Add("Open website", null, (_, _) => Ui.Open(this, site.StartsWith("http", StringComparison.OrdinalIgnoreCase) ? site : "https://" + site));
         menu.Items.Add("Note...", null, (_, _) => { if (Ask(this, "Note", $"Your note on {m.DisplayName}:", Note(m), multiline: true) is { } n) { SetNote(m.Key, n); ShowDetails(); } });
         var colour = new ToolStripMenuItem("Colour");
@@ -403,7 +445,12 @@ public sealed partial class MainForm
             {
                 var scan = _scan;
                 var done = await Task.Run(() => ModInstaller.Install(p, scan, target, AppSettings.BackupFolder));
-                lines.AddRange(done.Select(d => (d.Replaced != null ? "Updated " : "Installed ") + d.Name + (d.Replaced != null ? " (the old copy is zipped in the mod backups)" : "")));
+                foreach (var d in done)
+                {
+                    var kept = SettingsStore.Restore(d.Key, d.Folder);
+                    lines.Add((d.Replaced != null ? "Updated " : "Installed ") + d.Name + (d.Replaced != null ? " (the old copy is zipped in the mod backups)" : "")
+                        + (kept.Count > 0 ? $"; your settings put back in {string.Join(", ", kept)}" : ""));
+                }
                 await ScanAsync();
             }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidDataException or FormatException)

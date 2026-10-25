@@ -30,6 +30,17 @@ loads them: the game's own `Mods` folder and `%AppData%\7DaysToDie\Mods`. Nothin
   and warnings are grouped by message, and each names the mod most likely at fault: a mod named in it (XML patch
   errors name the mod), a file in its folder, or its code in the stack trace (namespaces read from the mod's DLLs,
   never run).
+- **Server, client or both:** the **Side** column says where each mod has to be installed for a multiplayer game.
+  It comes from the mod's own description when it says so ("Server only: players install nothing", "Only players
+  need it", "Install on the server AND every player's game"). Otherwise it is a guess from the mod's files, marked
+  with `?`: XML alone works from the server, which sends it to players; HUD windows (XUi), textures, sounds and asset
+  bundles have to be on each player's PC; code counts as both. Right-click a mod > **Side** to set it yourself.
+- **Settings:** **Settings...** beside the list (or right-click > **Edit settings...**) opens a mod's settings files
+  (`settings.txt`, `*.cfg` and the like, not readmes or examples). A file of `Key=value` lines is shown as a form,
+  each setting with the author's comment above it and on/off switches as drop-downs; **Text** edits any file as
+  text, such as a list like `entities.txt`. Saving rewrites only the lines you changed, and keeps your copy: when the
+  mod is updated or reinstalled, your values go back into the new version's file (new settings it adds keep their
+  defaults).
 - **Details beside the list:** the picked mod's ModInfo, where it is, whether it has code, its size and your note.
   Right-click a mod for **Note...**, **Colour**, its folder and website, and **Uninstall**.
 - **Tools:** **Find the broken mod for me** (enables half the suspects each round until one is left, then puts your
