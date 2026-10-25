@@ -12,6 +12,9 @@ using UnityEngine;
 
 public class AzraelBaitUIMod : IModApi
 {
+    // From <Version> in the csproj, so there is no second copy to keep in step.
+    public static string Version { get { return typeof(AzraelBaitUIMod).Assembly.GetName().Version.ToString(3); } }
+
     public void InitMod(Mod _modInstance)
     {
         if (GameManager.IsDedicatedServer) return;
@@ -21,7 +24,7 @@ public class AzraelBaitUIMod : IModApi
         var go = new GameObject("AzraelBaitUI");
         UnityEngine.Object.DontDestroyOnLoad(go);
         go.AddComponent<BaitHud>();
-        Log.Out("[BaitUI] Loaded. Roster window key: " + UiSettings.Key + ". Type 'baitui' in the console (F1) for options.");
+        Log.Out("[BaitUI] " + Version + " loaded. Roster window key: " + UiSettings.Key + ". Type 'baitui' in the console (F1) for options.");
     }
 }
 
