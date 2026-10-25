@@ -5,12 +5,13 @@ Small mods for 7 Days to Die, built and tested on **V3.3**.
 | Mod | Type | Install on | Version |
 |---|---|---|---|
 | [Remove Any Entity](#remove-any-entity) | Code (Harmony) | Server only | 2.0.1 |
-| [Quest Disconnect Fix](#quest-disconnect-fix) | Code (Harmony) | Server only | 1.4.0 |
-| [Honk Door Fix](#honk-door-fix) | Code (Harmony) | Server only | 1.4.0 |
+| [Quest Disconnect Fix](#quest-disconnect-fix) | Code (Harmony) | Server only | 1.1.0 |
+| [Honk Door Fix](#honk-door-fix) | Code (Harmony) | Server only | 1.0.0 |
+| [Craftable Canvas Signs](#craftable-canvas-signs) | XML only | Server only | 1.0.0 |
 | [Speedometer](#speedometer) | Code + UI | Players only | 1.1.1 |
 | [Craft From Chests](#craft-from-chests) | Code (Harmony) | Players only | 1.2.0 |
 | [Upgrade Bench](#upgrade-bench) | Code + XML | Server **and** every player | 1.0.2 |
-| [Keep Backpacks](#keep-backpacks) | Code | Server only | 1.4.0 |
+| [Keep Backpacks](#keep-backpacks) | Code | Server only | 1.2.2 |
 | [Blood Moon Sound](#blood-moon-sound) | Code (Harmony) | Players (own sound); server optional (sound for everyone, Discord posts) | 1.2.2 |
 | [Zombie and Animal Bait](#zombie-and-animal-bait) | Code (Harmony) + XML | Server only | 1.7.6 |
 | [Gyro Safe](#gyro-safe) | Code (Harmony) | Server and players who fly | 1.0.0 |
@@ -103,6 +104,23 @@ Server-side only; players install nothing.
 - 1.1.0: fix parties breaking after a robotic drone unloads (3.3). Website is the GitHub repo, matching the other mods. DisplayName is `Quest Disconnect Fix (No Ghost Players and No Broken Parties)` so Nexus will accept the zip (it rejects a comma in the file name).
 - 1.0.0: first version.
 
+## Craftable Canvas Signs
+
+**Server only (XML); players install nothing.** The game has picture signs you can draw on with the
+in-game sign editor, but only places them in POIs: they are flagged developer-only and have no
+recipe. This makes them craftable. There are two families: **canvas** signs (framed) and **decal**
+signs (just the picture, no frame; the Doggo's billboard is made of these).
+
+| Sign | Recipe (one craft, any size) |
+|---|---|
+| Canvas / decal sign, wood | 10 wood, 10 cloth, 5 paint |
+| Canvas / decal sign, corrugated iron | 10 forged iron, 10 cloth, 5 paint |
+
+- You pick the size when you place it (up to 13 blocks wide), so a big billboard costs the same as a small sign.
+- Tougher than vanilla: 10x the HP (wood 225 -> 2250, iron 300 -> 3000). Only the picture signs change, not other wood or metal blocks. Adjust `MaxDamage` in `Config/blocks.xml`.
+- Change the costs in `Config/recipes.xml`.
+
+---
 ## Honk Door Fix
 
 Nexus: https://www.nexusmods.com/7daystodie/mods/12926

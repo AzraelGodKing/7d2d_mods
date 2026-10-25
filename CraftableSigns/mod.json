@@ -1,0 +1,16 @@
+{
+  "slug": "craftable-signs",
+  "name": "Craftable Canvas Signs",
+  "game": "7-days-to-die",
+  "description": "Lets players craft the picture signs the game normally only places in POIs (canvas and decal, in wood and corrugated iron, every size). Draw on them with the in-game sign editor. Server-side: players install nothing.",
+  "version": "1.0.0",
+  "screenshots": [],
+  "download": {
+    "file": "CraftableSigns-1.0.0.zip"
+  },
+  "links": {
+    "steam": null,
+    "thunderstore": null,
+    "nexus": null
+  }
+}
