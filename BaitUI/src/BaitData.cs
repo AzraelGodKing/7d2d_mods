@@ -140,22 +140,15 @@ public static class BaitData
     }
 
     // Sends a /thrall command to the machine that runs Bait.
-    // Dedicated / listen-server clients must use ChatMessageClient: ChatMessageServer
-    // only runs on the host, and the dedicated process refuses that package.
+    // ChatMessageServer is the right call on every machine: on a remote client it sends the line to the server as a
+    // NetPackageChat, on a host it runs it directly. ChatMessageClient only prints a line in this client's own chat
+    // window and never reaches the server (BaitUI 1.6.3 used it, so the server never heard the hello).
     public static void Cmd(string text, bool expectReply = true)
     {
         var p = Me;
         if (p == null || GameManager.Instance == null) return;
         if (expectReply) LastCmd = Time.time;
-        try
-        {
-            var cm = SingletonMonoBehaviour<ConnectionManager>.Instance;
-            var bb = GeneratedTextManager.BbCodeSupportMode.Supported;
-            if (cm != null && cm.IsClient)
-                GameManager.Instance.ChatMessageClient(EChatType.Global, p.entityId, text, null, EMessageSender.SenderIdAsPlayer, bb);
-            else
-                GameManager.Instance.ChatMessageServer(null, EChatType.Global, p.entityId, text, null, EMessageSender.SenderIdAsPlayer, bb);
-        }
+        try { GameManager.Instance.ChatMessageServer(null, EChatType.Global, p.entityId, text, null, EMessageSender.SenderIdAsPlayer); }
         catch (Exception e) { Log.Warning("[BaitUI] send: " + e.Message); }
     }
 

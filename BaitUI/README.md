@@ -48,4 +48,6 @@ The buttons send the normal `/thrall` chat commands (they are hidden from other 
 
 **1.6.2:** Dedicated hosts send their own XUi to every client, which never includes this client-only roster. The client now puts the roster windows back on after those files arrive, so Home and `baitui open` work on a dedicated server without installing Bait UI on the host.
 
+**1.6.4:** Fix: the UI never got an answer from a dedicated server. 1.6.3 sent the hello and the button commands with a call that only prints in your own chat window, so they never left your PC. They go to the server again.
+
 **1.6.3:** Version check. The roster title shows the server's Bait version (Bait 1.7.6 or newer sends it) and warns when it is older than 1.3.0, the oldest this UI can talk to. The `Party members' bars` button says so when the server is older than 1.7.3. The UI asks the server for its roster 3 times (15 s apart) instead of 8, hides the `/thrall` command lines from your chat, and says when the server never answered.
