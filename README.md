@@ -5,13 +5,17 @@ Small mods for 7 Days to Die, built and tested on **V3.3**.
 | Mod | Type | Install on | Version |
 |---|---|---|---|
 | [Remove Any Entity](#remove-any-entity) | Code (Harmony) | Server only | 2.0.1 |
-| [Quest Disconnect Fix](#quest-disconnect-fix) | Code (Harmony) | Server only | 1.1.0 |
-| [Honk Door Fix](#honk-door-fix) | Code (Harmony) | Server only | 1.0.0 |
+| [Quest Disconnect Fix](#quest-disconnect-fix) | Code (Harmony) | Server only | 1.4.0 |
+| [Honk Door Fix](#honk-door-fix) | Code (Harmony) | Server only | 1.4.0 |
 | [Speedometer](#speedometer) | Code + UI | Players only | 1.1.1 |
 | [Craft From Chests](#craft-from-chests) | Code (Harmony) | Players only | 1.2.0 |
 | [Upgrade Bench](#upgrade-bench) | Code + XML | Server **and** every player | 1.0.2 |
-| [Keep Backpacks](#keep-backpacks) | Code | Server only | 1.2.2 |
+| [Keep Backpacks](#keep-backpacks) | Code | Server only | 1.4.0 |
 | [Blood Moon Sound](#blood-moon-sound) | Code (Harmony) | Players (own sound); server optional (sound for everyone, Discord posts) | 1.2.2 |
+| [Zombie and Animal Bait](#zombie-and-animal-bait) | Code (Harmony) + XML | Server only | 1.7.6 |
+| [Gyro Safe](#gyro-safe) | Code (Harmony) | Server and players who fly | 1.0.0 |
+| [Drone Loot Filter](#drone-loot-filter) | Code (Harmony), needs Drone Automation | Server only | 1.2.0 |
+| [Bait UI](#bait-ui) | Code + UI | Players only (optional, needs Bait on the server) | 1.6.3 |
 
 **Mod manager:** [ModManager/](ModManager/README.md) is a Windows app that turns mods on and off, installs them
 from zips, keeps modlists and reads the game's log. See its README.
@@ -308,6 +312,32 @@ Setup: copy `discord.example.txt` to `discord.txt` **on the server**, paste the 
 - 1.0.1: `bmsound` now works on multiplayer servers that don't have the mod.
 - 1.0.0: first version.
 
+## Bait UI
+
+Optional client add-on for Zombie and Animal Bait: roster window (Home key), name tags with HP bars, party list, fed tags and an admin window. Players only; needs Bait 1.3.0+ on the server. See [BaitUI/README.md](BaitUI/README.md).
+
+## Gyro Safe
+
+Gyrocopters no longer damage blocks or terrain they hit. Install on the players who fly and on the server. See [GyroSafe/README.md](GyroSafe/README.md).
+
+## Drone Loot Filter
+
+Companion for tehAon's Drone Automation. Each player chooses items their Auto-Loot drone leaves alone (bags, containers and loose items) with `/dai`. See [DroneLootFilter/README.md](DroneLootFilter/README.md).
+
+## Zombie and Animal Bait
+
+**Server only; players install nothing.** A craftable throwable that pulls zombies and animals to a spot.
+
+- **Item:** Zombie and Animal Bait. Recipe: 2 rotting flesh + 1 plant fiber makes 2 baits.
+- **Use:** throw it like a rock. Once it lands it calls every zombie and animal within 40 blocks for 45 seconds. Whatever reaches it stops and eats until it is used up (400 eat ticks, about 20 seconds of one animal eating).
+- **How it works:** vanilla already has throwable decoys (rocks, snowballs) that zombies chase through the ApproachDistraction AI task. Animals don't have that task, so this adds it to each animal's task list (after attacking, before Look/Wander). Skipped: bosses, vultures, insect swarms.
+- **Protected while baited (1.1.0):** a creature that is going for (or eating) the bait is only hurt by the player who threw it. Turrets (auto and mini) stop picking it as a target, and damage from traps, fire, other monsters and other defences is cancelled. Damage the thrower deals still counts, and so do hunger, falling and despawn, so nothing gets stuck alive. Once the bait is gone the creature is a normal target again.
+- **Limits:** turret bullets are credited to the turret's owner, so a stray bullet from the thrower's own turret can still hit a baited creature in its line of fire (the turret just won't aim at it). Hits from other players are not blocked (their client sends that damage to the server).
+- Tune the radius, time and eat ticks in `Config/items.xml`.
+
+Note: this changes animal AI for the whole server, but only things marked for animals pull them. Vanilla rocks and snowballs are still zombie-only, so only the bait draws animals.
+
+---
 ## Keep Backpacks
 
 Server only. Players install nothing and can leave EasyAntiCheat on. The server sends the bag times when they connect.

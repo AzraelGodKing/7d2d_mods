@@ -1,0 +1,17 @@
+<!--
+  K9 death sound. "AzraelK9Death/" is a marker:
+  - Without the mod's code, the game drops the part before the "/" and plays bicycle_horn.
+  - With the mod installed on your PC and a k9death clip loaded, your PC plays your clip instead.
+  To use a different vanilla sound for everyone, change "bicycle_horn" (a sound name from Data/Config/sounds.xml).
+-->
+<configs>
+	<set xpath="/entity_classes/entity_class[@name='animalWolf']/property[@name='SoundDeath']/@value">AzraelK9Death/bicycle_horn</set>
+	<set xpath="/entity_classes/entity_class[@name='animalDireWolf']/property[@name='SoundDeath']/@value">AzraelK9Death/bicycle_horn</set>
+	<set xpath="/entity_classes/entity_class[@name='animalCoyote']/property[@name='SoundDeath']/@value">AzraelK9Death/bicycle_horn</set>
+	<set xpath="/entity_classes/entity_class[@name='animalZombieDog']/property[@name='SoundDeath']/@value">AzraelK9Death/bicycle_horn</set>
+	<!-- Hurt sound: a random silly noise from Config/sounds.xml (azraelK9Silly). -->
+	<set xpath="/entity_classes/entity_class[@name='animalWolf']/property[@name='SoundHurt']/@value">azraelK9Silly</set>
+	<set xpath="/entity_classes/entity_class[@name='animalDireWolf']/property[@name='SoundHurt']/@value">azraelK9Silly</set>
+	<set xpath="/entity_classes/entity_class[@name='animalCoyote']/property[@name='SoundHurt']/@value">azraelK9Silly</set>
+	<set xpath="/entity_classes/entity_class[@name='animalZombieDog']/property[@name='SoundHurt']/@value">azraelK9Silly</set>
+</configs>

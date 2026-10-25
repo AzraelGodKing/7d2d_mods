@@ -1,0 +1,10 @@
+﻿{
+  "slug": "gyro-safe",
+  "name": "Gyro Safe",
+  "game": "7-days-to-die",
+  "description": "Gyrocopters no longer damage blocks or terrain when they hit them. Install on the players who fly and on the server.",
+  "version": "1.0.0",
+  "screenshots": [],
+  "download": { "file": "AzraelGyroSafe-v1.0.0.zip" },
+  "links": { "steam": null, "thunderstore": null, "nexus": null }
+}

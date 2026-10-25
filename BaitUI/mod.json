@@ -1,0 +1,16 @@
+{
+  "slug": "zombie-and-animal-bait-ui",
+  "name": "Zombie and Animal Bait - Client UI",
+  "game": "7-days-to-die",
+  "description": "Optional client add-on for Zombie and Animal Bait: a thrall roster window (\ key) with call, stow, stay, mode, tether, heal and release buttons, name tags with HP bars, a party list, fed progress tags and an admin settings window. Needs the Bait mod on the server.",
+  "version": "1.6.3",
+  "screenshots": [],
+  "download": {
+    "file": "AzraelBaitUI-v1.6.3.zip"
+  },
+  "links": {
+    "steam": null,
+    "thunderstore": null,
+    "nexus": null
+  }
+}

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xml>
+	<Name value="AzraelK9DeathSound" />
+	<DisplayName value="K9 Death Sound" />
+	<Description value="Wolves, dire wolves, coyotes and zombie dogs honk a bicycle horn when they die, and make a random silly noise from the game when they are hurt. Install on the server and everyone hears the horn. Players who also install it and drop k9death.ogg / .wav / .mp3 in this folder hear their own clip instead (EAC off)." />
+	<Author value="Azrael" />
+	<Version value="1.1.0" />
+	<Website value="https://github.com/AzraelGodKing/7d2d_mods" />
+</xml>

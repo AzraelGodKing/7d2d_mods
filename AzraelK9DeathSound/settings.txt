@@ -1,0 +1,7 @@
+# K9 Death Sound settings (your own PC). Restart the game after changing.
+
+# Volume of your own k9death clip, 0.0 to 1.0.
+Volume=1.0
+
+# How far away (in blocks) you can still hear it.
+MaxDistance=50

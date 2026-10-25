@@ -1,0 +1,35 @@
+<configs>
+	<!--
+		Used by the Bait mod to take bait out of a player's inventory on a server. The server sets the cvar (how many) and
+		starts the sequence; it runs on that player's own game. Each bait item has its own tag (see items.xml).
+	-->
+	<append xpath="/gameevents">
+		<action_sequence name="azrael_take_plain">
+			<property name="allow_user_trigger" value="false"/>
+			<property name="action_type" value="Game"/>
+			<action class="RemoveItems">
+				<property name="items_location" value="Toolbelt,Backpack"/>
+				<property name="items_tags" value="azrbaitplain"/>
+				<property name="count" value="@azrTakePlain"/>
+			</action>
+		</action_sequence>
+		<action_sequence name="azrael_take_rich">
+			<property name="allow_user_trigger" value="false"/>
+			<property name="action_type" value="Game"/>
+			<action class="RemoveItems">
+				<property name="items_location" value="Toolbelt,Backpack"/>
+				<property name="items_tags" value="azrbaitrich"/>
+				<property name="count" value="@azrTakeRich"/>
+			</action>
+		</action_sequence>
+		<action_sequence name="azrael_take_feast">
+			<property name="allow_user_trigger" value="false"/>
+			<property name="action_type" value="Game"/>
+			<action class="RemoveItems">
+				<property name="items_location" value="Toolbelt,Backpack"/>
+				<property name="items_tags" value="azrbaitfeast"/>
+				<property name="count" value="@azrTakeFeast"/>
+			</action>
+		</action_sequence>
+	</append>
+</configs>
