@@ -9,7 +9,7 @@ public static partial class Thralls
 {
     public static void OnGameStart(ref ModEvents.SGameStartDoneData _d) { if (IsServer) Load(); }
     public static void OnShutdown(ref ModEvents.SGameShutdownData _d)
-    { Flush(); Live.Clear(); liveByRecord.Clear(); levels.Clear(); scanned.Clear(); loaded = false; }
+    { Flush(); Live.Clear(); bodies.Clear(); liveByRecord.Clear(); levels.Clear(); scanned.Clear(); loaded = false; }
 
     public static void OnUpdate(ref ModEvents.SGameUpdateData _d)
     {
@@ -18,6 +18,7 @@ public static partial class Thralls
         float now = Time.time;
         try
         {
+            ClearBodies(world, now);
             if (now >= nextTaunt) { nextTaunt = now + 1f; Taunt(world, now); VehicleWatch(world); UiPush(); }
             if (now >= nextLook) { nextLook = now + 0.5f; Calm(); LookHp(world, now); }
             if (now >= nextSlow) { nextSlow = now + 5f; Slow(world, now); }
@@ -88,6 +89,7 @@ public static partial class Thralls
             bool has = online.TryGetValue(lt.OwnerKey, out owner);
             if (rec == null || !rec.Active || (!has && !rec.Tether)) { ForgetLive(lt.EntityId); RemoveFromWorld(e); continue; }
             lt.OwnerEntityId = has ? owner.entityId : -1;
+            KeepSafe(e);
             Regen(e);
         }
 

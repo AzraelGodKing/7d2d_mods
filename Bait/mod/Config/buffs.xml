@@ -44,4 +44,17 @@
 			</effect_group>
 		</buff>
 	</append>
+
+	<!-- Put on every thrall by the mod while no player may hurt thralls (OwnerCanHurtThralls and OthersCanHurtThralls
+	     both false). Hits from players do nothing. The server blocks them anyway; this buff is synced to every client,
+	     so the attacker's own screen also shows no damage instead of a thrall that dies only for them. -->
+	<append xpath="/buffs">
+		<buff name="azraelThrallWard" hidden="true">
+			<stack_type value="ignore"/>
+			<effect_group>
+				<requirement name="EntityTagCompare" target="other" tags="player"/>
+				<passive_effect name="GeneralDamageResist" operation="base_add" value="1"/>
+			</effect_group>
+		</buff>
+	</append>
 </configs>

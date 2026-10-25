@@ -56,6 +56,11 @@ public static partial class Thralls
     {
         LiveThrall lt; return Live.TryGetValue(thrallEntityId, out lt) && lt.OwnerEntityId == playerEntityId;
     }
+    // Player damage rules: the owner only with OwnerCanHurtThralls, anyone else only with OthersCanHurtThralls.
+    public static bool PlayerMayHurt(int thrallEntityId, int playerEntityId)
+    {
+        return OwnedBy(thrallEntityId, playerEntityId) ? BaitConfig.OwnerCanHurtThralls : BaitConfig.OthersCanHurtThralls;
+    }
     public static int LevelOf(int entityId) { int l; return levels.TryGetValue(entityId, out l) ? l : 0; }
     static void Dbg(string m) { if (BaitConfig.Debug) Log.Out("[Bait] " + m); }
 
@@ -414,6 +419,29 @@ public static partial class Thralls
         catch (Exception ex) { Dbg("clear attackers failed: " + ex.Message); }
     }
 
+    public const string WardBuff = "azraelThrallWard";
+
+    // Run when a thrall is made and every few seconds after.
+    // Zombies (EntityHuman) and zombie dogs carry a lifetime from the game: once world time passes timeToDie and they have
+    // no target, the game kills them outright, with no damage and no hit. A static spawn gets only 4000-8000 ticks
+    // (a few game hours), so thralls "randomly died". A thrall has no lifetime.
+    // The ward buff makes player hits do nothing on the attacker's own screen too (the server blocks them anyway), so a
+    // client never sees a thrall die that is still alive on the server. Only when no player may hurt thralls at all.
+    static void KeepSafe(EntityAlive z)
+    {
+        try
+        {
+            var h = z as EntityHuman; if (h != null) h.timeToDie = ulong.MaxValue;
+            var d = z as EntityZombieDog; if (d != null) d.timeToDie = ulong.MaxValue;
+            if (z.Buffs == null || z.IsDead()) return;
+            bool want = !BaitConfig.OwnerCanHurtThralls && !BaitConfig.OthersCanHurtThralls;
+            bool has = z.Buffs.HasBuff(WardBuff);
+            if (want && !has) z.Buffs.AddBuff(WardBuff);
+            else if (!want && has) z.Buffs.RemoveBuff(WardBuff);
+        }
+        catch (Exception ex) { Dbg("keep safe failed: " + ex.Message); }
+    }
+
     static void MakeLive(EntityAlive z, ThrallRecord rec, EntityPlayer owner)
     {
         // no longer a POI sleeper: no red quest dot on the map, no leash back to the sleeper volume
@@ -429,6 +457,7 @@ public static partial class Thralls
         z.IsEating = false;
         z.SetAttackTarget(null, 0);
         z.SetSpawnerSource(EnumSpawnerSource.StaticSpawner);
+        KeepSafe(z);
 
         var ai = z.aiManager;
         if (ai == null) return;
@@ -533,7 +562,11 @@ public static partial class Thralls
         var e = W != null ? W.GetEntity(id) as EntityAlive : null;
         ForgetLive(id);
         if (e != null && !e.IsDead())
+        {
+            NoHarvest(e);
             e.DamageEntity(new DamageSource(EnumDamageSource.Internal, EnumDamageTypes.Suicide), 99999, false, 1f);
+            ClearBody(e);
+        }
     }
 
     static bool ChunkLoaded(Vector3 p)
@@ -593,6 +626,7 @@ public static partial class Thralls
             var rec = Find(lt.RecordId);
             ForgetLive(victim.entityId);
             NoHarvest(victim);
+            ClearBody(victim);
             string why = DeathReason(victim, killer);
             if (rec != null)
             {
@@ -614,6 +648,23 @@ public static partial class Thralls
             }
         }
         catch (Exception ex) { Log.Warning("[Bait] kill handler: " + ex.Message); }
+    }
+
+    // Butchering a body is worked out on the attacking client from its own copy (GameUtils.HarvestOnAttack), so the
+    // server can't refuse it. The body is taken out of the world instead, half a second after death.
+    static readonly Dictionary<int, float> bodies = new Dictionary<int, float>();
+    static void ClearBody(EntityAlive v) { bodies[v.entityId] = Time.time + 0.5f; }
+    static void ClearBodies(World world, float now)
+    {
+        if (bodies.Count == 0) return;
+        foreach (var kv in new List<KeyValuePair<int, float>>(bodies))
+        {
+            if (now < kv.Value) continue;
+            bodies.Remove(kv.Key);
+            if (Live.ContainsKey(kv.Key)) continue;
+            var e = world.GetEntity(kv.Key) as EntityAlive;
+            if (e != null && e.IsDead()) RemoveFromWorld(e);
+        }
     }
 
     // A fallen thrall comes back from its record, so its body gives nothing: no loot bag, nothing to butcher or search.
