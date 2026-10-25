@@ -15,21 +15,24 @@ sealed class ModDetailsPanel : Panel
 
     /// <summary>Raised when the note is changed (on leaving the box), with the mod's Name and the new note.</summary>
     public event Action<string, string>? NoteChanged;
-    public event Action<InstalledMod>? OpenFolder, Uninstall;
+    public event Action<InstalledMod>? OpenFolder, Uninstall, EditSettings;
+    readonly Button _settings;
 
     public ModDetailsPanel()
     {
         AutoScroll = true;
         _website.LinkClicked += (_, _) => { if (_website.Tag is string url) Ui.Open(FindForm(), url); };
         _note.Leave += (_, _) => { if (_mod != null) NoteChanged?.Invoke(_mod.Key, _note.Text.Trim()); };
+        _settings = Ui.SmallBtn("Settings...", (_, _) => { if (_mod != null) EditSettings?.Invoke(_mod); });
+        _buttons.Controls.Add(_settings);
         _buttons.Controls.Add(Ui.SmallBtn("Open folder", (_, _) => { if (_mod != null) OpenFolder?.Invoke(_mod); }));
         _buttons.Controls.Add(Ui.SmallBtn("Uninstall...", (_, _) => { if (_mod != null) Uninstall?.Invoke(_mod); }));
         _box.Controls.AddRange(new Control[] { _title, _sub, _desc, _facts, _website, Ui.Muted("Note"), _note, _buttons });
         Controls.Add(_box);
-        Show(null, null);
+        Show(null, null, null, false);
     }
 
-    public void Show(InstalledMod? mod, string? note)
+    public void Show(InstalledMod? mod, string? note, SideInfo? side, bool hasSettings)
     {
         _mod = mod;
         _box.Visible = true;
@@ -47,18 +50,20 @@ sealed class ModDetailsPanel : Panel
         var facts = new List<string>
         {
             $"Name: {mod.Key}",
+            side != null ? $"Install on: {side.Label}, {side.Why}" : "",
             $"Folder: {mod.FolderName} ({(mod.Location == ModLocation.Game ? "game Mods folder" : "AppData Mods folder")}{(mod.Enabled ? "" : ", disabled")})",
             mod.HasCode ? $"Code: {mod.Dlls.Count} DLL{(mod.Dlls.Count == 1 ? "" : "s")}, so EasyAntiCheat must be off" : "No code: works with EasyAntiCheat on",
             $"Size: {Display.Size(mod.Size)}",
         };
         if (mod.Locked) facts.Add("Part of the game: always on.");
-        _facts.Text = string.Join("\n", facts);
+        _facts.Text = string.Join("\n", facts.Where(f => f.Length > 0));
         var site = mod.Info?.Website;
         _website.Visible = !string.IsNullOrWhiteSpace(site);
         _website.Text = site ?? "";
         _website.Tag = site != null && !site.StartsWith("http", StringComparison.OrdinalIgnoreCase) ? "https://" + site : site;
         _note.Visible = _buttons.Visible = true;
         _note.Text = note ?? "";
-        _buttons.Controls[1].Enabled = !mod.Locked;
+        _settings.Visible = hasSettings;
+        _buttons.Controls[2].Enabled = !mod.Locked;
     }
 }

@@ -36,8 +36,9 @@ public static class Cli
             switch (cmd)
             {
                 case "list":
-                    if (json) o.WriteLine(JsonSerializer.Serialize(scan.Mods.Select(m => new { m.Key, m.DisplayName, version = m.Info?.Version, m.Enabled, m.HasCode, location = m.Location.ToString(), m.Folder }), new JsonSerializerOptions { WriteIndented = true }));
-                    else foreach (var m in scan.Mods) o.WriteLine($"{(m.Enabled ? "*" : " ")} {m.DisplayName}{(m.Info?.Version is { Length: > 0 } v ? " " + v : "")}{(m.HasCode ? "  [code]" : "")}  ({m.FolderName})");
+                    SideInfo SideOf(InstalledMod m) => ModSides.Of(m, s.Sides.TryGetValue(m.Key, out var c) ? c : null);
+                    if (json) o.WriteLine(JsonSerializer.Serialize(scan.Mods.Select(m => new { m.Key, m.DisplayName, version = m.Info?.Version, m.Enabled, m.HasCode, side = SideOf(m).Side.ToString(), sideGuessed = SideOf(m).Guessed, location = m.Location.ToString(), m.Folder }), new JsonSerializerOptions { WriteIndented = true }));
+                    else foreach (var m in scan.Mods) o.WriteLine($"{(m.Enabled ? "*" : " ")} {m.DisplayName}{(m.Info?.Version is { Length: > 0 } v ? " " + v : "")}{(m.HasCode ? "  [code]" : "")}{(m.Locked ? "" : "  [" + SideOf(m).Short + "]")}  ({m.FolderName})");
                     return 0;
                 case "problems":
                 {
@@ -65,7 +66,11 @@ public static class Cli
                 case "install":
                     if (rest.Count == 0) { o.WriteLine("Usage: install <zip or folder>"); return 2; }
                     foreach (var done in ModInstaller.Install(rest[0], scan, s.InstallToUserData ? install.UserMods : install.GameMods, AppSettings.BackupFolder))
+                    {
                         o.WriteLine((done.Replaced != null ? "Updated " : "Installed ") + done.Name + " in " + done.Folder);
+                        var kept = new ModSettingsStore(AppSettings.ModSettingsFolder).Restore(done.Key, done.Folder);
+                        if (kept.Count > 0) o.WriteLine("  your settings put back: " + string.Join(", ", kept));
+                    }
                     return 0;
             }
         }
