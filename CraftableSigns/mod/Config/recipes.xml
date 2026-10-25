@@ -1,0 +1,29 @@
+<configs>
+	<!--
+		One craft gives one sign of any size (you pick the size when you place it), so a 13x2
+		billboard costs the same as a 1x1. Wood signs use wood, iron signs use forged iron. Change
+		the counts here to rebalance.
+	-->
+	<append xpath="/recipes">
+		<recipe name="canvasSignBlockVariantHelper" count="1" craft_time="5">
+			<ingredient name="resourceWood" count="10"/>
+			<ingredient name="resourceCloth" count="10"/>
+			<ingredient name="resourcePaint" count="5"/>
+		</recipe>
+		<recipe name="canvasSignCorrugatedMetalBlockVariantHelper" count="1" craft_time="5">
+			<ingredient name="resourceForgedIron" count="10"/>
+			<ingredient name="resourceCloth" count="10"/>
+			<ingredient name="resourcePaint" count="5"/>
+		</recipe>
+		<recipe name="decalSignBlockVariantHelper" count="1" craft_time="5">
+			<ingredient name="resourceWood" count="10"/>
+			<ingredient name="resourceCloth" count="10"/>
+			<ingredient name="resourcePaint" count="5"/>
+		</recipe>
+		<recipe name="decalSignCorrugatedMetalBlockVariantHelper" count="1" craft_time="5">
+			<ingredient name="resourceForgedIron" count="10"/>
+			<ingredient name="resourceCloth" count="10"/>
+			<ingredient name="resourcePaint" count="5"/>
+		</recipe>
+	</append>
+</configs>

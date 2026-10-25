@@ -1,0 +1,25 @@
+<configs>
+	<!--
+		The game places the picture signs in POIs and flags their helper blocks Dev, so players are
+		never offered them. There are two families: canvas signs (framed) and decal signs (just the
+		picture, no frame; the Doggo's billboard is made of these). Switching the four helper blocks
+		to Player puts them in the crafting list, the same way the vanilla wood text signs and
+		paintings are. A helper lets you pick the size when you place it. The blocks themselves are
+		not changed: same HP, same material, same sign editor.
+	-->
+	<set xpath="/blocks/block[@name='canvasSignBlockVariantHelper']/property[@name='CreativeMode']/@value">Player</set>
+	<set xpath="/blocks/block[@name='canvasSignCorrugatedMetalBlockVariantHelper']/property[@name='CreativeMode']/@value">Player</set>
+	<set xpath="/blocks/block[@name='decalSignBlockVariantHelper']/property[@name='CreativeMode']/@value">Player</set>
+	<set xpath="/blocks/block[@name='decalSignCorrugatedMetalBlockVariantHelper']/property[@name='CreativeMode']/@value">Player</set>
+	<!--
+		Durability x10. The wood material is 225 HP and the metal material is 300 HP; MaxDamage set
+		on the block itself overrides the material, so only the picture signs change (not every
+		other wood or metal block). 2250 / 3000 here; change the numbers to rebalance.
+	-->
+	<append xpath="/blocks/block[starts-with(@name,'signCanvasWood') or starts-with(@name,'signDecalWood')]">
+		<property name="MaxDamage" value="2250"/>
+	</append>
+	<append xpath="/blocks/block[starts-with(@name,'signCanvasCorrugatedMetal') or starts-with(@name,'signDecalCorrugatedMetal')]">
+		<property name="MaxDamage" value="3000"/>
+	</append>
+</configs>
