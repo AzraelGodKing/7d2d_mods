@@ -27,12 +27,12 @@ public sealed class AppSettings
     public bool InstallToUserData { get; set; }
     /// <summary>The modlist last picked.</summary>
     public string? Modlist { get; set; }
+    /// <summary>Sides the player set by hand, by mod Name (overrides what the mod says or its files suggest).</summary>
+    public Dictionary<string, ModSide> Sides { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>The player's notes, by mod Name.</summary>
     public Dictionary<string, string> Notes { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>The colour tag on a mod's row, by mod Name.</summary>
     public Dictionary<string, string> Colours { get; set; } = new(StringComparer.OrdinalIgnoreCase);
-    /// <summary>Sides the player set by hand, by mod Name (overrides what the mod says or its files suggest).</summary>
-    public Dictionary<string, ModSide> Sides { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     public int[]? WindowBounds { get; set; }
     public bool WindowMaximized { get; set; }
 
