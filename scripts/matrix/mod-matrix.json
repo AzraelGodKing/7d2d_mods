@@ -54,5 +54,10 @@
     "zipName": "AzraelBloodMoonSound",
     "nexus_mod_id": "12920",
     "nexus_file_id": "8079786"
+  },
+  {
+    "modKey": "spawn-tuner",
+    "modDir": "SpawnTuner",
+    "zipName": "AzraelSpawnTuner"
   }
 ]

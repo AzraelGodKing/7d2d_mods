@@ -1,0 +1,37 @@
+# ==============================================================================
+#   SPAWN TUNER - spawn rates you can change while the game runs
+# ==============================================================================
+#
+#   Easiest: change these from the server console (F1 in single player), e.g.
+#     spawns NightDensity 4
+#     spawns refresh
+#   The console saves your change to this file. You can also edit the file and
+#   type  spawns reload
+#
+#   A line that starts with # is ignored, and that setting comes from the
+#   world's own settings (the sandbox options you picked when you made it).
+#
+#   Density = how many enemies (or animals) each spawn spot in an area can hold
+#             none, default, or a number (the game's own range is 1 to 5)
+#   Respawn = how fast an area refills after it empties
+#             default, veryslow, slow, normal, fast, veryfast
+#
+#   New settings apply as each area's timer runs out, which can take a few game
+#   days. Type  spawns refresh  to restart the timers in the loaded areas now.
+
+#DayDensity = default
+#NightDensity = default
+#DayRespawn = default
+#NightRespawn = default
+
+#AnimalDayDensity = default
+#AnimalNightDensity = default
+#AnimalDayRespawn = default
+#AnimalNightRespawn = default
+
+# Zombies per player at a blood moon (the game offers 4 to 64)
+#BloodMoonCount = 8
+
+# Most zombies / animals alive in the whole world at once (game default 64 / 50)
+#MaxZombies = 64
+#MaxAnimals = 50

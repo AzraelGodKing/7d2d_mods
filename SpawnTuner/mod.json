@@ -1,0 +1,16 @@
+{
+  "slug": "spawn-tuner",
+  "name": "Spawn Tuner",
+  "game": "7-days-to-die",
+  "description": "Server-side. Change zombie and animal spawn rates, max zombies alive and the blood moon count from the console while the game runs, no restart. Players do not install this mod.",
+  "version": "1.0.0",
+  "screenshots": [],
+  "download": {
+    "file": "spawn-tuner-1.0.0.zip"
+  },
+  "links": {
+    "steam": null,
+    "thunderstore": null,
+    "nexus": null
+  }
+}
