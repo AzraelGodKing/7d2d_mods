@@ -4,7 +4,7 @@ Small mods for 7 Days to Die, built and tested on **V3.3**.
 
 | Mod | Type | Install on | Version |
 |---|---|---|---|
-| [Remove Any Entity](#remove-any-entity) | Code (Harmony) | Server only | 2.0.1 |
+| [Remove Any Entity](#remove-any-entity) | Code (Harmony) | Server only | 2.1.0 |
 | [Quest Disconnect Fix](#quest-disconnect-fix) | Code (Harmony) | Server only | 1.1.0 |
 | [Honk Door Fix](#honk-door-fix) | Code (Harmony) | Server only | 1.0.0 |
 | [Craftable Canvas Signs](#craftable-canvas-signs) | XML only | Server only | 1.0.0 |
@@ -32,7 +32,7 @@ Server-only mods do not.
 
 Formerly **Remove Zombie Dogs** (later **Remove Entities**), and the same Nexus page. Pick which zombies and animals stop spawning. `entities.txt` in the
 mod folder lists every vanilla entity that spawns naturally, all commented out; remove the `#` in front
-of a name to take it out of the game, then restart.
+of a name to take it out of the game, then type `rae reload` in the server console (or restart).
 
 ```
 #animalZombieDog          zombie dog         <- still spawns
@@ -58,6 +58,14 @@ goes in your own Mods folder.
 |---|---|
 | `rae` | What's removed, how many groups changed, typos in `entities.txt` |
 | `rae group <name>` | What a spawn group can spawn now, with chances (partial names are suggested) |
+| `rae reload` | Re-read `entities.txt` and apply it now, without a restart |
+| `rae remove <name>` | Stop `<name>` (and its tiers) spawning: saves it to `entities.txt` and applies it now |
+| `rae keep <name>` | Let `<name>` spawn again: comments its line out in `entities.txt` and applies it now |
+
+Live changes affect new spawns only: creatures already in the world stay, and a horde that has already
+picked its zombies keeps them. `rae reload` rebuilds the groups from what `entitygroups.xml` defined, so
+another mod that changes spawn groups after they load (rather than through XML) has those changes undone
+until the next restart.
 
 Upgrading from Remove Zombie Dogs / Remove Entities: this version has its own mod id, so delete the
 old `RemoveZombieDogs` folder from `Mods` first (running both would remove creatures twice). The old
@@ -67,6 +75,7 @@ old `RemoveZombieDogs` folder from `Mods` first (running both would remove creat
 Known side effect: challenges that need a removed creature (e.g. "Kill 50 coyotes") can't be completed.
 
 **Changelog**
+- 2.1.0: change spawns without a restart. `rae reload` applies an edited `entities.txt` straight away, and `rae remove <name>` / `rae keep <name>` edit the file from the console and apply it.
 - 2.0.1: replaces Remove Zombie Dogs / Remove Entities on its Nexus page (the `rement` version is retired). A Twitch spawn whose creatures are all removed, with no usable `Replacement=`, is left unchanged (with one warning), the same as an emptied spawn group. It used to end up empty, which made the action rebuild its list every tick and never finish.
 - 2.0.0: renamed to Remove Any Entity. Now a code mod driven by `entities.txt` (any entity, all tiers,
   other mods' entities), with `rae` / `rae group` console commands and typo warnings.

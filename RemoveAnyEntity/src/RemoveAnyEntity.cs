@@ -77,6 +77,36 @@ public static class RaeSettings
         return false;
     }
 
+    // Turn a name on (remove it from spawning) or off in entities.txt: uncomment or comment
+    // its existing line, or add a line at the end. Returns what changed, for the console.
+    public static string SetRemoved(string name, bool removed)
+    {
+        var path = Path.Combine(ModPath ?? "", FileName);
+        var lines = File.Exists(path) ? File.ReadAllLines(path).ToList() : new List<string>();
+        bool found = false, changed = false;
+        for (int i = 0; i < lines.Count; i++)
+        {
+            var line = lines[i].Trim();
+            bool commented = line.StartsWith("#");
+            // Only "#name" with no space after the # is an entity line; "# text" is a comment.
+            var body = commented ? line.Substring(1) : line;
+            if (body.Length == 0 || char.IsWhiteSpace(body[0])) continue;
+            var first = body.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries)[0];
+            if (!first.Equals(name, StringComparison.OrdinalIgnoreCase)) continue;
+            found = true;
+            if (commented == removed)
+            {
+                lines[i] = removed ? body : "#" + line;
+                changed = true;
+            }
+        }
+        if (!found && removed) { lines.Add(name); changed = true; }
+        if (changed) File.WriteAllLines(path, lines);
+        if (!found && !removed) return $"'{name}' isn't in {FileName}, so it already spawns.";
+        if (!changed) return removed ? $"'{name}' was already removed." : $"'{name}' was already spawning.";
+        return removed ? $"'{name}' removed in {FileName}." : $"'{name}' spawns again ({FileName} line commented out).";
+    }
+
     public static string Summary() => Removed.Count == 0 ? "nothing (all lines in entities.txt are commented out)" : string.Join(", ", Removed);
 }
 
@@ -93,6 +123,14 @@ public static class RaeStats
         GroupsChanged = EntriesRemoved = GroupsRefilled = 0;
         ReplacementIds.Clear(); UnknownNames.Clear(); ClassesRemoved.Clear();
     }
+}
+
+// The spawn groups as entitygroups.xml defined them, before anything was removed,
+// so 'rae reload' can rebuild them after entities.txt changes without a restart.
+public static class RaeOriginal
+{
+    public static readonly Dictionary<string, List<SEntityClassAndProb>> Groups =
+        new Dictionary<string, List<SEntityClassAndProb>>(StringComparer.Ordinal);
 }
 
 static class RaeUtil
@@ -126,7 +164,7 @@ static class RaeUtil
     }
 }
 
-// Before entitygroups.xml is read: re-read entities.txt (so a restart picks up changes) and check the names.
+// Before entitygroups.xml is read: re-read entities.txt and check the names.
 [HarmonyLib.HarmonyPatch(typeof(EntityGroupsFromXml), nameof(EntityGroupsFromXml.LoadEntityGroups))]
 public static class RaeLoadPatch
 {
@@ -136,6 +174,7 @@ public static class RaeLoadPatch
         {
             RaeSettings.Load();
             RaeStats.Reset();
+            RaeOriginal.Groups.Clear();
             RaeUtil.BuildReplacementIds();
             RaeUtil.CheckNames();
             foreach (var p in RaeSettings.Problems) Log.Warning("[RemoveAnyEntity] " + p);
@@ -153,51 +192,85 @@ public static class RaeGroupPatch
     {
         try
         {
-            if (RaeSettings.Removed.Count == 0) return;
             var name = _elementGroup.Attribute("name")?.Value;
             if (string.IsNullOrEmpty(name) || !EntityGroups.list.TryGetValue(name, out var list) || list == null) return;
-
-            var kept = new List<SEntityClassAndProb>(list.Count);
-            int removedHere = 0;
-            foreach (var e in list)
-            {
-                var cls = RaeUtil.ClassName(e.entityClassId);
-                if (cls != null && RaeSettings.IsRemoved(cls)) { removedHere++; RaeStats.ClassesRemoved.Add(cls); }
-                else kept.Add(e);
-            }
-            if (removedHere == 0) return;
-
-            bool anyReal = kept.Any(e => !RaeUtil.IsNone(e.entityClassId));
-            if (!anyReal)
-            {
-                if (RaeStats.ReplacementIds.Count == 0)
-                {
-                    // Nothing valid to put in: leave this group as it was rather than break it.
-                    Log.Warning($"[RemoveAnyEntity] Group '{name}' would be empty and there's no usable Replacement; left unchanged.");
-                    return;
-                }
-                // Keep the original "nothing spawns" share, and give the rest to the replacements.
-                float noneShare = kept.Sum(e => e.prob);
-                float each = Math.Max(0.0001f, 1f - noneShare) / RaeStats.ReplacementIds.Count;
-                var refill = RaeStats.ReplacementIds.Select(id => new SEntityClassAndProb { entityClassId = id, prob = each }).ToList();
-                kept.InsertRange(0, refill);
-                RaeStats.GroupsRefilled++;
-            }
-
-            // A "none" entry must never be first: EntityGroups.IsEnemyGroup reads the first entry's class.
-            var ordered = kept.Where(e => !RaeUtil.IsNone(e.entityClassId)).Concat(kept.Where(e => RaeUtil.IsNone(e.entityClassId))).ToList();
-
-            // The game picks by walking cumulative chances, so rescale to a total of 1 again.
-            float total = ordered.Sum(e => e.prob);
-            if (total > 0f)
-                for (int i = 0; i < ordered.Count; i++) { var e = ordered[i]; e.prob /= total; ordered[i] = e; }
-
-            list.Clear();
-            list.AddRange(ordered);
-            RaeStats.GroupsChanged++;
-            RaeStats.EntriesRemoved += removedHere;
+            RaeOriginal.Groups[name] = new List<SEntityClassAndProb>(list);
+            RaeFilter.Apply(name, list);
         }
         catch (Exception e) { Log.Warning("[RemoveAnyEntity] group patch: " + e.Message); }
+    }
+}
+
+public static class RaeFilter
+{
+    // Take the removed entities out of one group's list, in place.
+    public static void Apply(string name, List<SEntityClassAndProb> list)
+    {
+        if (RaeSettings.Removed.Count == 0) return;
+
+        var kept = new List<SEntityClassAndProb>(list.Count);
+        int removedHere = 0;
+        foreach (var e in list)
+        {
+            var cls = RaeUtil.ClassName(e.entityClassId);
+            if (cls != null && RaeSettings.IsRemoved(cls)) { removedHere++; RaeStats.ClassesRemoved.Add(cls); }
+            else kept.Add(e);
+        }
+        if (removedHere == 0) return;
+
+        bool anyReal = kept.Any(e => !RaeUtil.IsNone(e.entityClassId));
+        if (!anyReal)
+        {
+            if (RaeStats.ReplacementIds.Count == 0)
+            {
+                // Nothing valid to put in: leave this group as it was rather than break it.
+                Log.Warning($"[RemoveAnyEntity] Group '{name}' would be empty and there's no usable Replacement; left unchanged.");
+                return;
+            }
+            // Keep the original "nothing spawns" share, and give the rest to the replacements.
+            float noneShare = kept.Sum(e => e.prob);
+            float each = Math.Max(0.0001f, 1f - noneShare) / RaeStats.ReplacementIds.Count;
+            var refill = RaeStats.ReplacementIds.Select(id => new SEntityClassAndProb { entityClassId = id, prob = each }).ToList();
+            kept.InsertRange(0, refill);
+            RaeStats.GroupsRefilled++;
+        }
+
+        // A "none" entry must never be first: EntityGroups.IsEnemyGroup reads the first entry's class.
+        var ordered = kept.Where(e => !RaeUtil.IsNone(e.entityClassId)).Concat(kept.Where(e => RaeUtil.IsNone(e.entityClassId))).ToList();
+
+        // The game picks by walking cumulative chances, so rescale to a total of 1 again.
+        float total = ordered.Sum(e => e.prob);
+        if (total > 0f)
+            for (int i = 0; i < ordered.Count; i++) { var e = ordered[i]; e.prob /= total; ordered[i] = e; }
+
+        list.Clear();
+        list.AddRange(ordered);
+        RaeStats.GroupsChanged++;
+        RaeStats.EntriesRemoved += removedHere;
+    }
+
+    // Re-read entities.txt and rebuild every group from its original entries. Returns false
+    // if no world has loaded the groups yet. Lists are changed in place, so anything holding
+    // a reference to one sees the new contents.
+    public static bool Reload()
+    {
+        RaeSettings.Load();
+        if (RaeOriginal.Groups.Count == 0) return false;
+        RaeStats.Reset();
+        RaeUtil.BuildReplacementIds();
+        RaeUtil.CheckNames();
+        foreach (var kv in RaeOriginal.Groups)
+        {
+            if (!EntityGroups.list.TryGetValue(kv.Key, out var list) || list == null) continue;
+            list.Clear();
+            list.AddRange(kv.Value);
+            try { Apply(kv.Key, list); }
+            catch (Exception e) { Log.Warning($"[RemoveAnyEntity] reload '{kv.Key}': " + e.Message); }
+        }
+        foreach (var p in RaeSettings.Problems) Log.Warning("[RemoveAnyEntity] " + p);
+        foreach (var u in RaeStats.UnknownNames) Log.Warning($"[RemoveAnyEntity] '{u}' in {RaeSettings.FileName} doesn't match any entity (typo?)");
+        Log.Out($"[RemoveAnyEntity] Reloaded. Removed {RaeStats.EntriesRemoved} spawn entries from {RaeStats.GroupsChanged} groups. Removing: {RaeSettings.Summary()}");
+        return true;
     }
 }
 
@@ -255,11 +328,38 @@ public class ConsoleCmdAzraelRemoveAnyEntity : ConsoleCmdAbstract
     public override string getDescription() => "Remove Any Entity: show what's removed from spawning";
     public override string getHelp() => "rae               - show the removed entities, and what changed when the world loaded\n" +
                                         "rae group <name>  - list what a spawn group can spawn now, with chances (e.g. rae group ZombiesAll)\n" +
-                                        "Edit entities.txt in the mod folder, then restart the server to apply changes.";
+                                        "rae reload        - re-read entities.txt and apply it now, no restart\n" +
+                                        "rae remove <name> - stop <name> (and its tiers) spawning, saved to entities.txt, applied now\n" +
+                                        "rae keep <name>   - let <name> spawn again, saved to entities.txt, applied now\n" +
+                                        "Creatures already in the world stay.";
 
     public override void Execute(List<string> _params, CommandSenderInfo _senderInfo)
     {
         var con = SingletonMonoBehaviour<SdtdConsole>.Instance;
+        var sub = _params.Count > 0 ? _params[0].ToLowerInvariant() : "";
+        if (sub == "remove" || sub == "keep")
+        {
+            if (_params.Count < 2) { con.Output($"Usage: rae {sub} <entity name>, e.g. rae {sub} zombieScreamer"); return; }
+            try { con.Output(RaeSettings.SetRemoved(_params[1], sub == "remove")); }
+            catch (Exception e) { con.Output($"Could not change {RaeSettings.FileName}: {e.Message}"); return; }
+            sub = "reload";
+        }
+        if (sub == "reload")
+        {
+            if (!RaeFilter.Reload())
+            {
+                con.Output($"{RaeSettings.FileName} re-read. No world is loaded yet, so it applies when one loads.");
+                return;
+            }
+            con.Output($"Applied. Removed {RaeStats.EntriesRemoved} spawn entries from {RaeStats.GroupsChanged} groups " +
+                       $"({RaeStats.GroupsRefilled} refilled). Removing: {RaeSettings.Summary()}");
+            foreach (var u in RaeStats.UnknownNames) con.Output($"PROBLEM: '{u}' doesn't match any entity (typo?)");
+            foreach (var p in RaeSettings.Problems) con.Output("PROBLEM: " + p);
+            if (_params.Count >= 2 && _params[0].Equals("keep", StringComparison.OrdinalIgnoreCase) && RaeSettings.IsRemoved(_params[1]))
+                con.Output($"'{_params[1]}' is still removed by a shorter name in {RaeSettings.FileName} (a name covers its tiers).");
+            con.Output("New spawns use this now. Creatures already in the world stay.");
+            return;
+        }
         if (_params.Count >= 2 && _params[0].Equals("group", StringComparison.OrdinalIgnoreCase))
         {
             if (!EntityGroups.list.TryGetValue(_params[1], out var grp) || grp == null)
@@ -274,7 +374,7 @@ public class ConsoleCmdAzraelRemoveAnyEntity : ConsoleCmdAbstract
         }
         con.Output("Remove Any Entity - listed in entities.txt: " + RaeSettings.Summary());
         if (RaeStats.GroupsChanged > 0 || RaeStats.EntriesRemoved > 0)
-            con.Output($"At world load: removed {RaeStats.EntriesRemoved} spawn entries from {RaeStats.GroupsChanged} groups, " +
+            con.Output($"Now: removed {RaeStats.EntriesRemoved} spawn entries from {RaeStats.GroupsChanged} groups, " +
                        $"{RaeStats.GroupsRefilled} groups refilled with replacements.");
         if (RaeStats.ClassesRemoved.Count > 0)
             con.Output("Entities no longer spawning: " + string.Join(", ", RaeStats.ClassesRemoved.OrderBy(x => x)));
@@ -282,6 +382,6 @@ public class ConsoleCmdAzraelRemoveAnyEntity : ConsoleCmdAbstract
         con.Output("Replacements: " + (reps.Count > 0 ? string.Join(", ", reps) : "(none usable)"));
         foreach (var u in RaeStats.UnknownNames) con.Output($"PROBLEM: '{u}' doesn't match any entity (typo?)");
         foreach (var p in RaeSettings.Problems) con.Output("PROBLEM: " + p);
-        con.Output("Changed entities.txt? Restart the server (or reload the world in single player) to apply.");
+        con.Output("Changed entities.txt? Type 'rae reload' to apply it now.");
     }
 }

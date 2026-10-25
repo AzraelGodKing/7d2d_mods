@@ -8,7 +8,9 @@
 #     #animalZombieDog        <- still spawns
 #     animalZombieDog         <- removed
 #
-#   Save the file, then restart the server (or your game in single player).
+#   Save the file, then type  rae reload  in the server console (F1 in single
+#   player) to apply it straight away. Restarting works too.
+#   Or skip the file:  rae remove zombieScreamer  /  rae keep zombieScreamer
 #
 #   A name removes ALL its versions: "zombieScreamer" also removes the Feral,
 #   Radiated, Charged and Infernal screamers. To remove only one version, add its
