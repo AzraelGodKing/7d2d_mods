@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>SevenDaysModManager</RootNamespace>
+    <AssemblyName>SevenDaysModManager</AssemblyName>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <Product>7 Days Mod Manager</Product>
+    <Description>Mod manager for 7 Days to Die: turn mods on and off, install from zips, modlists, problems and the game's log.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SevenDaysModManager.Core\SevenDaysModManager.Core.csproj" />
+    <Using Include="SevenDaysModManager.Core" />
+  </ItemGroup>
+</Project>
