@@ -291,7 +291,8 @@ public class ConsoleCmdBaitUI : ConsoleCmdAbstract
                "baitui scale <number>       - size of the tags and party list (default 1.6)\n" +
                "baitui reset                - party list back to the default spot and size\n" +
                "baitui key <key>             - roster window hotkey (default Home), 'none' to disable\n" +
-               "baitui open                  - open or close the roster window";
+               "baitui open                  - open or close the roster window\n" +
+               "baitui version               - this Bait UI's version and the server's Bait version";
     }
 
     public override void Execute(List<string> p, CommandSenderInfo info)
@@ -300,6 +301,15 @@ public class ConsoleCmdBaitUI : ConsoleCmdAbstract
         if (p.Count == 1 && p[0].ToLowerInvariant() == "open")
         {
             if (!BaitData.TryOpenRoster()) con.Output("Could not open the roster (not in a world, or the window XML did not load).");
+            return;
+        }
+        if (p.Count == 1 && p[0].ToLowerInvariant() == "version")
+        {
+            string server = !string.IsNullOrEmpty(BaitData.ServerVersion) ? BaitData.ServerVersion
+                          : BaitData.HasData ? "older than 1.7.6 (it does not say)"
+                          : BaitData.HelloGaveUp ? "no answer (not installed, or older than 1.3.0)"
+                          : BaitData.Me == null ? "not in a world" : "waiting for the server";
+            con.Output("Bait UI " + AzraelBaitUIMod.Version + ", server Bait " + server + ".");
             return;
         }
         if (p.Count == 1 && p[0].ToLowerInvariant() == "reset") { UiSettings.PartyX = 0.006f; UiSettings.PartyY = 0.14f; UiSettings.Scale = 1.6f; UiSettings.Save(); }

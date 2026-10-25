@@ -17,7 +17,7 @@ Small mods for 7 Days to Die, built and tested on **V3.3**.
 | [Zombie and Animal Bait](#zombie-and-animal-bait) | Code (Harmony) + XML | Server only | 1.7.6 |
 | [Gyro Safe](#gyro-safe) | Code (Harmony) | Server and players who fly | 1.0.0 |
 | [Drone Loot Filter](#drone-loot-filter) | Code (Harmony), needs Drone Automation | Server only | 1.2.0 |
-| [Bait UI](#bait-ui) | Code + UI | Players only (optional, needs Bait on the server) | 1.6.3 |
+| [Bait UI](#bait-ui) | Code + UI | Players only (optional, needs Bait on the server) | 1.6.4 |
 | [Spawn Tuner](#spawn-tuner) | Code (Harmony) | Server only | 1.0.0 |
 
 **Mod manager:** [ModManager/](ModManager/README.md) is a Windows app that turns mods on and off, installs them

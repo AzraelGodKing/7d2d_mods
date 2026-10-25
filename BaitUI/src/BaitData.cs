@@ -12,6 +12,9 @@ using UnityEngine;
 
 public class AzraelBaitUIMod : IModApi
 {
+    // From <Version> in the csproj, so there is no second copy to keep in step.
+    public static string Version { get { return typeof(AzraelBaitUIMod).Assembly.GetName().Version.ToString(3); } }
+
     public void InitMod(Mod _modInstance)
     {
         if (GameManager.IsDedicatedServer) return;
@@ -21,7 +24,7 @@ public class AzraelBaitUIMod : IModApi
         var go = new GameObject("AzraelBaitUI");
         UnityEngine.Object.DontDestroyOnLoad(go);
         go.AddComponent<BaitHud>();
-        Log.Out("[BaitUI] Loaded. Roster window key: " + UiSettings.Key + ". Type 'baitui' in the console (F1) for options.");
+        Log.Out("[BaitUI] " + Version + " loaded. Roster window key: " + UiSettings.Key + ". Type 'baitui' in the console (F1) for options.");
     }
 }
 
@@ -140,22 +143,15 @@ public static class BaitData
     }
 
     // Sends a /thrall command to the machine that runs Bait.
-    // Dedicated / listen-server clients must use ChatMessageClient: ChatMessageServer
-    // only runs on the host, and the dedicated process refuses that package.
+    // ChatMessageServer is the right call on every machine: on a remote client it sends the line to the server as a
+    // NetPackageChat, on a host it runs it directly. ChatMessageClient only prints a line in this client's own chat
+    // window and never reaches the server (BaitUI 1.6.3 used it, so the server never heard the hello).
     public static void Cmd(string text, bool expectReply = true)
     {
         var p = Me;
         if (p == null || GameManager.Instance == null) return;
         if (expectReply) LastCmd = Time.time;
-        try
-        {
-            var cm = SingletonMonoBehaviour<ConnectionManager>.Instance;
-            var bb = GeneratedTextManager.BbCodeSupportMode.Supported;
-            if (cm != null && cm.IsClient)
-                GameManager.Instance.ChatMessageClient(EChatType.Global, p.entityId, text, null, EMessageSender.SenderIdAsPlayer, bb);
-            else
-                GameManager.Instance.ChatMessageServer(null, EChatType.Global, p.entityId, text, null, EMessageSender.SenderIdAsPlayer, bb);
-        }
+        try { GameManager.Instance.ChatMessageServer(null, EChatType.Global, p.entityId, text, null, EMessageSender.SenderIdAsPlayer); }
         catch (Exception e) { Log.Warning("[BaitUI] send: " + e.Message); }
     }
 

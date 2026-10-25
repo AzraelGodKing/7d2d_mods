@@ -17,7 +17,7 @@ The server sends this mod the entity ids of every thrall, so your turrets, mini 
 
 ## Options
 
-Console (F1): `baitui` shows them. `baitui nameplates on|off`, `baitui party on|off`, `baitui feed on|off`, `baitui scale <number>` (size of tags and list, default 1.6), `baitui key <key>` (default Home, `none` to turn it off).
+Console (F1): `baitui` shows them. `baitui nameplates on|off`, `baitui party on|off`, `baitui feed on|off`, `baitui scale <number>` (size of tags and list, default 1.6), `baitui key <key>` (default Home, `none` to turn it off), `baitui version` (this mod's version and the Bait version the server reported).
 Saved in `%APPDATA%\7DaysToDie\AzraelBaitUI.txt`.
 
 ## How it works
@@ -47,5 +47,7 @@ The buttons send the normal `/thrall` chat commands (they are hidden from other 
 **1.6.1:** On a dedicated or listen-server client, `/thrall hello` and roster buttons now go through `ChatMessageClient`. The old path called `ChatMessageServer` on the player's game, which the dedicated host refuses, so the roster stayed empty. Home also opens the window while another cursor HUD is up. `baitui open` toggles the roster from F1.
 
 **1.6.2:** Dedicated hosts send their own XUi to every client, which never includes this client-only roster. The client now puts the roster windows back on after those files arrive, so Home and `baitui open` work on a dedicated server without installing Bait UI on the host.
+
+**1.6.4:** Fix: the UI never got an answer from a dedicated server. 1.6.3 sent the hello and the button commands with a call that only prints in your own chat window, so they never left your PC. They go to the server again. New `baitui version` console command shows this mod's version and the server's Bait version, and the version is in the log line on load.
 
 **1.6.3:** Version check. The roster title shows the server's Bait version (Bait 1.7.6 or newer sends it) and warns when it is older than 1.3.0, the oldest this UI can talk to. The `Party members' bars` button says so when the server is older than 1.7.3. The UI asks the server for its roster 3 times (15 s apart) instead of 8, hides the `/thrall` command lines from your chat, and says when the server never answered.
