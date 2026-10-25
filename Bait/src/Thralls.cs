@@ -52,6 +52,14 @@ public static partial class Thralls
     public static bool IsServer { get { return SingletonMonoBehaviour<ConnectionManager>.Instance != null && SingletonMonoBehaviour<ConnectionManager>.Instance.IsServer; } }
     static World W { get { return GameManager.Instance != null ? GameManager.Instance.World : null; } }
     public static bool IsThrall(int entityId) { return Live.ContainsKey(entityId); }
+
+    // Every entity id that has ever been a thrall in this save (kept in AzraelBaitThrallIds.txt).
+    // A tethered thrall whose area unloads is dropped from the world but stays in the chunk the game keeps in memory, and
+    // the chunk respawns it with the same entity id when someone comes back, while the roster spawns a fresh one too.
+    // Such an entity must never be saved or restored, and a copy that still turns up is removed.
+    static readonly HashSet<int> pastIds = new HashSet<int>();
+    static bool idsDirty;
+    public static bool NeverSave(int entityId) { return Live.ContainsKey(entityId) || pastIds.Contains(entityId); }
     public static bool OwnedBy(int thrallEntityId, int playerEntityId)
     {
         LiveThrall lt; return Live.TryGetValue(thrallEntityId, out lt) && lt.OwnerEntityId == playerEntityId;
@@ -158,6 +166,49 @@ public static partial class Thralls
 
     // ------------------------------------------------------------------ roster file
     static string FilePath { get { return Path.Combine(GameIO.GetSaveGameDir(), FileName); } }
+    static string IdsPath { get { return Path.Combine(GameIO.GetSaveGameDir(), "AzraelBaitThrallIds.txt"); } }
+
+    static void LoadIds()
+    {
+        pastIds.Clear(); idsDirty = false;
+        try
+        {
+            if (File.Exists(IdsPath))
+                foreach (string line in File.ReadAllLines(IdsPath)) { int id; if (int.TryParse(line.Trim(), out id)) pastIds.Add(id); }
+        }
+        catch (Exception e) { Log.Warning("[Bait] could not load thrall ids: " + e.Message); }
+    }
+
+    static void FlushIds()
+    {
+        if (!idsDirty || !loaded) return;
+        try
+        {
+            if (pastIds.Count > 20000)   // ids only grow, so the oldest are the smallest
+            {
+                var all = new List<int>(pastIds); all.Sort();
+                for (int i = 0; i < all.Count - 15000; i++) if (!Live.ContainsKey(all[i])) pastIds.Remove(all[i]);
+            }
+            var sb = new StringBuilder();
+            foreach (int id in pastIds) sb.Append(id).Append('\n');
+            File.WriteAllText(IdsPath, sb.ToString());
+            idsDirty = false;
+        }
+        catch (Exception e) { Log.Warning("[Bait] could not save thrall ids: " + e.Message); }
+    }
+
+    // Takes out any entity that was a thrall but is no longer one: a copy the game brought back from a cached chunk or the save.
+    static void RemoveStaleCopies(World world)
+    {
+        if (pastIds.Count == 0) return;
+        foreach (var en in new List<Entity>(world.Entities.list))
+        {
+            var e = en as EntityAlive;
+            if (e == null || e is EntityPlayer || Live.ContainsKey(e.entityId) || !pastIds.Contains(e.entityId)) continue;
+            Log.Out("[Bait] removing a stale copy of a former thrall: " + ClassName(e) + " #" + e.entityId + " at " + e.position);
+            RemoveFromWorld(e);
+        }
+    }
     static string F(float v) { return v.ToString("0.##", CultureInfo.InvariantCulture); }
     static float P(string s) { float r; return float.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out r) ? r : 0f; }
     static int PI(string s) { int r; return int.TryParse(s, out r) ? r : 0; }
@@ -167,6 +218,7 @@ public static partial class Thralls
         roster.Clear();
         BaitConfig.LoadSaved();
         LoadLimits();
+        LoadIds();
         try
         {
             if (File.Exists(FilePath))
@@ -190,6 +242,7 @@ public static partial class Thralls
 
     public static void Flush()
     {
+        FlushIds();
         if (!dirty || !loaded) return;
         try
         {
@@ -447,6 +500,7 @@ public static partial class Thralls
         // no longer a POI sleeper: no red quest dot on the map, no leash back to the sleeper volume
         z.IsSleeper = false; z.IsSleeperPassive = false;
         StartGrace(z);
+        if (pastIds.Add(z.entityId)) idsDirty = true;
         Live[z.entityId] = new LiveThrall { EntityId = z.entityId, OwnerEntityId = owner != null ? owner.entityId : -1, RecordId = rec.Id, OwnerKey = rec.OwnerKey, Hold = rec.Stay, Mode = rec.Mode };
         liveByRecord[rec.Id] = z.entityId;
         if (rec.Level < 1 && z is EntityZombie) { rec.Level = 1; dirty = true; }   // a zombie thrall is never level 0 (older ones are brought up to 1 here)

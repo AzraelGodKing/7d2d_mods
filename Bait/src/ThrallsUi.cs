@@ -9,7 +9,7 @@ using System.Text;
 public static partial class Thralls
 {
     const string UiTag = "\u200B\u200BBAIT|";
-    public const string ModVersion = "1.7.7";   // keep in step with mod.json; sent to Bait UI so it can warn about a server that is too old
+    public const string ModVersion = "1.7.8";   // keep in step with mod.json; sent to Bait UI so it can warn about a server that is too old
     static readonly HashSet<int> uiClients = new HashSet<int>();
     static readonly Dictionary<int, string> uiRoster = new Dictionary<int, string>();
     static readonly Dictionary<int, string> uiCfg = new Dictionary<int, string>();

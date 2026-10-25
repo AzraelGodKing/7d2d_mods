@@ -142,13 +142,13 @@ public static class ThrallTargetPatch
     }
 }
 
-// Live thralls come from the roster, never from the world save.
+// Live thralls come from the roster, never from the world save. Nor does anything that used to be a thrall (see Thralls.NeverSave).
 [HarmonyPatch(typeof(EntityEnemy), "IsSavedToFile")]
 public static class ThrallNoSave
 {
     static void Postfix(EntityEnemy __instance, ref bool __result)
     {
-        if (__result && Thralls.IsThrall(__instance.entityId)) __result = false;
+        if (__result && Thralls.NeverSave(__instance.entityId)) __result = false;
     }
 }
 
@@ -157,7 +157,7 @@ public static class ThrallNoSaveAnimal
 {
     static void Postfix(Entity __instance, ref bool __result)
     {
-        if (__result && Thralls.IsThrall(__instance.entityId)) __result = false;
+        if (__result && Thralls.NeverSave(__instance.entityId)) __result = false;
     }
 }
 
