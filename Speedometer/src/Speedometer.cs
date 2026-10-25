@@ -3,9 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
-// Azrael's Speedometer: a HUD speed readout with MPH / KM/H toggle and hotkeys.
-// Client-side UI. Settings are saved per player in %APPDATA%\7DaysToDie\AzraelSpeedometer.txt
-
 public class AzraelSpeedometerMod : IModApi
 {
     public void InitMod(Mod _modInstance)

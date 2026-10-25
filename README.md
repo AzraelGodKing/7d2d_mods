@@ -13,6 +13,9 @@ Small mods for 7 Days to Die, built and tested on **V3.3**.
 | [Keep Backpacks](#keep-backpacks) | Code | Server only | 1.2.2 |
 | [Blood Moon Sound](#blood-moon-sound) | Code (Harmony) | Players (own sound); server optional (sound for everyone, Discord posts) | 1.2.2 |
 
+**Mod manager:** [ModManager/](ModManager/README.md) is a Windows app that turns mods on and off, installs them
+from zips, keeps modlists and reads the game's log. See its README.
+
 Download the zips from the Releases page, unzip, and put the folder inside the game's `Mods` folder
 (or the server's `Mods` folder). Code that a player installs needs EasyAntiCheat turned off.
 Server-only mods do not.
@@ -93,7 +96,7 @@ The mod skips a drone whose list is gone, stops it listening to that party, and 
 Server-side only; players install nothing.
 
 **Changelog**
-- 1.1.0: fix parties breaking after a robotic drone unloads (3.3). DisplayName is `Quest Disconnect Fix (No Ghost Players and No Broken Parties)` so Nexus will accept the zip (it rejects a comma in the file name).
+- 1.1.0: fix parties breaking after a robotic drone unloads (3.3). Website is the GitHub repo, matching the other mods. DisplayName is `Quest Disconnect Fix (No Ghost Players and No Broken Parties)` so Nexus will accept the zip (it rejects a comma in the file name).
 - 1.0.0: first version.
 
 ## Honk Door Fix
@@ -147,7 +150,7 @@ works for drivers, passengers and on foot, and ignores teleports. Settings are s
 **Only players need it; the server doesn't.** Players launch without EAC.
 
 **Changelog**
-- 1.1.1: `speedo` now works on multiplayer servers that don't have the mod (runs on the player's PC). DisplayName is `Speedometer (MPH and KMH)` so Nexus will accept the zip (it rejects a slash in the file name).
+- 1.1.1: `speedo` now works on multiplayer servers that don't have the mod (runs on the player's PC). DisplayName is `Speedometer (MPH and KMH)` so Nexus will accept the zip (it rejects a slash in the file name). Website is the GitHub repo, matching the other mods.
 - 1.1.0: F5/F2 hotkeys (rebindable), on-screen confirmation, moved above the vehicle gauges.
 - 1.0.0: first version.
 
@@ -162,9 +165,10 @@ A recipe that also needs a quality item still takes the stackable parts from tho
 needs a small engine (that stays in your backpack) and wheels (those come from the chests). Tools,
 weapons, and armor are never taken.
 
-Upgrading a block with a repair tool uses the same chests for its material (wood, cobblestone,
-concrete, steel, and so on). With the Upgrade Bench mod installed, that bench's material cost comes
-from the same chests too. The two mods you put in the bench still have to be in the bench.
+When `UpgradeFromChests` is on, upgrading a block with a repair tool uses the same chests for its
+material (wood, cobblestone, concrete, steel, and so on). With the Upgrade Bench mod installed, that
+bench's material cost comes from the same chests too. The two mods you put in the bench still have
+to be in the bench. That setting is **off by default**.
 
 If your backpack is short, the missing materials move from those chests into your backpack first,
 then the normal craft or upgrade runs. On a multiplayer server the mod waits for the server to
@@ -179,7 +183,7 @@ once the server confirms the take.
 **Only players need it; the server doesn't.** Players launch without EAC.
 
 **Changelog**
-- 1.2.0: using chests for block upgrades and the Upgrade Bench is now a setting, `UpgradeFromChests`, and it is **off by default**. Set it to `on` in `settings.txt` to get the 1.1.x behavior back. ModInfo and site descriptions match: crafting uses claim chests; upgrades only when that setting is on.
+- 1.2.0: using chests for block upgrades and the Upgrade Bench is now a setting, `UpgradeFromChests`, and it is **off by default**. Set it to `on` in `settings.txt` to get the 1.1.x behavior back. ModInfo, site descriptions, and the README how-it-works paragraph match: crafting uses claim chests; upgrades only when that setting is on.
 - 1.1.2: fixed items duplicating on a laggy server. The mod used to stop waiting for the server after 3 seconds and hand out the materials anyway; if the server then refused, the chest got them back too. It now waits up to 10 seconds, and materials from a chest the server still hasn't answered arrive only once the server accepts.
 - 1.1.1: 7 Days 3.3. Chest contents are read from ItemGrid, and item type is a property, so opening a workstation no longer throws and chest materials count again.
 - 1.1.0: gyro crafts take stackable parts such as wheels from chests even when the recipe also needs a quality item. Block upgrades, and the Upgrade Bench material cost, use those chests too.
@@ -382,6 +386,7 @@ file, create `Directory.Build.local.props` (gitignored):
 When bumping a version, update both `ModInfo.xml` and the `.csproj` `<Version>`, and the `version` field in that mod's `mod.json`.
 
 Each mod folder has a `mod.json` for the public mod website. It is not copied into the game.
+`download.file` is `<slug>-<version>.zip`, the name CI uploads.
 
 ## Releasing
 

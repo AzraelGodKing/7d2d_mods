@@ -5,5 +5,5 @@
 	<Description value="Shows your speed on the HUD while driving. F5 shows/hides it, F2 switches MPH / KM/H (both changeable). Console (F1): speedo for all options. Only players need it; the server does not." />
 	<Author value="Azrael" />
 	<Version value="1.1.1" />
-	<Website value="" />
+	<Website value="https://github.com/AzraelGodKing/7d2d_mods" />
 </xml>

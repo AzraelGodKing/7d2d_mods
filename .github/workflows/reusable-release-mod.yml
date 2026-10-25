@@ -56,7 +56,6 @@ jobs:
           echo "zip_name=$(echo "$ROW" | jq -r '.zipName')" >> "$GITHUB_OUTPUT"
           echo "nexus_mod_id=$(echo "$ROW" | jq -r '.nexus_mod_id // empty')" >> "$GITHUB_OUTPUT"
           echo "nexus_file_id=$(echo "$ROW" | jq -r '.nexus_file_id // empty')" >> "$GITHUB_OUTPUT"
-          echo "nexus_publish=$(echo "$ROW" | jq -r 'if .nexus_publish == false then "false" else "true" end')" >> "$GITHUB_OUTPUT"
 
       - name: Read ModInfo.xml version + changelog
         id: meta
@@ -167,8 +166,7 @@ jobs:
           inputs.dry_run != 'true' &&
           inputs.publish_nexus == 'true' &&
           steps.version_check.outputs.nexus_unchanged != 'true' &&
-          steps.matrix.outputs.nexus_file_id != '' &&
-          steps.matrix.outputs.nexus_publish != 'false'
+          steps.matrix.outputs.nexus_file_id != ''
         env:
           NEXUS_API_KEY: ${{ secrets.NEXUSMODS_API_KEY }}
         run: |
@@ -209,11 +207,6 @@ jobs:
         if: inputs.dry_run != 'true' && inputs.publish_nexus == 'true' && steps.matrix.outputs.nexus_file_id == ''
         run: |
           echo "::warning::${{ steps.meta.outputs.display_name }} has no nexus_file_id in scripts/matrix/mod-matrix.json. Create the Nexus page, upload one file, copy the file id from Files → Advanced, then re-run with publish_nexus."
-
-      - name: Nexus skipped (opted out)
-        if: inputs.dry_run != 'true' && inputs.publish_nexus == 'true' && steps.matrix.outputs.nexus_publish == 'false'
-        run: |
-          echo "::warning::${{ steps.meta.outputs.display_name }} has nexus_publish=false in scripts/matrix/mod-matrix.json. IDs are kept; CI will not upload until that flag is true."
 
       - name: Nexus upload (1/4)
         id: nexus_upload_1
