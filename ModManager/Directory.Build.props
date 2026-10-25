@@ -1,0 +1,16 @@
+<Project>
+  <!--
+    The mod manager is a normal .NET 8 app. This file stops MSBuild from picking up the repo's root
+    Directory.Build.props, which builds the mods against the game's DLLs on net48.
+  -->
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <Authors>Azrael</Authors>
+    <Version>0.1.0</Version>
+    <Copyright>Copyright (c) 2026 Azrael</Copyright>
+    <!-- Lets the Windows app build on Linux CI runners too (it still only runs on Windows). -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+  </PropertyGroup>
+</Project>

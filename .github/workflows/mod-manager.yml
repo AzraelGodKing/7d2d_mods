@@ -1,0 +1,32 @@
+# Builds and tests the 7 Days Mod Manager (ModManager/) and uploads a single-file exe as an artifact.
+# It needs no game files, so it runs on GitHub-hosted runners (the mods' own release workflow needs the self-hosted one).
+name: Mod Manager
+
+on:
+  push:
+    paths: ["ModManager/**", ".github/workflows/mod-manager.yml"]
+  pull_request:
+    paths: ["ModManager/**", ".github/workflows/mod-manager.yml"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: ModManager
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Build
+        run: dotnet build ModManager.sln -c Release
+      - name: Test
+        run: dotnet test ModManager.sln -c Release --no-build
+      - name: Publish single-file exe
+        run: dotnet publish src/SevenDaysModManager/SevenDaysModManager.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SevenDaysModManager-win-x64
+          path: ModManager/publish/SevenDaysModManager.exe

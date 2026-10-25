@@ -1,0 +1,78 @@
+# 7 Days Mod Manager
+
+A Windows mod manager for **7 Days to Die**, built on the player side of
+[ModWright](https://github.com/AzraelGodKing/ModWright) (The Drop Pod): the same .NET 8 WinForms stack, the same
+look and every one of its themes, cut down to what 7 Days to Die needs.
+
+It finds the game through your Steam libraries (or a folder you pick) and reads every mod from both places the game
+loads them: the game's own `Mods` folder and `%AppData%\7DaysToDie\Mods`. Nothing is changed until you press
+**Save to game**, and nothing is changed while the game is running.
+
+## Using it
+
+- **Mods:** tick a mod to enable it. **Save to game** (Ctrl+S) moves unticked mods to a `Mods-disabled` folder next
+  to the `Mods` folder they came from, and ticked ones back. The game's own `0_TFP_Harmony` is always on. The
+  **Load order** column shows the order the game loads them in (by folder name, A to Z). Ctrl+Z and Ctrl+Y undo and
+  redo ticks; **Undo changes** goes back to what is on disk.
+- **Install:** drop a mod's `.zip` or folder anywhere on the window, or press **Install...** (Ctrl+O). Every folder
+  inside with a `ModInfo.xml` is a mod, however deep the zip put it. A mod that is already installed (same ModInfo
+  `Name`) is replaced where it is, after the old copy is zipped into the mod backups. `.rar` and `.7z` need unpacking
+  first. **Uninstall** sends a mod to the Recycle Bin.
+- **Modlists:** **Save as...** keeps the ticked mods as a named list and **Switch to it** enables exactly those.
+  **More** imports and exports lists, copies a share code (`7DMM1:...`) to paste in a chat, and adds a list from one.
+- **Problems:** mods with no or a broken `ModInfo.xml`, mods unpacked one folder too deep (**Fix** moves the folder
+  up), two enabled mods with the same `Name` (the game loads only the first), old-format ModInfo files, code mods
+  with EasyAntiCheat forced on, and a missing `0_TFP_Harmony` (**Fix** asks Steam to verify the game files).
+- **Play:** starts the game. With EAC on it goes through Steam and the game's launcher; with EAC off it starts
+  `7DaysToDie.exe` directly. On **Auto** (the default), EAC is off whenever an enabled mod has code (a DLL). Launch
+  options, and a backup of the newest save before each start, are under **Options > Play**.
+- **Test** and **Read the log:** Test starts the game and follows its log; Read the log reads the last one. Errors
+  and warnings are grouped by message, and each names the mod most likely at fault: a mod named in it (XML patch
+  errors name the mod), a file in its folder, or its code in the stack trace (namespaces read from the mod's DLLs,
+  never run).
+- **Details beside the list:** the picked mod's ModInfo, where it is, whether it has code, its size and your note.
+  Right-click a mod for **Note...**, **Colour**, its folder and website, and **Uninstall**.
+- **Tools:** **Find the broken mod for me** (enables half the suspects each round until one is left, then puts your
+  mods back), the Mods and backup folders, and **Verify the game files in Steam**.
+- **Saves...:** every save with its world, when it was last played and its size, with **Back up** to a zip.
+- **Options:** theme (Dark, Light, Kats, Koneko, Serina, Wolfie, Vickra, Kitomi, Szendoo, Triphlx, Tohma, Skywolf,
+  Hunter, or Match Windows; Windows High Contrast always wins), text size, the game and data folders, where new mods
+  are installed, EasyAntiCheat and launch options.
+
+Settings, modlists and backups are in `%LocalAppData%\SevenDaysModManager`.
+
+## Command line
+
+```
+SevenDaysModManager list [--json]         the installed mods (* = enabled)
+SevenDaysModManager problems [--json]     problems with the enabled mods (exit code 1 on errors)
+SevenDaysModManager lists                 the saved modlists (* = last used)
+SevenDaysModManager switch <modlist>      enable exactly the mods of a modlist
+SevenDaysModManager play [<modlist>]      start the game, after switching to the modlist
+SevenDaysModManager install <zip|folder>  install a mod
+```
+
+A desktop shortcut to `SevenDaysModManager.exe play "Horde night"` starts that setup in one click.
+
+## Build
+
+Needs the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0). Unlike the mods in this repo, it needs no
+game files.
+
+```powershell
+cd ModManager
+dotnet build ModManager.sln -c Release
+dotnet test ModManager.sln
+```
+
+The app is `src\SevenDaysModManager\bin\Release\net8.0-windows\SevenDaysModManager.exe`. The **Mod Manager**
+GitHub workflow builds and tests every change under `ModManager/` and uploads a self-contained single-file exe.
+
+`src/SevenDaysModManager.Core` holds everything that needs no WinForms (finding the game, reading mods, installing,
+modlists, problems, the log, saves, the command line) and is what the tests cover. `src/SevenDaysModManager` is the
+window. `Theme.cs` is ModWright's, unchanged apart from its namespace.
+
+## Not carried over from ModWright
+
+The Launch Pad (Workshop uploads; 7 Days to Die has no Workshop), SteamCMD, Workshop and Thunderstore downloads,
+load-order sorting (the game has no load-order file), and RimWorld's instances, XML and texture tools.
