@@ -33,6 +33,10 @@ public sealed class AppSettings
     public Dictionary<string, string> Notes { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>The colour tag on a mod's row, by mod Name.</summary>
     public Dictionary<string, string> Colours { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>Look for a newer version of the app at start-up.</summary>
+    public bool CheckForUpdates { get; set; } = true;
+    /// <summary>A version the player said not to be reminded about again.</summary>
+    public string? SkippedVersion { get; set; }
     public int[]? WindowBounds { get; set; }
     public bool WindowMaximized { get; set; }
 

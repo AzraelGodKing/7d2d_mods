@@ -50,6 +50,13 @@ loads them: the game's own `Mods` folder and `%AppData%\7DaysToDie\Mods`. Nothin
   Hunter, or Match Windows; Windows High Contrast always wins), text size, the game and data folders, where new mods
   are installed, EasyAntiCheat and launch options.
 
+- **Updates:** at start-up the app asks GitHub for a newer release and offers **Update now**, **Release notes** or
+  **Later**, with a box to stop reminding you about that version. **Update now** downloads the new exe, checks it
+  against the release's `SHA256SUMS.txt`, and restarts into it; the old exe is kept as `<name>.update-old` until the
+  next start, and put back if Windows (or antivirus) won't run the new one. Only GitHub's public list of releases is
+  read. Turn the check off, or **Check now**, under **Options > About**. Only the single-file exe updates itself; a
+  copy built with `dotnet build` offers the release page instead.
+
 Settings, modlists and backups are in `%LocalAppData%\SevenDaysModManager`.
 
 ## Command line
@@ -82,6 +89,13 @@ GitHub workflow builds and tests every change under `ModManager/` and uploads a 
 `src/SevenDaysModManager.Core` holds everything that needs no WinForms (finding the game, reading mods, installing,
 modlists, problems, the log, saves, the command line) and is what the tests cover. `src/SevenDaysModManager` is the
 window. `Theme.cs` is ModWright's, unchanged apart from its namespace.
+
+## Releasing
+
+Bump `<Version>` in `ModManager/Directory.Build.props` on `main`, then run the **Release Mod Manager** workflow
+(Actions tab), optionally with change notes. It tests, publishes `SevenDaysModManager-<version>-win-x64.exe` and
+`SHA256SUMS.txt`, and creates the release `ModManager-v<version>`, which is what the app's update check looks for. The
+mods' releases (`<ModName>-v<version>`) are ignored by it, and the app's releases are never marked "latest".
 
 ## Not carried over from ModWright
 

@@ -14,9 +14,9 @@ public sealed partial class MainForm : Form
     NavButton _navMods = null!, _navOptions = null!;
     Control _modsPage = null!, _optionsPage = null!;
 
-    public static string Version => typeof(MainForm).Assembly.GetName().Version is { } v ? $"{v.Major}.{v.Minor}.{v.Build}" : "";
+    public static string Version => UpdateCheck.CurrentVersion;
 
-    public MainForm(AppSettings s)
+    public MainForm(AppSettings s, string? updatedFrom = null)
     {
         _s = s;
         Text = "7 Days Mod Manager";
@@ -40,7 +40,12 @@ public sealed partial class MainForm : Form
         Theme.Apply(this);
         ShowPage(_modsPage);
 
-        Shown += async (_, _) => await ScanAsync();
+        Shown += async (_, _) =>
+        {
+            if (updatedFrom != null) ShowNote($"Updated from {updatedFrom} to {UpdateCheck.CurrentVersion}.", Tone.Ok);
+            await ScanAsync();
+            if (_s.CheckForUpdates) await CheckForUpdateAsync(quiet: true);
+        };
         DragEnter += (_, e) => e.Effect = e.Data?.GetDataPresent(DataFormats.FileDrop) == true ? DragDropEffects.Copy : DragDropEffects.None;
         DragDrop += async (_, e) => { if (e.Data?.GetData(DataFormats.FileDrop) is string[] paths) await InstallAsync(paths); };
         KeyDown += OnKey;
@@ -131,6 +136,32 @@ public sealed partial class MainForm : Form
         StartPosition = FormStartPosition.Manual;
         Bounds = r;
         if (_s.WindowMaximized) WindowState = FormWindowState.Maximized;
+    }
+
+    bool _checkingUpdate;
+
+    /// <summary>
+    /// Asks GitHub for a newer version and offers it. <paramref name="quiet"/> (at start-up) says nothing when there is
+    /// none or GitHub can't be reached, and skips a version the player said not to be reminded about.
+    /// </summary>
+    async Task CheckForUpdateAsync(bool quiet)
+    {
+        if (_checkingUpdate) return;
+        _checkingUpdate = true;
+        try
+        {
+            var r = await UpdateCheck.FindNewerAsync(UpdateCheck.CurrentVersion);
+            if (r == null)
+            {
+                if (!quiet) Info(this, $"You have the newest version ({UpdateCheck.CurrentVersion}).");
+                return;
+            }
+            if (quiet && r.Version == _s.SkippedVersion) return;
+            using var f = new UpdateForm(r);
+            f.ShowDialog(this);
+            if (f.SkipThisVersion && _s.SkippedVersion != r.Version) { _s.SkippedVersion = r.Version; SaveSettings(); }
+        }
+        finally { _checkingUpdate = false; }
     }
 
     void SaveSettings()

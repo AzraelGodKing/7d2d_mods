@@ -1,0 +1,63 @@
+# Publishes the 7 Days Mod Manager as a GitHub release the app's self-update finds:
+#   tag ModManager-v<Version>, with SevenDaysModManager-<Version>-win-x64.exe and SHA256SUMS.txt.
+# The version is <Version> in ModManager/Directory.Build.props; bump it before running this.
+# The release is never marked "latest", so the mods' own releases keep that spot.
+name: Release Mod Manager
+
+on:
+  workflow_dispatch:
+    inputs:
+      notes:
+        description: "Change notes shown in the app's update window (optional)"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: ModManager
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Read version
+        id: meta
+        run: |
+          $v = ([xml](Get-Content Directory.Build.props)).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
+          if (-not $v) { throw "No <Version> in ModManager/Directory.Build.props" }
+          "version=$v" >> $env:GITHUB_OUTPUT
+          "tag=ModManager-v$v" >> $env:GITHUB_OUTPUT
+      - name: Refuse an existing tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "${{ steps.meta.outputs.tag }}" --repo "${{ github.repository }}" 2>$null
+          if ($LASTEXITCODE -eq 0) { throw "${{ steps.meta.outputs.tag }} is already released. Bump <Version> in ModManager/Directory.Build.props." }
+          $global:LASTEXITCODE = 0
+      - name: Test
+        run: dotnet test ModManager.sln -c Release
+      - name: Publish
+        run: |
+          dotnet publish src/SevenDaysModManager/SevenDaysModManager.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish
+          $name = "SevenDaysModManager-${{ steps.meta.outputs.version }}-win-x64.exe"
+          New-Item -ItemType Directory -Force release | Out-Null
+          Copy-Item publish/SevenDaysModManager.exe "release/$name"
+          $hash = (Get-FileHash "release/$name" -Algorithm SHA256).Hash.ToLowerInvariant()
+          Set-Content -Path release/SHA256SUMS.txt -Value "$hash  $name" -NoNewline -Encoding ascii
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NOTES: ${{ inputs.notes }}
+        run: |
+          $notes = if ($env:NOTES) { $env:NOTES } else { "7 Days Mod Manager ${{ steps.meta.outputs.version }}." }
+          Set-Content -Path release-notes.md -Value $notes -Encoding utf8
+          gh release create "${{ steps.meta.outputs.tag }}" (Get-ChildItem release/*).FullName `
+            --repo "${{ github.repository }}" --target "${{ github.sha }}" `
+            --title "7 Days Mod Manager ${{ steps.meta.outputs.version }}" --notes-file release-notes.md --latest=false
