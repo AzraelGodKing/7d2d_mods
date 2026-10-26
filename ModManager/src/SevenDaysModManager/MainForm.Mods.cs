@@ -96,7 +96,7 @@ public sealed partial class MainForm
         var install = SmallBtn("Install...", (_, _) => PickArchive());
         _undo = SmallBtn("Undo changes", (_, _) => { if (_scan == null) return; _history.Push(_enabled); SetEnabled(EnabledOnDisk()); });
         _save = SmallBtn("Save to game", async (_, _) => await SaveToGameAsync()).Role(ThemeRole.Primary);
-        Tip(install, "Install a mod from a .zip or a folder (Ctrl+O). You can also drop it onto the window");
+        Tip(install, "Install a mod from a .zip or a folder (Ctrl+O). You can also drop it, or a download link, onto the window");
         Tip(_undo, "Go back to the mods as they are in the game folders (Ctrl+Z steps back one change at a time)");
         Tip(_save, "Move the folders: ticked mods into Mods, the others into Mods-disabled (Ctrl+S)");
         var split = new SplitContainer { Dock = DockStyle.Fill, FixedPanel = FixedPanel.Panel2, Margin = Padding.Empty };
@@ -461,6 +461,73 @@ public sealed partial class MainForm
         ShowNote(string.Join("\n", lines), lines.Any(l => l.Contains(": ")) ? Tone.Warn : Tone.Ok);
     }
 
+    async Task AskLinkAsync()
+    {
+        var clip = Clipboard.ContainsText() && ModDownloader.IsLink(Clipboard.GetText().Trim()) ? Clipboard.GetText().Trim() : "";
+        var link = Ask(this, "Install from a link", "Link to the mod's .zip, or to its GitHub repository or release page:", clip);
+        if (string.IsNullOrWhiteSpace(link)) return;
+        await InstallFromLinkAsync(link);
+    }
+
+    bool _downloading;
+
+    /// <summary>Downloads a mod's zip from a link (a GitHub page resolves to its release zip) and installs it.</summary>
+    async Task InstallFromLinkAsync(string link)
+    {
+        if (_scan == null) { Error(this, "Find the game first (Game folder...)."); return; }
+        if (_downloading) { Info(this, "A download is already running."); return; }
+        if (!ModDownloader.IsLink(link)) { Error(this, $"{link} is not an http or https link."); return; }
+        if (!CanChangeFiles()) return;
+        _downloading = true;
+        string? file = null;
+        try
+        {
+            ShowNote("Downloading " + link + " ...", Tone.Info);
+            var progress = new Progress<(long Done, long? Total)>(p =>
+                ShowNote($"Downloading {link}  {Display.Size(p.Done)}{(p.Total is { } t ? " of " + Display.Size(t) : "")}", Tone.Info));
+            file = await ModDownloader.DownloadAsync(await ModDownloader.ResolveAsync(link, ModDownloader.Api), ModDownloader.Http, progress);
+            await InstallAsync(new[] { file });
+        }
+        catch (Exception e) when (e is HttpRequestException or TaskCanceledException or IOException or UnauthorizedAccessException or InvalidDataException or System.Text.Json.JsonException)
+        {
+            ShowNote("", Tone.Normal);
+            Error(this, "Couldn't download the mod: " + e.Message);
+        }
+        finally
+        {
+            if (file != null) ModDownloader.CleanUp(file);
+            _downloading = false;
+        }
+    }
+
+    async Task CheckModUpdatesAsync()
+    {
+        if (_scan == null) return;
+        var withRepo = _scan.Mods.Count(m => !m.Locked && ModUpdates.RepoOf(m.Info?.Website) != null);
+        if (withRepo == 0) { Info(this, "None of your mods has a GitHub repository as its Website, so there is nowhere to look for updates."); return; }
+        List<ModUpdate> found;
+        try
+        {
+            UseWaitCursor = true;
+            ShowNote($"Looking for updates of {withRepo} mod{(withRepo == 1 ? "" : "s")} on GitHub...", Tone.Info);
+            found = await ModUpdates.CheckAsync(_scan.Mods, (u, ct) => ModDownloader.Api.GetStringAsync(u, ct));
+        }
+        catch (Exception e) when (e is HttpRequestException or TaskCanceledException or System.Text.Json.JsonException)
+        {
+            ShowNote("", Tone.Normal);
+            Error(this, "Couldn't read GitHub: " + e.Message);
+            return;
+        }
+        finally { UseWaitCursor = false; }
+        if (found.Count == 0) { ShowNote($"Your {withRepo} mod{(withRepo == 1 ? " from GitHub is" : "s from GitHub are")} up to date.", Tone.Ok); return; }
+        ShowNote($"{found.Count} mod update{(found.Count == 1 ? "" : "s")} on GitHub.", Tone.Info);
+        using var f = new ModUpdatesForm(found);
+        if (f.ShowDialog(this) != DialogResult.OK) return;
+        foreach (var u in f.Picked)
+            if (u.ZipUrl != null) await InstallFromLinkAsync(u.ZipUrl);
+            else Ui.Open(this, u.PageUrl);
+    }
+
     async Task UninstallAsync(InstalledMod m)
     {
         if (m.Locked || !CanChangeFiles()) return;
@@ -641,6 +708,8 @@ public sealed partial class MainForm
         var menu = new ContextMenuStrip();
         menu.Items.Add(new ToolStripMenuItem("Find the broken mod for me...", null, async (_, _) => await BisectStartAsync()) { Enabled = _scan != null && _bisect == null });
         menu.Items.Add("Install a mod from a zip...", null, (_, _) => PickArchive());
+        menu.Items.Add(new ToolStripMenuItem("Install a mod from a link...", null, async (_, _) => await AskLinkAsync()) { Enabled = _scan != null });
+        menu.Items.Add(new ToolStripMenuItem("Check mods for updates on GitHub...", null, async (_, _) => await CheckModUpdatesAsync()) { Enabled = _scan != null });
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(new ToolStripMenuItem("Open the game's Mods folder", null, (_, _) => { Directory.CreateDirectory(_scan!.Install.GameMods); Ui.Open(this, _scan.Install.GameMods); }) { Enabled = _scan != null });
         menu.Items.Add(new ToolStripMenuItem("Open the AppData Mods folder", null, (_, _) => { Directory.CreateDirectory(_scan!.Install.UserMods); Ui.Open(this, _scan.Install.UserMods); }) { Enabled = _scan != null });
