@@ -27,6 +27,12 @@ loads them: the game's own `Mods` folder and `%AppData%\7DaysToDie\Mods`. Nothin
 - **Problems:** mods with no or a broken `ModInfo.xml`, mods unpacked one folder too deep (**Fix** moves the folder
   up), two enabled mods with the same `Name` (the game loads only the first), old-format ModInfo files, code mods
   with EasyAntiCheat forced on, and a missing `0_TFP_Harmony` (**Fix** asks Steam to verify the game files).
+  It also reads each enabled mod's `Config` XML: two mods that `set`, `remove` or `setattribute` the same xpath in the
+  same file (whatever their quotes and spacing; the one that loads last wins), two mods that add an item, block or
+  buff with the same name, and XML files that aren't valid. A mod whose description says it needs another ("Needs the
+  Bait mod", "Requires SCore") is flagged when that mod is disabled or missing; one needed only on the server is left
+  alone when it isn't installed here. Mods whose name or description says they are for an older game ("A20", "for
+  V1.0") are flagged against the game version read from the log, which is shown beside the game folder.
 - **Play:** starts the game. With EAC on it goes through Steam and the game's launcher; with EAC off it starts
   `7DaysToDie.exe` directly. On **Auto** (the default), EAC is off whenever an enabled mod has code (a DLL). Launch
   options, and a backup of the newest save before each start, are under **Options > Play**.

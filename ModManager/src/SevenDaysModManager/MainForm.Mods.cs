@@ -27,6 +27,8 @@ public sealed partial class MainForm
 
     readonly SteamLibraries _steam = SteamLibraries.Find();
     LibraryScan? _scan;
+    /// <summary>XML conflicts, requirements and game version checks, read once per scan.</summary>
+    ModAnalysis? _analysis;
     /// <summary>The mods ticked in the list (their ids), as edited here; Save to game makes the folders match.</summary>
     HashSet<string> _enabled = new();
     readonly EditHistory _history = new();
@@ -157,15 +159,22 @@ public sealed partial class MainForm
             if (install == null)
             {
                 _scan = null;
+                _analysis = null;
                 _gameText.Text = "7 Days to Die was not found through Steam. Press Game folder... and pick its install folder.";
                 _gameText.ForeColor = Theme.Of(Tone.Warn);
                 _enabled.Clear();
                 FillList();
                 return;
             }
-            _scan = await Task.Run(() => ModLibrary.Scan(install));
+            (_scan, _analysis) = await Task.Run(() =>
+            {
+                var scan = ModLibrary.Scan(install);
+                var analysis = ModAnalysis.For(install);
+                foreach (var m in scan.Mods) analysis.XmlOf(m);
+                return (scan, analysis);
+            });
             _sides.Clear();
-            _gameText.Text = $"{install.GameFolder}    ·    data: {install.UserDataFolder}";
+            _gameText.Text = $"{install.GameFolder}    ·    data: {install.UserDataFolder}{(_analysis?.Game is { } v ? "    ·    game " + v : "")}";
             _gameText.ForeColor = Theme.Of(Tone.Normal);
             _history.Clear();
             SetEnabled(EnabledOnDisk(), dirty: false);
@@ -284,7 +293,7 @@ public sealed partial class MainForm
         _play.Enabled = true;
 
         var before = _found;
-        _found = Problems.Check(_scan, _enabled, _s.Eac);
+        _found = Problems.Check(_scan, _enabled, _s.Eac, _analysis);
         _problems.BeginUpdate();
         _problems.Items.Clear();
         foreach (var p in _found)

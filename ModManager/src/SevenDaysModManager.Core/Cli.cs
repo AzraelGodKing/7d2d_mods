@@ -42,7 +42,7 @@ public static class Cli
                     return 0;
                 case "problems":
                 {
-                    var found = Problems.Check(scan, scan.Mods.Where(m => m.Enabled).Select(m => m.Id).ToHashSet(), s.Eac);
+                    var found = Problems.Check(scan, scan.Mods.Where(m => m.Enabled).Select(m => m.Id).ToHashSet(), s.Eac, ModAnalysis.For(install));
                     if (json) o.WriteLine(JsonSerializer.Serialize(found.Select(p => new { severity = p.Severity.ToString(), mod = p.ModId, p.Text }), new JsonSerializerOptions { WriteIndented = true }));
                     else if (found.Count == 0) o.WriteLine("No problems.");
                     else foreach (var p in found) o.WriteLine($"{p.Severity}: {p.Text}");

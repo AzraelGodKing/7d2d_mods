@@ -12,7 +12,8 @@ public sealed record ModProblem(Severity Severity, string? ModId, string Text, P
 /// <summary>Checks the mods that would be enabled for what stops them loading or makes the game complain.</summary>
 public static class Problems
 {
-    public static List<ModProblem> Check(LibraryScan scan, IReadOnlySet<string> enabledIds, EacMode eac)
+    /// <summary>The problems with <paramref name="enabledIds"/>; with an <paramref name="analysis"/>, also XML conflicts, missing requirements and old game versions.</summary>
+    public static List<ModProblem> Check(LibraryScan scan, IReadOnlySet<string> enabledIds, EacMode eac, ModAnalysis? analysis = null)
     {
         var list = new List<ModProblem>();
         var enabled = scan.Mods.Where(m => enabledIds.Contains(m.Id)).ToList();
@@ -43,6 +44,7 @@ public static class Problems
             if (!scan.Mods.Any(m => m.Locked && m.Enabled && m.FolderName.Contains("Harmony", StringComparison.OrdinalIgnoreCase)))
                 list.Add(new ModProblem(Severity.Error, null, "The game's own 0_TFP_Harmony mod is missing, and code mods need it. Verify the game files in Steam to get it back.", ProblemFix.VerifyGameFiles));
         }
+        if (analysis != null) list.AddRange(analysis.Check(scan, enabledIds));
         return list.OrderByDescending(p => p.Severity).ToList();
     }
 
