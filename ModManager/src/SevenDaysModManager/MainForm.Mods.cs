@@ -14,7 +14,7 @@ public sealed partial class MainForm
 
     readonly Label _gameText = new() { AutoSize = true, UseMnemonic = false, Tag = "fill" };
     readonly Label _note = new() { AutoSize = true, UseMnemonic = false, MaximumSize = new Size(1100, 0), Visible = false };
-    readonly ComboBox _modlist = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 240, AccessibleName = "Modlist" };
+    readonly ComboBox _modlist = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 240, AccessibleName = "Profile" };
     readonly ListView _list = new() { View = View.Details, FullRowSelect = true, HideSelection = false, Dock = DockStyle.Fill, ShowItemToolTips = true, CheckBoxes = true, AccessibleName = "Installed mods; ticked mods are enabled" };
     readonly TextBox _filter = new() { Width = 170, PlaceholderText = "Filter mods  (Ctrl+F)", AccessibleName = "Filter mods" };
     readonly Label _count = Muted();
@@ -53,7 +53,7 @@ public sealed partial class MainForm
         var test = Btn("Test", async (_, _) => await PlayAsync(watch: true));
         var readLog = Btn("Read the log", (_, _) => OpenLog(watch: false));
         var saves = Btn("Saves...", (_, _) => { if (_scan != null) new SavesForm(_scan.Install).Show(this); });
-        var switchTo = Btn("Switch to it", async (_, _) => await SwitchModlistAsync());
+        var switchTo = Btn("Switch to it", async (_, _) => { if (PickedModlist() is { } l) await SwitchModlistAsync(l); });
         var saveAs = Btn("Save as...", (_, _) => SaveModlistAs());
         Button more = null!;
         more = Btn("More ▾", (_, _) => DropDown(more, ModlistMenu()));
@@ -64,9 +64,10 @@ public sealed partial class MainForm
         Tip(test, "Start the game and follow its log: errors and warnings are grouped as they come, with the mod most likely at fault");
         Tip(readLog, "Read the game's last log: errors and warnings grouped, with the mod most likely at fault");
         Tip(saves, "Your saved games, and backups of them");
-        Tip(switchTo, "Enable exactly this modlist's mods (moves the folders now)");
-        Tip(saveAs, "Save the ticked mods as a named modlist");
-        Tip(more, "Import or export a modlist, copy or paste a share code, delete a modlist");
+        Tip(_modlist, "Pick a profile to switch to it: exactly its mods are enabled, at once");
+        Tip(switchTo, "Enable exactly this profile's mods again (moves the folders now)");
+        Tip(saveAs, "Save the ticked mods as a named profile");
+        Tip(more, "The profile's own Play settings, a desktop shortcut, import or export, share codes, delete");
         _bisectBar.Controls.Add(_bisectText);
         _bisectBar.Controls.Add(SmallBtn("Problem still there", async (_, _) => await BisectAnswerAsync(true)));
         _bisectBar.Controls.Add(SmallBtn("Problem gone", async (_, _) => await BisectAnswerAsync(false)));
@@ -74,7 +75,7 @@ public sealed partial class MainForm
         page.Controls.Add(Card("Game", new Control[] { tools, rescan },
             Row(_gameText, pick),
             Row(_play, test, readLog, saves),
-            Row(Lbl("Modlist"), _modlist, switchTo, saveAs, more),
+            Row(Lbl("Profile"), _modlist, switchTo, saveAs, more),
             Row(_note), Row(_bisectBar)), 0, 0);
 
         // ---- Mods
@@ -130,7 +131,12 @@ public sealed partial class MainForm
         problemsCard.Dock = DockStyle.Fill;
         page.Controls.Add(problemsCard, 0, 2);
 
-        _modlist.SelectedIndexChanged += (_, _) => { if (!_filling && _modlist.SelectedItem is string n) { _s.Modlist = n; SaveSettings(); } };
+        // One click: picking a profile switches to it.
+        _modlist.SelectionChangeCommitted += async (_, _) =>
+        {
+            if (_modlist.SelectedItem is string n && Store.Get(n) is { } list && !string.Equals(n, _s.Modlist, StringComparison.OrdinalIgnoreCase))
+                await SwitchModlistAsync(list);
+        };
         return page;
     }
 
@@ -518,7 +524,8 @@ public sealed partial class MainForm
         try
         {
             var scan = _scan;
-            var r = await Task.Run(() => GameRunner.Play(scan, _s, _steam.SteamFolder));
+            var profile = CurrentProfile();
+            var r = await Task.Run(() => GameRunner.Play(scan, _s, _steam.SteamFolder, profile));
             ShowNote($"Starting 7 Days to Die. {r.Why}.{(r.SaveBackup != null ? " Newest save backed up to " + r.SaveBackup : "")}", Tone.Ok);
             if (watch) OpenLog(watch: true);
         }
@@ -541,39 +548,64 @@ public sealed partial class MainForm
         try
         {
             _modlist.Items.Clear();
+            _modlist.Items.Add(Modlist.VanillaName);
             foreach (var l in Store.All()) _modlist.Items.Add(l.Name);
             var pick = _modlist.Items.Cast<string>().FirstOrDefault(n => string.Equals(n, _s.Modlist, StringComparison.OrdinalIgnoreCase));
             if (pick != null) _modlist.SelectedItem = pick;
-            else if (_modlist.Items.Count > 0) _modlist.SelectedIndex = 0;
+            else if (_modlist.Items.Count > 1) _modlist.SelectedIndex = 1;
         }
         finally { _filling = false; }
     }
 
     Modlist? PickedModlist() => _modlist.SelectedItem is string n ? Store.Get(n) : null;
 
-    async Task SwitchModlistAsync()
+    /// <summary>The picked profile when it is a saved one (not Vanilla), for the menu items that change or share it.</summary>
+    Modlist? PickedSavedModlist() => PickedModlist() is { } l && !Modlist.IsVanilla(l.Name) ? l : null;
+
+    /// <summary>The profile last switched to, whose Play settings Play uses.</summary>
+    Modlist? CurrentProfile() => _s.Modlist is { } n ? Store.Get(n) : null;
+
+    async Task SwitchModlistAsync(Modlist list)
     {
         if (_scan == null) return;
-        if (PickedModlist() is not { } list) { Info(this, "There are no modlists yet. Tick the mods you want and press Save as..."); return; }
-        if (!CanChangeFiles()) return;
+        if (!await TrySwitchAsync(list)) FillModlists();
+    }
+
+    async Task<bool> TrySwitchAsync(Modlist list)
+    {
+        if (_scan == null || !CanChangeFiles()) return false;
+        if (_dirty && !Confirm(this, $"Your ticks aren't saved to the game. Switch to \"{list.Name}\" anyway? They are lost (Ctrl+Z brings them back).")) return false;
         var (_, missing) = list.Match(_scan);
-        if (missing.Count > 0 && !Confirm(this, $"{missing.Count} mod{(missing.Count == 1 ? " in this list isn't" : "s in this list aren't")} installed:\n\n{string.Join("\n", missing.Take(15).Select(e => "  " + (e.DisplayName ?? e.Name)))}{(missing.Count > 15 ? "\n  ..." : "")}\n\nSwitch anyway, with the rest?")) return;
+        if (missing.Count > 0 && !Confirm(this, $"{missing.Count} mod{(missing.Count == 1 ? " in this profile isn't" : "s in this profile aren't")} installed:\n\n{string.Join("\n", missing.Take(15).Select(e => "  " + (e.DisplayName ?? e.Name)))}{(missing.Count > 15 ? "\n  ..." : "")}\n\nSwitch anyway, with the rest?")) return false;
         _history.Push(_enabled);
         _enabled = list.EnabledIds(_scan);
         _dirty = true;
-        if (SaveToGame()) ShowNote($"Switched to \"{list.Name}\".", Tone.Ok);
+        if (SaveToGame())
+        {
+            var (eac, options) = list.PlaySettings(_s);
+            var own = list.Eac != null || list.LaunchOptions != null ? $" Play uses its own settings: EAC {eac}{(options.Length > 0 ? ", " + options : "")}." : "";
+            ShowNote($"Switched to \"{list.Name}\".{own}", Tone.Ok);
+        }
         _s.Modlist = list.Name;
         SaveSettings();
         await ScanAsync();
+        return true;
     }
 
     void SaveModlistAs()
     {
         if (_scan == null) return;
-        var name = Ask(this, "Save modlist", "Name for a modlist of the ticked mods:", PickedModlist()?.Name ?? "");
+        var old = PickedSavedModlist();
+        var name = Ask(this, "Save profile", "Name for a profile of the ticked mods:", old?.Name ?? "");
         if (string.IsNullOrWhiteSpace(name)) return;
-        if (Store.Get(name) != null && !Confirm(this, $"Replace the modlist \"{name}\"?")) return;
-        SaveModlist(Modlist.From(name, _scan.LoadOrder(_enabled)));
+        if (Modlist.IsVanilla(name)) { Error(this, $"\"{name}\" is the built-in profile with no mods; pick another name."); return; }
+        var existing = Store.Get(name);
+        if (existing != null && !Confirm(this, $"Replace the profile \"{name}\"?")) return;
+        var list = Modlist.From(name, _scan.LoadOrder(_enabled));
+        // Replacing a profile's mods keeps its Play settings.
+        list.Eac = existing?.Eac;
+        list.LaunchOptions = existing?.LaunchOptions;
+        SaveModlist(list);
     }
 
     void SaveModlist(Modlist list)
@@ -584,25 +616,28 @@ public sealed partial class MainForm
             _s.Modlist = list.Name;
             SaveSettings();
             FillModlists();
-            ShowNote($"Saved the modlist \"{list.Name}\" ({list.Mods.Count} mods).", Tone.Ok);
+            ShowNote($"Saved the profile \"{list.Name}\" ({list.Mods.Count} mods).", Tone.Ok);
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { Error(this, "Couldn't save the modlist: " + e.Message); }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { Error(this, "Couldn't save the profile: " + e.Message); }
     }
 
     ContextMenuStrip ModlistMenu()
     {
         var menu = new ContextMenuStrip();
-        var picked = PickedModlist();
+        var picked = PickedSavedModlist();
+        menu.Items.Add(new ToolStripMenuItem("Play settings for this profile...", null, (_, _) => EditProfilePlay(picked!)) { Enabled = picked != null });
+        menu.Items.Add(new ToolStripMenuItem("Create a desktop shortcut that plays it...", null, (_, _) => CreateShortcut(PickedModlist()!)) { Enabled = PickedModlist() != null });
+        menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add("Import from a file...", null, (_, _) =>
         {
-            using var d = new OpenFileDialog { Title = "Import a modlist", Filter = "Modlists (*.json)|*.json|All files|*.*" };
+            using var d = new OpenFileDialog { Title = "Import a profile", Filter = "Profiles (*.json)|*.json|All files|*.*" };
             if (d.ShowDialog(this) != DialogResult.OK) return;
             try { SaveModlist(Modlist.Parse(File.ReadAllText(d.FileName), Path.GetFileNameWithoutExtension(d.FileName))); }
             catch (Exception e) when (e is FormatException or IOException) { Error(this, e.Message); }
         });
         menu.Items.Add(new ToolStripMenuItem("Export to a file...", null, (_, _) =>
         {
-            using var d = new SaveFileDialog { Title = "Export the modlist", Filter = "Modlists (*.json)|*.json", FileName = Backups.Safe(picked!.Name) + ".json" };
+            using var d = new SaveFileDialog { Title = "Export the profile", Filter = "Profiles (*.json)|*.json", FileName = Backups.Safe(picked!.Name) + ".json" };
             if (d.ShowDialog(this) != DialogResult.OK) return;
             try { File.WriteAllText(d.FileName, picked.ToJson()); }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException) { Error(this, e.Message); }
@@ -615,23 +650,42 @@ public sealed partial class MainForm
         }) { Enabled = picked != null });
         menu.Items.Add("Add from a share code...", null, (_, _) =>
         {
-            var code = Ask(this, "Add a modlist", $"Paste the share code ({Modlist.SharePrefix}...):", Clipboard.ContainsText() && Clipboard.GetText().StartsWith(Modlist.SharePrefix) ? Clipboard.GetText() : "");
+            var code = Ask(this, "Add a profile", $"Paste the share code ({Modlist.SharePrefix}...):", Clipboard.ContainsText() && Clipboard.GetText().StartsWith(Modlist.SharePrefix) ? Clipboard.GetText() : "");
             if (string.IsNullOrWhiteSpace(code)) return;
             try
             {
                 var list = Modlist.FromShareCode(code);
-                if (Ask(this, "Add a modlist", "Name for it:", list.Name) is { Length: > 0 } name) { list.Name = name; SaveModlist(list); }
+                if (Ask(this, "Add a profile", "Name for it:", list.Name) is { Length: > 0 } name) { list.Name = name; SaveModlist(list); }
             }
             catch (FormatException e) { Error(this, e.Message); }
         });
         menu.Items.Add(new ToolStripSeparator());
-        menu.Items.Add(new ToolStripMenuItem("Delete this modlist...", null, (_, _) =>
+        menu.Items.Add(new ToolStripMenuItem("Delete this profile...", null, (_, _) =>
         {
-            if (!Confirm(this, $"Delete the modlist \"{picked!.Name}\"? Mods aren't touched.")) return;
+            if (!Confirm(this, $"Delete the profile \"{picked!.Name}\"? Mods aren't touched.")) return;
             Store.Delete(picked.Name);
             FillModlists();
         }) { Enabled = picked != null });
         return menu;
+    }
+
+    void EditProfilePlay(Modlist list)
+    {
+        using var f = new ProfilePlayForm(list);
+        if (f.ShowDialog(this) != DialogResult.OK) return;
+        list.Eac = f.Eac;
+        list.LaunchOptions = f.LaunchOptions;
+        SaveModlist(list);
+    }
+
+    void CreateShortcut(Modlist list)
+    {
+        try
+        {
+            var lnk = Shortcut.CreateOnDesktop($"7DTD - {list.Name}", $"play \"{list.Name}\"", $"Switch to the profile {list.Name} and start 7 Days to Die");
+            ShowNote($"Made a desktop shortcut: {lnk}. It switches to \"{list.Name}\" and starts the game.", Tone.Ok);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidOperationException or System.Runtime.InteropServices.COMException) { Error(this, "Couldn't make the shortcut: " + e.Message); }
     }
 
     // ------------------------------------------------------------ tools

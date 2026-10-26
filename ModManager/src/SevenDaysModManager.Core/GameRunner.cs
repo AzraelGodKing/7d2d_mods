@@ -22,23 +22,26 @@ public static class GameRunner
 
     /// <summary>
     /// Starts the game with the enabled mods of <paramref name="scan"/>: without EAC when the setting (or, on Auto, a
-    /// code mod) says so, after backing up the newest save when the setting asks for it.
+    /// code mod) says so, after backing up the newest save when the setting asks for it. A <paramref name="profile"/>
+    /// with its own EAC setting or launch options uses those instead of the ones in Options.
     /// </summary>
-    public static PlayResult Play(LibraryScan scan, AppSettings s, string? steamFolder)
+    public static PlayResult Play(LibraryScan scan, AppSettings s, string? steamFolder, Modlist? profile = null)
     {
         var code = scan.Mods.Where(m => m.Enabled && m.HasCode && !m.Locked).ToList();
-        var eac = SevenDays.UsesEac(s.Eac, code.Count > 0);
-        var why = s.Eac switch
+        var (mode, launchOptions) = profile?.PlaySettings(s) ?? (s.Eac, s.LaunchOptions);
+        var eac = SevenDays.UsesEac(mode, code.Count > 0);
+        var setIn = profile?.Eac != null ? $"set in the profile \"{profile.Name}\"" : "set in Options";
+        var why = mode switch
         {
-            EacMode.On => "EasyAntiCheat on (set in Options)",
-            EacMode.Off => "EasyAntiCheat off (set in Options)",
+            EacMode.On => $"EasyAntiCheat on ({setIn})",
+            EacMode.Off => $"EasyAntiCheat off ({setIn})",
             _ when code.Count > 0 => $"EasyAntiCheat off: {code.Count} enabled mod{(code.Count == 1 ? " has" : "s have")} code",
             _ => "EasyAntiCheat on: no enabled mod has code",
         };
         string? backup = null;
         if (s.BackupSaveBeforePlay && Saves.List(scan.Install).FirstOrDefault() is { } newest)
             backup = Saves.Backup(newest, AppSettings.SaveBackupFolder);
-        Start(SevenDays.Launch(scan.Install, eac, s.LaunchOptions, steamFolder));
+        Start(SevenDays.Launch(scan.Install, eac, launchOptions, steamFolder));
         return new PlayResult(eac, why, backup);
     }
 

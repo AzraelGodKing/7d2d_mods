@@ -45,4 +45,41 @@ public class ModlistTests
         store.Delete("A/B list");
         Assert.Empty(store.All());
     }
+
+    [Fact]
+    public void AProfileKeepsItsPlaySettingsThroughAFileAndAShareCode()
+    {
+        var list = new Modlist { Name = "Server", Eac = EacMode.Off, LaunchOptions = "-skipintro", Mods = { new ModlistEntry("A") } };
+        foreach (var back in new[] { Modlist.Parse(list.ToJson()), Modlist.Parse(list.ToShareCode()) })
+        {
+            Assert.Equal(EacMode.Off, back.Eac);
+            Assert.Equal("-skipintro", back.LaunchOptions);
+        }
+        Assert.Contains("\"Off\"", list.ToJson());
+    }
+
+    [Fact]
+    public void AProfileWithoutPlaySettingsUsesTheAppsOnes()
+    {
+        var s = new AppSettings { Eac = EacMode.On, LaunchOptions = "-a" };
+        var plain = Modlist.Parse("""{ "name": "Old", "mods": [ { "name": "A" } ] }""");
+        Assert.Null(plain.Eac);
+        Assert.Equal((EacMode.On, "-a"), plain.PlaySettings(s));
+        Assert.Equal((EacMode.Off, "-a"), new Modlist { Eac = EacMode.Off }.PlaySettings(s));
+        Assert.Equal((EacMode.On, ""), new Modlist { LaunchOptions = "" }.PlaySettings(s));
+    }
+
+    [Fact]
+    public void VanillaTurnsEveryModOffButTheGamesOwn()
+    {
+        using var g = new FakeGame();
+        g.AddMod(g.Install.GameMods, "A", "A");
+        var scan = ModLibrary.Scan(g.Install);
+        var store = new ModlistStore(Path.Combine(g.Root, "lists"));
+        var vanilla = store.Get("vanilla");
+        Assert.NotNull(vanilla);
+        Assert.Equal(new[] { "game/0_TFP_Harmony" }, vanilla!.EnabledIds(scan));
+        Assert.Throws<IOException>(() => store.Save(new Modlist { Name = Modlist.VanillaName }));
+        Assert.Empty(store.All());
+    }
 }

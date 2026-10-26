@@ -7,15 +7,32 @@ namespace SevenDaysModManager.Core;
 /// <summary>One mod in a modlist: its ModInfo Name, and what it was called and which version it was when the list was made.</summary>
 public sealed record ModlistEntry(string Name, string? DisplayName = null, string? Version = null);
 
-/// <summary>A named set of mods the player keeps: switch to it, share it, or import it on another PC.</summary>
+/// <summary>
+/// A named set of mods the player keeps (a profile): switch to it, share it, or import it on another PC. It can also
+/// carry how Play starts the game with it (EasyAntiCheat and launch options), which win over the ones in Options.
+/// </summary>
 public sealed class Modlist
 {
     public const int FormatVersion = 1;
     public const string SharePrefix = "7DMM1:";
+    /// <summary>The built-in profile with no mods but the game's own; never saved as a file.</summary>
+    public const string VanillaName = "Vanilla (no mods)";
     public int Format { get; set; } = FormatVersion;
     public string Name { get; set; } = "";
     public List<ModlistEntry> Mods { get; set; } = new();
     public DateTime Saved { get; set; }
+    /// <summary>EasyAntiCheat for Play with this profile, or null to use the one in Options.</summary>
+    public EacMode? Eac { get; set; }
+    /// <summary>Launch options for Play with this profile, or null to use the ones in Options.</summary>
+    public string? LaunchOptions { get; set; }
+
+    public static Modlist Vanilla() => new() { Name = VanillaName };
+
+    public static bool IsVanilla(string? name) =>
+        string.Equals(name, VanillaName, StringComparison.OrdinalIgnoreCase) || string.Equals(name, "vanilla", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>The EasyAntiCheat setting and launch options Play uses: this profile's where it has them, else the app's.</summary>
+    public (EacMode Eac, string LaunchOptions) PlaySettings(AppSettings s) => (Eac ?? s.Eac, LaunchOptions ?? s.LaunchOptions);
 
     /// <summary>A list of the enabled mods, without the game's own (every install has those).</summary>
     public static Modlist From(string name, IEnumerable<InstalledMod> enabled)
@@ -54,7 +71,12 @@ public sealed class Modlist
         return ids;
     }
 
-    static readonly JsonSerializerOptions Opts = new() { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase, PropertyNameCaseInsensitive = true };
+    static readonly JsonSerializerOptions Opts = new()
+    {
+        WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase, PropertyNameCaseInsensitive = true,
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+        Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() },
+    };
 
     public string ToJson() => JsonSerializer.Serialize(this, Opts);
 
@@ -76,7 +98,7 @@ public sealed class Modlist
     /// <summary>The list as one line of text to paste in a chat: "7DMM1:" and the compressed list.</summary>
     public string ToShareCode()
     {
-        var bytes = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(this, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
+        var bytes = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(this, new JsonSerializerOptions(Opts) { WriteIndented = false }));
         using var ms = new MemoryStream();
         using (var z = new DeflateStream(ms, CompressionLevel.SmallestSize)) z.Write(bytes);
         return SharePrefix + Convert.ToBase64String(ms.ToArray()).TrimEnd('=').Replace('+', '-').Replace('/', '_');
@@ -117,12 +139,15 @@ public sealed class ModlistStore
         return lists.OrderBy(l => l.Name, StringComparer.OrdinalIgnoreCase).ToList();
     }
 
-    public Modlist? Get(string name) => All().FirstOrDefault(l => string.Equals(l.Name, name, StringComparison.OrdinalIgnoreCase));
+    /// <summary>A saved list by name, or the built-in Vanilla profile for its name (or "vanilla").</summary>
+    public Modlist? Get(string name) =>
+        Modlist.IsVanilla(name) ? Modlist.Vanilla() : All().FirstOrDefault(l => string.Equals(l.Name, name, StringComparison.OrdinalIgnoreCase));
 
     string PathFor(string name) => Path.Combine(Folder, Backups.Safe(name) + ".json");
 
     public void Save(Modlist list)
     {
+        if (Modlist.IsVanilla(list.Name)) throw new IOException($"\"{list.Name}\" is the built-in profile with no mods; pick another name.");
         Directory.CreateDirectory(Folder);
         File.WriteAllText(PathFor(list.Name), list.ToJson());
     }
