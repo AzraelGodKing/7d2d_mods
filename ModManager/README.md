@@ -39,6 +39,15 @@ loads them: the game's own `Mods` folder and `%AppData%\7DaysToDie\Mods`. Nothin
   need it", "Install on the server AND every player's game"). Otherwise it is a guess from the mod's files, marked
   with `?`: XML alone works from the server, which sends it to players; HUD windows (XUi), textures, sounds and asset
   bundles have to be on each player's PC; code counts as both. Right-click a mod > **Side** to set it yourself.
+- **Server sync:** **Server...** (or **Tools > Server sync**) compares your enabled mods with a dedicated server's
+  Mods folder and pushes the ones the server needs: those whose Side is Server or Both. The server is reached through a
+  folder (a shared folder, a mapped drive, or a dedicated server on this PC) or FTP/FTPS; the FTP password is kept
+  encrypted for your Windows account. Only files that differ are sent, and files a mod no longer has are removed.
+  Mods that are only for players, or disabled here, can be removed from the server (tick them); mods the server has
+  that this PC doesn't are left alone. Restart the server afterwards. SFTP isn't supported.
+- **Client pack:** **Tools > Export a client pack for players** zips the enabled mods players need (Client only, or
+  Server + clients) into one file, with the profile and a readme inside, so players' mods match the server's. They
+  drop it on 7 Days Mod Manager, or unzip it into their game folder.
 - **Settings:** **Settings...** beside the list (or right-click > **Edit settings...**) opens a mod's settings files
   (`settings.txt`, `*.cfg` and the like, not readmes or examples). A file of `Key=value` lines is shown as a form,
   each setting with the author's comment above it and on/off switches as drop-downs; **Text** edits any file as

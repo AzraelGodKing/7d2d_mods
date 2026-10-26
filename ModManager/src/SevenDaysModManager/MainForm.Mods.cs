@@ -53,6 +53,7 @@ public sealed partial class MainForm
         var test = Btn("Test", async (_, _) => await PlayAsync(watch: true));
         var readLog = Btn("Read the log", (_, _) => OpenLog(watch: false));
         var saves = Btn("Saves...", (_, _) => { if (_scan != null) new SavesForm(_scan.Install).Show(this); });
+        var server = Btn("Server...", async (_, _) => await OpenServerSync());
         var switchTo = Btn("Switch to it", async (_, _) => { if (PickedModlist() is { } l) await SwitchModlistAsync(l); });
         var saveAs = Btn("Save as...", (_, _) => SaveModlistAs());
         Button more = null!;
@@ -64,6 +65,7 @@ public sealed partial class MainForm
         Tip(test, "Start the game and follow its log: errors and warnings are grouped as they come, with the mod most likely at fault");
         Tip(readLog, "Read the game's last log: errors and warnings grouped, with the mod most likely at fault");
         Tip(saves, "Your saved games, and backups of them");
+        Tip(server, "Server sync: compare your mods with a dedicated server's Mods folder (a folder or FTP) and push the ones it needs");
         Tip(_modlist, "Pick a profile to switch to it: exactly its mods are enabled, at once");
         Tip(switchTo, "Enable exactly this profile's mods again (moves the folders now)");
         Tip(saveAs, "Save the ticked mods as a named profile");
@@ -74,7 +76,7 @@ public sealed partial class MainForm
         _bisectBar.Controls.Add(SmallBtn("Stop", async (_, _) => await BisectStopAsync(null)));
         page.Controls.Add(Card("Game", new Control[] { tools, rescan },
             Row(_gameText, pick),
-            Row(_play, test, readLog, saves),
+            Row(_play, test, readLog, saves, server),
             Row(Lbl("Profile"), _modlist, switchTo, saveAs, more),
             Row(_note), Row(_bisectBar)), 0, 0);
 
@@ -696,12 +698,52 @@ public sealed partial class MainForm
         menu.Items.Add(new ToolStripMenuItem("Find the broken mod for me...", null, async (_, _) => await BisectStartAsync()) { Enabled = _scan != null && _bisect == null });
         menu.Items.Add("Install a mod from a zip...", null, (_, _) => PickArchive());
         menu.Items.Add(new ToolStripSeparator());
+        menu.Items.Add(new ToolStripMenuItem("Server sync...", null, async (_, _) => await OpenServerSync()) { Enabled = _scan != null });
+        menu.Items.Add(new ToolStripMenuItem("Export a client pack for players...", null, async (_, _) => await ExportClientPackAsync()) { Enabled = _scan != null });
+        menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(new ToolStripMenuItem("Open the game's Mods folder", null, (_, _) => { Directory.CreateDirectory(_scan!.Install.GameMods); Ui.Open(this, _scan.Install.GameMods); }) { Enabled = _scan != null });
         menu.Items.Add(new ToolStripMenuItem("Open the AppData Mods folder", null, (_, _) => { Directory.CreateDirectory(_scan!.Install.UserMods); Ui.Open(this, _scan.Install.UserMods); }) { Enabled = _scan != null });
         menu.Items.Add("Open the mod backups", null, (_, _) => { Directory.CreateDirectory(AppSettings.BackupFolder); Ui.Open(this, AppSettings.BackupFolder); });
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add("Verify the game files in Steam", null, (_, _) => Ui.Open(this, "steam://validate/" + SevenDays.AppId));
         return menu;
+    }
+
+    /// <summary>Server sync and the client pack go by the mods on disk; unsaved ticks are saved first.</summary>
+    bool SavedForServer()
+    {
+        if (!_dirty) return true;
+        if (!Confirm(this, "Your ticks aren't saved to the game yet. Save them first? Server sync and the client pack use the enabled mods.")) return false;
+        if (!SaveToGame()) return false;
+        return true;
+    }
+
+    async Task OpenServerSync()
+    {
+        if (_scan == null) return;
+        if (_dirty) { if (!SavedForServer()) return; await ScanAsync(); }
+        if (_scan == null) return;
+        new ServerForm(_s, _scan, Side, SaveSettings).Show(this);
+    }
+
+    async Task ExportClientPackAsync()
+    {
+        if (_scan == null) return;
+        if (_dirty) { if (!SavedForServer()) return; await ScanAsync(); }
+        if (_scan == null) return;
+        var mods = ClientPack.ClientMods(_scan, Side);
+        if (mods.Count == 0) { Info(this, "No enabled mod is for players (Client only, or Server + clients), so there is nothing to pack. The Side column says which are."); return; }
+        var name = _s.Modlist is { } p && !Modlist.IsVanilla(p) ? p : "Server mods";
+        using var d = new SaveFileDialog { Title = "Export a client pack", Filter = "Zip files (*.zip)|*.zip", FileName = Backups.Safe(name) + " - client pack.zip" };
+        if (d.ShowDialog(this) != DialogResult.OK) return;
+        try
+        {
+            UseWaitCursor = true;
+            var count = await Task.Run(() => ClientPack.Create(mods, d.FileName, name));
+            ShowNote($"Made a client pack of {count} mod{(count == 1 ? "" : "s")}: {d.FileName}. Players drop it on 7 Days Mod Manager, or unzip it into their game folder.", Tone.Ok);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { Error(this, "Couldn't make the client pack: " + e.Message); }
+        finally { UseWaitCursor = false; }
     }
 
     async Task BisectStartAsync()
