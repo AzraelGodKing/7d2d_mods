@@ -50,6 +50,9 @@ public sealed partial class MainForm
         Button tools = null!;
         tools = SmallBtn("Tools ▾", (_, _) => DropDown(tools, ToolsMenu()));
         _play = Btn("Play", async (_, _) => await PlayAsync(watch: false)).Role(ThemeRole.Accent);
+        Button playMore = null!;
+        playMore = Btn("▾", (_, _) => DropDown(playMore, PlayMenu()));
+        playMore.AccessibleName = "More ways to play";
         var test = Btn("Test", async (_, _) => await PlayAsync(watch: true));
         var readLog = Btn("Read the log", (_, _) => OpenLog(watch: false));
         var saves = Btn("Saves...", (_, _) => { if (_scan != null) new SavesForm(_scan.Install).Show(this); });
@@ -61,6 +64,7 @@ public sealed partial class MainForm
         Tip(rescan, "Read every Mods folder again (F5)");
         Tip(tools, "Find the broken mod, install from a zip, verify the game files, backups");
         Tip(_play, "Start the game. EasyAntiCheat is turned off when an enabled mod has code (see Options)");
+        Tip(playMore, "Play with or without EasyAntiCheat this once, or start the dedicated server on this PC");
         Tip(test, "Start the game and follow its log: errors and warnings are grouped as they come, with the mod most likely at fault");
         Tip(readLog, "Read the game's last log: errors and warnings grouped, with the mod most likely at fault");
         Tip(saves, "Your saved games, and backups of them");
@@ -73,7 +77,7 @@ public sealed partial class MainForm
         _bisectBar.Controls.Add(SmallBtn("Stop", async (_, _) => await BisectStopAsync(null)));
         page.Controls.Add(Card("Game", new Control[] { tools, rescan },
             Row(_gameText, pick),
-            Row(_play, test, readLog, saves),
+            Row(_play, playMore, test, readLog, saves),
             Row(Lbl("Modlist"), _modlist, switchTo, saveAs, more),
             Row(_note), Row(_bisectBar)), 0, 0);
 
@@ -415,6 +419,7 @@ public sealed partial class MainForm
         if (_scan == null || !CanChangeFiles()) return false;
         try
         {
+            if (_s.BackupSaveBeforeModChange && _bisect == null && ModLibrary.Changes(_scan, _enabled).Count > 0) BackUpSave();
             ModLibrary.Apply(_scan, _enabled);
             _dirty = false;
             return true;
@@ -439,6 +444,7 @@ public sealed partial class MainForm
         if (_dirty && !SaveToGame()) return;
         var lines = new List<string>();
         var target = _s.InstallToUserData ? _scan.Install.UserMods : _scan.Install.GameMods;
+        if (_s.BackupSaveBeforeModChange && BackUpSave() is { } saved) lines.Add("Newest save backed up to " + saved);
         foreach (var p in paths)
         {
             try
@@ -504,7 +510,48 @@ public sealed partial class MainForm
 
     // ------------------------------------------------------------ playing and the log
 
-    async Task PlayAsync(bool watch)
+    /// <summary>Backs up the newest save before mods change (Options > Play); says so when it can't. Returns the zip, or null.</summary>
+    string? BackUpSave()
+    {
+        if (_scan == null) return null;
+        try
+        {
+            UseWaitCursor = true;
+            return Saves.BackupNewest(_scan.Install, AppSettings.SaveBackupFolder);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            Error(this, "Couldn't back up the newest save: " + e.Message + "\n\nThe mods are changed anyway.");
+            return null;
+        }
+        finally { UseWaitCursor = false; }
+    }
+
+    ContextMenuStrip PlayMenu()
+    {
+        var menu = new ContextMenuStrip();
+        menu.Items.Add(new ToolStripMenuItem("Play with EasyAntiCheat", null, async (_, _) => await PlayAsync(watch: false, EacMode.On)) { Enabled = _scan != null });
+        menu.Items.Add(new ToolStripMenuItem("Play without EasyAntiCheat", null, async (_, _) => await PlayAsync(watch: false, EacMode.Off)) { Enabled = _scan != null });
+        menu.Items.Add(new ToolStripSeparator());
+        var server = _scan == null ? null : DedicatedServer.Find(_steam, _s.ServerFolder, _scan.Install);
+        menu.Items.Add(new ToolStripMenuItem("Start the dedicated server", null, (_, _) => StartServer()) { Enabled = server != null, ToolTipText = server == null ? "No dedicated server found (Options > Dedicated server)" : server.Folder });
+        menu.Items.Add(new ToolStripMenuItem($"Open {_s.ServerConfigFile}", null, (_, _) => Ui.Open(this, server!.ConfigPath(_s.ServerConfigFile))) { Enabled = server != null && File.Exists(server.ConfigPath(_s.ServerConfigFile)) });
+        menu.Items.Add(new ToolStripMenuItem("Open the server's Mods folder", null, (_, _) => { Directory.CreateDirectory(server!.Mods); Ui.Open(this, server.Mods); }) { Enabled = server != null });
+        return menu;
+    }
+
+    void StartServer()
+    {
+        if (_scan == null || DedicatedServer.Find(_steam, _s.ServerFolder, _scan.Install) is not { } server) return;
+        try
+        {
+            var backup = GameRunner.StartServer(server, _s);
+            ShowNote($"Starting the dedicated server ({server.Folder}).{(backup != null ? $" {_s.ServerConfigFile} backed up to {backup}" : "")}", Tone.Ok);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception) { Error(this, "Couldn't start the server: " + e.Message); }
+    }
+
+    async Task PlayAsync(bool watch, EacMode? eac = null)
     {
         if (_scan == null) { Error(this, "Find the game first (Game folder...)."); return; }
         if (GameRunner.IsRunning()) { Error(this, "7 Days to Die is already running."); return; }
@@ -518,7 +565,7 @@ public sealed partial class MainForm
         try
         {
             var scan = _scan;
-            var r = await Task.Run(() => GameRunner.Play(scan, _s, _steam.SteamFolder));
+            var r = await Task.Run(() => GameRunner.Play(scan, _s, _steam.SteamFolder, eac));
             ShowNote($"Starting 7 Days to Die. {r.Why}.{(r.SaveBackup != null ? " Newest save backed up to " + r.SaveBackup : "")}", Tone.Ok);
             if (watch) OpenLog(watch: true);
         }

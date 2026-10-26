@@ -22,24 +22,40 @@ public static class GameRunner
 
     /// <summary>
     /// Starts the game with the enabled mods of <paramref name="scan"/>: without EAC when the setting (or, on Auto, a
-    /// code mod) says so, after backing up the newest save when the setting asks for it.
+    /// code mod) says so, after backing up the newest save when the setting asks for it. <paramref name="eacOverride"/>
+    /// is a one-off choice (Play with or without EAC) that wins over the setting.
     /// </summary>
-    public static PlayResult Play(LibraryScan scan, AppSettings s, string? steamFolder)
+    public static PlayResult Play(LibraryScan scan, AppSettings s, string? steamFolder, EacMode? eacOverride = null)
     {
         var code = scan.Mods.Where(m => m.Enabled && m.HasCode && !m.Locked).ToList();
-        var eac = SevenDays.UsesEac(s.Eac, code.Count > 0);
-        var why = s.Eac switch
+        var mode = eacOverride ?? s.Eac;
+        var eac = SevenDays.UsesEac(mode, code.Count > 0);
+        var setIn = eacOverride != null ? "this time" : "set in Options";
+        var why = mode switch
         {
-            EacMode.On => "EasyAntiCheat on (set in Options)",
-            EacMode.Off => "EasyAntiCheat off (set in Options)",
+            EacMode.On => $"EasyAntiCheat on ({setIn})",
+            EacMode.Off => $"EasyAntiCheat off ({setIn})",
             _ when code.Count > 0 => $"EasyAntiCheat off: {code.Count} enabled mod{(code.Count == 1 ? " has" : "s have")} code",
             _ => "EasyAntiCheat on: no enabled mod has code",
         };
-        string? backup = null;
-        if (s.BackupSaveBeforePlay && Saves.List(scan.Install).FirstOrDefault() is { } newest)
-            backup = Saves.Backup(newest, AppSettings.SaveBackupFolder);
+        var backup = s.BackupSaveBeforePlay ? Saves.BackupNewest(scan.Install, AppSettings.SaveBackupFolder) : null;
         Start(SevenDays.Launch(scan.Install, eac, s.LaunchOptions, steamFolder));
         return new PlayResult(eac, why, backup);
+    }
+
+    /// <summary>
+    /// Starts the dedicated server, after backing up its config file when the setting asks for it. Returns that backup
+    /// (or null). Throws <see cref="FileNotFoundException"/> when the config file isn't there.
+    /// </summary>
+    public static string? StartServer(ServerInstall server, AppSettings s)
+    {
+        var config = server.ConfigPath(s.ServerConfigFile);
+        if (!File.Exists(config)) throw new FileNotFoundException($"{Path.GetFileName(config)} was not found in {server.Folder}.", config);
+        var backup = s.BackupConfigBeforeServer ? DedicatedServer.BackupConfig(config, AppSettings.ServerConfigBackupFolder) : null;
+        var launch = DedicatedServer.Launch(server, s.ServerConfigFile, s.ServerLaunchOptions, DateTime.Now);
+        Directory.CreateDirectory(Path.GetDirectoryName(launch.Args[1])!);
+        Start(launch);
+        return backup;
     }
 
     public static void Start(GameLaunch launch)
