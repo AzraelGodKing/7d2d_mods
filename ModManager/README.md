@@ -18,8 +18,12 @@ loads them: the game's own `Mods` folder and `%AppData%\7DaysToDie\Mods`. Nothin
   inside with a `ModInfo.xml` is a mod, however deep the zip put it. A mod that is already installed (same ModInfo
   `Name`) is replaced where it is, after the old copy is zipped into the mod backups. `.rar` and `.7z` need unpacking
   first. **Uninstall** sends a mod to the Recycle Bin.
-- **Modlists:** **Save as...** keeps the ticked mods as a named list and **Switch to it** enables exactly those.
-  **More** imports and exports lists, copies a share code (`7DMM1:...`) to paste in a chat, and adds a list from one.
+- **Profiles:** saved sets of enabled mods, such as vanilla, your server, or a test setup. Picking one in the
+  **Profile** box switches to it at once (exactly its mods are enabled); **Vanilla (no mods)** is always there and turns
+  every mod off. **Save as...** keeps the ticked mods as a profile. **More > Play settings for this profile** gives it
+  its own EasyAntiCheat setting and launch options, which Play uses instead of the ones in Options, and **Create a
+  desktop shortcut** makes a shortcut that switches to it and starts the game. **More** also imports and exports
+  profiles, copies a share code (`7DMM1:...`) to paste in a chat, and adds a profile from one.
 - **Problems:** mods with no or a broken `ModInfo.xml`, mods unpacked one folder too deep (**Fix** moves the folder
   up), two enabled mods with the same `Name` (the game loads only the first), old-format ModInfo files, code mods
   with EasyAntiCheat forced on, and a missing `0_TFP_Harmony` (**Fix** asks Steam to verify the game files).
@@ -57,16 +61,16 @@ loads them: the game's own `Mods` folder and `%AppData%\7DaysToDie\Mods`. Nothin
   read. Turn the check off, or **Check now**, under **Options > About**. Only the single-file exe updates itself; a
   copy built with `dotnet build` offers the release page instead.
 
-Settings, modlists and backups are in `%LocalAppData%\SevenDaysModManager`.
+Settings, profiles (the `modlists` folder) and backups are in `%LocalAppData%\SevenDaysModManager`.
 
 ## Command line
 
 ```
 SevenDaysModManager list [--json]         the installed mods (* = enabled)
 SevenDaysModManager problems [--json]     problems with the enabled mods (exit code 1 on errors)
-SevenDaysModManager lists                 the saved modlists (* = last used)
-SevenDaysModManager switch <modlist>      enable exactly the mods of a modlist
-SevenDaysModManager play [<modlist>]      start the game, after switching to the modlist
+SevenDaysModManager lists                 the saved profiles (* = last used)
+SevenDaysModManager switch <profile>      enable exactly the mods of a profile ("vanilla" turns every mod off)
+SevenDaysModManager play [<profile>]      start the game, after switching to the profile
 SevenDaysModManager install <zip|folder>  install a mod
 ```
 

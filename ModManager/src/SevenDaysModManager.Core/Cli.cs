@@ -7,9 +7,9 @@ namespace SevenDaysModManager.Core;
 /// <code>
 /// SevenDaysModManager list [--json]        the installed mods (* = enabled)
 /// SevenDaysModManager problems [--json]    problems with the enabled mods (exit code 1 on errors)
-/// SevenDaysModManager lists                the saved modlists
-/// SevenDaysModManager switch &lt;modlist&gt;     enable exactly the mods of a modlist
-/// SevenDaysModManager play [&lt;modlist&gt;]     start the game, after switching to the modlist
+/// SevenDaysModManager lists                the saved profiles (modlists)
+/// SevenDaysModManager switch &lt;profile&gt;     enable exactly the mods of a profile ("vanilla": none)
+/// SevenDaysModManager play [&lt;profile&gt;]     start the game, after switching to the profile
 /// SevenDaysModManager install &lt;zip|folder&gt; install a mod
 /// </code>
 /// </summary>
@@ -49,7 +49,8 @@ public static class Cli
                     return found.Any(p => p.Severity == Severity.Error) ? 1 : 0;
                 }
                 case "lists":
-                    foreach (var l in store.All()) o.WriteLine($"{(string.Equals(l.Name, s.Modlist, StringComparison.OrdinalIgnoreCase) ? "*" : " ")} {l.Name} ({l.Mods.Count} mods)");
+                    foreach (var l in store.All().Prepend(Modlist.Vanilla()))
+                        o.WriteLine($"{(string.Equals(l.Name, s.Modlist, StringComparison.OrdinalIgnoreCase) ? "*" : " ")} {l.Name} ({l.Mods.Count} mods){(l.Eac is { } e ? ", EAC " + e : "")}{(l.LaunchOptions is { Length: > 0 } lo ? ", options: " + lo : "")}");
                     return 0;
                 case "switch":
                     if (rest.Count == 0) { o.WriteLine("Usage: switch <modlist>"); return 2; }
@@ -60,7 +61,7 @@ public static class Cli
                         if (!Switch(rest[0], scan, store, s, o)) return 1;
                         scan = ModLibrary.Scan(install);
                     }
-                    var r = GameRunner.Play(scan, s, steam.SteamFolder);
+                    var r = GameRunner.Play(scan, s, steam.SteamFolder, s.Modlist is { } current ? store.Get(current) : null);
                     o.WriteLine("Starting 7 Days to Die. " + r.Why + ".");
                     return 0;
                 case "install":
@@ -86,7 +87,7 @@ public static class Cli
     static bool Switch(string name, LibraryScan scan, ModlistStore store, AppSettings s, TextWriter o)
     {
         var list = store.Get(name);
-        if (list == null) { o.WriteLine($"No modlist called \"{name}\". Saved lists: {string.Join(", ", store.All().Select(l => l.Name))}"); return false; }
+        if (list == null) { o.WriteLine($"No profile called \"{name}\". Saved profiles: {string.Join(", ", store.All().Select(l => l.Name).Prepend("vanilla"))}"); return false; }
         if (GameRunner.IsRunning()) { o.WriteLine("7 Days to Die is running; close it first."); return false; }
         var (_, missing) = list.Match(scan);
         var moved = ModLibrary.Apply(scan, list.EnabledIds(scan));
@@ -103,9 +104,9 @@ public static class Cli
           SevenDaysModManager                       open the window
           SevenDaysModManager list [--json]         the installed mods (* = enabled)
           SevenDaysModManager problems [--json]     problems with the enabled mods (exit code 1 on errors)
-          SevenDaysModManager lists                 the saved modlists (* = last used)
-          SevenDaysModManager switch <modlist>      enable exactly the mods of a modlist
-          SevenDaysModManager play [<modlist>]      start the game, after switching to the modlist
+          SevenDaysModManager lists                 the saved profiles (modlists; * = last used)
+          SevenDaysModManager switch <profile>      enable exactly the mods of a profile ("vanilla" turns every mod off)
+          SevenDaysModManager play [<profile>]      start the game, after switching to the profile
           SevenDaysModManager install <zip|folder>  install a mod (an installed copy is replaced, after a backup)
         """;
 }
