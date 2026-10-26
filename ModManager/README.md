@@ -37,7 +37,15 @@ loads them: the game's own `Mods` folder and `%AppData%\7DaysToDie\Mods`. Nothin
   V1.0") are flagged against the game version read from the log, which is shown beside the game folder.
 - **Play:** starts the game. With EAC on it goes through Steam and the game's launcher; with EAC off it starts
   `7DaysToDie.exe` directly. On **Auto** (the default), EAC is off whenever an enabled mod has code (a DLL). Launch
-  options, and a backup of the newest save before each start, are under **Options > Play**.
+  options, and a backup of the newest save before each start, are under **Options > Play**. The **▾** beside Play
+  plays with or without EAC this once, and starts a **dedicated server** on this PC the way the game's
+  `startdedicated.bat` does (Steam's "7 Days to Die Dedicated Server", a folder you pick, or the game itself), after
+  backing up its `serverconfig.xml`.
+- **Dedicated server (Options):** the server folder, its config file (shown with its name, port, world and EAC, and a
+  warning when code mods meet `EACEnabled` true), extra launch options, and `serverconfig.xml` backups: **Back up
+  now**, **Restore...** (the file it replaces is backed up first) and one before every start (the newest 20 are kept).
+- **Save backup before mod changes:** with **Options > Play > Back up the newest save before mods are enabled,
+  disabled, switched or updated** on, Save to game, switching profiles and installs zip the newest save first.
 - **Test** and **Read the log:** Test starts the game and follows its log; Read the log reads the last one. Errors
   and warnings are grouped by message, and each names the mod most likely at fault: a mod named in it (XML patch
   errors name the mod), a file in its folder, or its code in the stack trace (namespaces read from the mod's DLLs,
@@ -96,6 +104,7 @@ SevenDaysModManager switch <profile>      enable exactly the mods of a profile (
 SevenDaysModManager play [<profile>]      start the game, after switching to the profile
 SevenDaysModManager install <zip|folder|link>  install a mod
 SevenDaysModManager updates               newer versions of installed mods on GitHub
+SevenDaysModManager server                start the dedicated server on this PC
 ```
 
 A desktop shortcut to `SevenDaysModManager.exe play "Horde night"` starts that setup in one click.

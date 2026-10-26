@@ -25,6 +25,10 @@ public static class Saves
         return list.OrderByDescending(s => s.LastPlayed).ToList();
     }
 
+    /// <summary>Backs up the most recently played save, if there is one; returns the zip or null.</summary>
+    public static string? BackupNewest(GameInstall install, string backupFolder) =>
+        List(install).FirstOrDefault() is { } newest ? Backup(newest, backupFolder) : null;
+
     /// <summary>Zips a save into <paramref name="backupFolder"/>, keeping the newest <paramref name="keep"/> backups of it. Returns the zip.</summary>
     public static string Backup(SaveGame save, string backupFolder, int keep = 10)
     {

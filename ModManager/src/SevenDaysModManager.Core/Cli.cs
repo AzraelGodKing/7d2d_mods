@@ -12,11 +12,12 @@ namespace SevenDaysModManager.Core;
 /// SevenDaysModManager play [&lt;profile&gt;]     start the game, after switching to the profile
 /// SevenDaysModManager install &lt;zip|folder|link&gt; install a mod
 /// SevenDaysModManager updates              newer versions of installed mods on GitHub
+/// SevenDaysModManager server               start the dedicated server on this PC
 /// </code>
 /// </summary>
 public static class Cli
 {
-    public static readonly string[] Commands = { "list", "problems", "lists", "switch", "play", "install", "updates", "help", "--help", "-h", "/?" };
+    public static readonly string[] Commands = { "list", "problems", "lists", "switch", "play", "install", "updates", "server", "help", "--help", "-h", "/?" };
 
     public static bool IsCommand(string[] args) => args.Length > 0 && Commands.Contains(args[0].ToLowerInvariant());
 
@@ -65,9 +66,18 @@ public static class Cli
                     var r = GameRunner.Play(scan, s, steam.SteamFolder, s.Modlist is { } current ? store.Get(current) : null);
                     o.WriteLine("Starting 7 Days to Die. " + r.Why + ".");
                     return 0;
+                case "server":
+                {
+                    var server = DedicatedServer.Find(steam, s.ServerFolder, install);
+                    if (server == null) { o.WriteLine("No dedicated server found. Install \"7 Days to Die Dedicated Server\" from Steam's Tools, or pick its folder in the app's Options."); return 1; }
+                    var backup = GameRunner.StartServer(server, s);
+                    o.WriteLine($"Starting the dedicated server in {server.Folder}{(backup != null ? $" (config backed up to {backup})" : "")}.");
+                    return 0;
+                }
                 case "install":
                     if (rest.Count == 0) { o.WriteLine("Usage: install <zip, folder or link>"); return 2; }
                     var into = s.InstallToUserData ? install.UserMods : install.GameMods;
+                    if (s.BackupSaveBeforeModChange && Saves.BackupNewest(install, AppSettings.SaveBackupFolder) is { } saved) o.WriteLine("Newest save backed up to " + saved);
                     if (ModDownloader.IsLink(rest[0])) o.WriteLine("Downloading " + rest[0] + " ...");
                     var installed = ModDownloader.IsLink(rest[0])
                         ? ModDownloader.InstallAsync(rest[0], scan, into, AppSettings.BackupFolder).GetAwaiter().GetResult()
@@ -103,6 +113,8 @@ public static class Cli
         if (list == null) { o.WriteLine($"No profile called \"{name}\". Saved profiles: {string.Join(", ", store.All().Select(l => l.Name).Prepend("vanilla"))}"); return false; }
         if (GameRunner.IsRunning()) { o.WriteLine("7 Days to Die is running; close it first."); return false; }
         var (_, missing) = list.Match(scan);
+        if (s.BackupSaveBeforeModChange && ModLibrary.Changes(scan, list.EnabledIds(scan)).Count > 0
+            && Saves.BackupNewest(scan.Install, AppSettings.SaveBackupFolder) is { } zip) o.WriteLine("Newest save backed up to " + zip);
         var moved = ModLibrary.Apply(scan, list.EnabledIds(scan));
         s.Modlist = list.Name;
         s.Save();
@@ -122,5 +134,6 @@ public static class Cli
           SevenDaysModManager play [<profile>]      start the game, after switching to the profile
           SevenDaysModManager install <zip|folder|link>  install a mod (an installed copy is replaced, after a backup)
           SevenDaysModManager updates               newer versions of installed mods on GitHub
+          SevenDaysModManager server                start the dedicated server on this PC (its config is backed up first)
         """;
 }

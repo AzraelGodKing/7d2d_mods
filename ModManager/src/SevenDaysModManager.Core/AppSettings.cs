@@ -10,6 +10,7 @@ public sealed class AppSettings
 
     public static string BackupFolder => Path.Combine(Folder, "mod-backups");
     public static string SaveBackupFolder => Path.Combine(Folder, "save-backups");
+    public static string ServerConfigBackupFolder => Path.Combine(Folder, "serverconfig-backups");
     public static string ModlistFolder => Path.Combine(Folder, "modlists");
     /// <summary>The player's own copies of mod settings files, put back when a mod is updated.</summary>
     public static string ModSettingsFolder => Path.Combine(Folder, "mod-settings");
@@ -23,6 +24,16 @@ public sealed class AppSettings
     public string LaunchOptions { get; set; } = "";
     public EacMode Eac { get; set; } = EacMode.Auto;
     public bool BackupSaveBeforePlay { get; set; }
+    /// <summary>Back up the newest save before mods are enabled, disabled, switched or updated.</summary>
+    public bool BackupSaveBeforeModChange { get; set; }
+    /// <summary>The dedicated server's folder when picked by hand, else null (the Dedicated Server app from Steam, or the game).</summary>
+    public string? ServerFolder { get; set; }
+    /// <summary>The server's config file, in its folder.</summary>
+    public string ServerConfigFile { get; set; } = DedicatedServer.DefaultConfig;
+    /// <summary>Arguments added after the ones the server always gets.</summary>
+    public string ServerLaunchOptions { get; set; } = "";
+    /// <summary>Back up the server's config file each time the server is started from here.</summary>
+    public bool BackupConfigBeforeServer { get; set; } = true;
     /// <summary>Where new mods go: the game's Mods folder (false) or %AppData%\7DaysToDie\Mods (true).</summary>
     public bool InstallToUserData { get; set; }
     /// <summary>The modlist last picked.</summary>
