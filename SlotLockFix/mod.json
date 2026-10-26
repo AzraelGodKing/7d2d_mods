@@ -1,0 +1,16 @@
+{
+  "slug": "slot-lock-fix",
+  "name": "Slot Lock Fix",
+  "game": "7-days-to-die",
+  "description": "Fixes the V3.4 bug where locking backpack and storage slots does nothing: Sort and Move ignore the locks and they are gone when you reopen the window. Install on every player (client-side).",
+  "version": "1.0.0",
+  "screenshots": [],
+  "download": {
+    "file": "slot-lock-fix-1.0.0.zip"
+  },
+  "links": {
+    "steam": null,
+    "thunderstore": null,
+    "nexus": null
+  }
+}
