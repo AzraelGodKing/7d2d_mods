@@ -14,7 +14,9 @@ loads them: the game's own `Mods` folder and `%AppData%\7DaysToDie\Mods`. Nothin
   to the `Mods` folder they came from, and ticked ones back. The game's own `0_TFP_Harmony` is always on. The
   **Load order** column shows the order the game loads them in (by folder name, A to Z). Ctrl+Z and Ctrl+Y undo and
   redo ticks; **Undo changes** goes back to what is on disk.
-- **Install:** drop a mod's `.zip` or folder anywhere on the window, or press **Install...** (Ctrl+O). Every folder
+- **Install:** drop a mod's `.zip`, folder, or download link anywhere on the window, or press **Install...** (Ctrl+O)
+  or **Tools > Install a mod from a link**. A link can be a direct link to a zip, or a GitHub repository or release page
+  (its release zip is used). Every folder
   inside with a `ModInfo.xml` is a mod, however deep the zip put it. A mod that is already installed (same ModInfo
   `Name`) is replaced where it is, after the old copy is zipped into the mod backups. `.rar` and `.7z` need unpacking
   first. **Uninstall** sends a mod to the Recycle Bin.
@@ -60,6 +62,9 @@ loads them: the game's own `Mods` folder and `%AppData%\7DaysToDie\Mods`. Nothin
   text, such as a list like `entities.txt`. Saving rewrites only the lines you changed, and keeps your copy: when the
   mod is updated or reinstalled, your values go back into the new version's file (new settings it adds keep their
   defaults).
+- **Mod updates:** **Tools > Check mods for updates on GitHub** reads the releases of every mod whose Website is a GitHub
+  repository (tags `<ModName>-v<version>`, or `v<version>` for a repository of one mod) and lists the newer ones;
+  **Update ticked** downloads and installs them over the old copies, after a backup, keeping your edited settings.
 - **Details beside the list:** the picked mod's ModInfo, where it is, whether it has code, its size and your note.
   Right-click a mod for **Note...**, **Colour**, its folder and website, and **Uninstall**.
 - **Tools:** **Find the broken mod for me** (enables half the suspects each round until one is left, then puts your
@@ -86,7 +91,8 @@ SevenDaysModManager problems [--json]     problems with the enabled mods (exit c
 SevenDaysModManager lists                 the saved profiles (* = last used)
 SevenDaysModManager switch <profile>      enable exactly the mods of a profile ("vanilla" turns every mod off)
 SevenDaysModManager play [<profile>]      start the game, after switching to the profile
-SevenDaysModManager install <zip|folder>  install a mod
+SevenDaysModManager install <zip|folder|link>  install a mod
+SevenDaysModManager updates               newer versions of installed mods on GitHub
 ```
 
 A desktop shortcut to `SevenDaysModManager.exe play "Horde night"` starts that setup in one click.

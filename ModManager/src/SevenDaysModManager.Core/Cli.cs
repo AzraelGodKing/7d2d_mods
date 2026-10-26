@@ -10,12 +10,13 @@ namespace SevenDaysModManager.Core;
 /// SevenDaysModManager lists                the saved profiles (modlists)
 /// SevenDaysModManager switch &lt;profile&gt;     enable exactly the mods of a profile ("vanilla": none)
 /// SevenDaysModManager play [&lt;profile&gt;]     start the game, after switching to the profile
-/// SevenDaysModManager install &lt;zip|folder&gt; install a mod
+/// SevenDaysModManager install &lt;zip|folder|link&gt; install a mod
+/// SevenDaysModManager updates              newer versions of installed mods on GitHub
 /// </code>
 /// </summary>
 public static class Cli
 {
-    public static readonly string[] Commands = { "list", "problems", "lists", "switch", "play", "install", "help", "--help", "-h", "/?" };
+    public static readonly string[] Commands = { "list", "problems", "lists", "switch", "play", "install", "updates", "help", "--help", "-h", "/?" };
 
     public static bool IsCommand(string[] args) => args.Length > 0 && Commands.Contains(args[0].ToLowerInvariant());
 
@@ -65,17 +66,29 @@ public static class Cli
                     o.WriteLine("Starting 7 Days to Die. " + r.Why + ".");
                     return 0;
                 case "install":
-                    if (rest.Count == 0) { o.WriteLine("Usage: install <zip or folder>"); return 2; }
-                    foreach (var done in ModInstaller.Install(rest[0], scan, s.InstallToUserData ? install.UserMods : install.GameMods, AppSettings.BackupFolder))
+                    if (rest.Count == 0) { o.WriteLine("Usage: install <zip, folder or link>"); return 2; }
+                    var into = s.InstallToUserData ? install.UserMods : install.GameMods;
+                    if (ModDownloader.IsLink(rest[0])) o.WriteLine("Downloading " + rest[0] + " ...");
+                    var installed = ModDownloader.IsLink(rest[0])
+                        ? ModDownloader.InstallAsync(rest[0], scan, into, AppSettings.BackupFolder).GetAwaiter().GetResult()
+                        : ModInstaller.Install(rest[0], scan, into, AppSettings.BackupFolder);
+                    foreach (var done in installed)
                     {
                         o.WriteLine((done.Replaced != null ? "Updated " : "Installed ") + done.Name + " in " + done.Folder);
                         var kept = new ModSettingsStore(AppSettings.ModSettingsFolder).Restore(done.Key, done.Folder);
                         if (kept.Count > 0) o.WriteLine("  your settings put back: " + string.Join(", ", kept));
                     }
                     return 0;
+                case "updates":
+                {
+                    var found = ModUpdates.CheckAsync(scan.Mods, (u, ct) => ModDownloader.Api.GetStringAsync(u, ct)).GetAwaiter().GetResult();
+                    if (found.Count == 0) o.WriteLine("No newer versions on GitHub (only mods whose Website is a GitHub repository are checked).");
+                    foreach (var u in found) o.WriteLine($"{u.Name}: {u.Current} -> {u.Latest}  {u.ZipUrl ?? u.PageUrl}");
+                    return 0;
+                }
             }
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidDataException or FormatException)
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidDataException or FormatException or HttpRequestException or TaskCanceledException)
         {
             o.WriteLine(e.Message);
             return 1;
@@ -107,6 +120,7 @@ public static class Cli
           SevenDaysModManager lists                 the saved profiles (modlists; * = last used)
           SevenDaysModManager switch <profile>      enable exactly the mods of a profile ("vanilla" turns every mod off)
           SevenDaysModManager play [<profile>]      start the game, after switching to the profile
-          SevenDaysModManager install <zip|folder>  install a mod (an installed copy is replaced, after a backup)
+          SevenDaysModManager install <zip|folder|link>  install a mod (an installed copy is replaced, after a backup)
+          SevenDaysModManager updates               newer versions of installed mods on GitHub
         """;
 }

@@ -46,13 +46,36 @@ public sealed partial class MainForm : Form
             await ScanAsync();
             if (_s.CheckForUpdates) await CheckForUpdateAsync(quiet: true);
         };
-        DragEnter += (_, e) => e.Effect = e.Data?.GetDataPresent(DataFormats.FileDrop) == true ? DragDropEffects.Copy : DragDropEffects.None;
-        DragDrop += async (_, e) => { if (e.Data?.GetData(DataFormats.FileDrop) is string[] paths) await InstallAsync(paths); };
+        DragEnter += (_, e) => e.Effect = e.Data?.GetDataPresent(DataFormats.FileDrop) == true || DroppedLink(e.Data) != null ? DragDropEffects.Copy : DragDropEffects.None;
+        DragDrop += async (_, e) =>
+        {
+            if (e.Data?.GetData(DataFormats.FileDrop) is string[] paths) await InstallAsync(paths);
+            else if (DroppedLink(e.Data) is { } link) await InstallFromLinkAsync(link);
+        };
         KeyDown += OnKey;
         FormClosing += OnClosing;
     }
 
     void Tip(Control c, string text) => _tip.SetToolTip(c, text);
+
+    /// <summary>A link dragged from a browser (its address bar, or a download link on a page), or null.</summary>
+    static string? DroppedLink(IDataObject? data)
+    {
+        if (data == null) return null;
+        foreach (var format in new[] { "UniformResourceLocatorW", DataFormats.UnicodeText, DataFormats.Text })
+        {
+            if (!data.GetDataPresent(format)) continue;
+            var value = data.GetData(format) switch
+            {
+                string t => t,
+                MemoryStream ms => (format == "UniformResourceLocatorW" ? System.Text.Encoding.Unicode : System.Text.Encoding.Default).GetString(ms.ToArray()),
+                _ => null,
+            };
+            var line = value?.Split('\0', '\r', '\n')[0].Trim();
+            if (ModDownloader.IsLink(line)) return line;
+        }
+        return null;
+    }
 
     Control BuildHeader()
     {
@@ -81,7 +104,7 @@ public sealed partial class MainForm : Form
         bar.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         bar.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         bar.Controls.Add(new Label { Text = "7 Days Mod Manager " + Version, AutoSize = true, Font = Theme.SmallFont, Anchor = AnchorStyles.Left, Margin = Padding.Empty }.Role(ThemeRole.Muted), 0, 0);
-        bar.Controls.Add(new Label { Text = "Not affiliated with The Fun Pimps or Valve. Drop a mod's .zip or folder anywhere on the window to install it.", AutoSize = true, Font = Theme.SmallFont, Anchor = AnchorStyles.Right, Margin = Padding.Empty }.Role(ThemeRole.Muted), 1, 0);
+        bar.Controls.Add(new Label { Text = "Not affiliated with The Fun Pimps or Valve. Drop a mod's .zip, folder or download link anywhere on the window to install it.", AutoSize = true, Font = Theme.SmallFont, Anchor = AnchorStyles.Right, Margin = Padding.Empty }.Role(ThemeRole.Muted), 1, 0);
         var footer = new Panel { Dock = DockStyle.Bottom, AutoSize = true };
         footer.Controls.Add(bar);
         footer.Controls.Add(new Panel { Dock = DockStyle.Top, Height = 1 }.Role(ThemeRole.Divider));
