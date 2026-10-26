@@ -20,8 +20,7 @@ Small mods for 7 Days to Die, built and tested on **V3.3**.
 | [Bait UI](#bait-ui) | Code + UI | Players only (optional, needs Bait on the server) | 1.6.4 |
 | [Spawn Tuner](#spawn-tuner) | Code (Harmony) | Server only | 1.0.0 |
 
-**Mod manager:** [ModManager/](ModManager/README.md) is a Windows app that turns mods on and off, installs them
-from zips, keeps modlists and reads the game's log. See its README.
+**Mod manager:** the Windows mod manager is now [Survivor's Toolkit](https://github.com/AzraelGodKing/Survivor-s-Toolkit), in its own repository.
 
 Download the zips from the Releases page, unzip, and put the folder inside the game's `Mods` folder
 (or the server's `Mods` folder). Code that a player installs needs EasyAntiCheat turned off.
