@@ -33,6 +33,7 @@ $mods = @(
     @{ Dir = 'GyroSafe';           Name = 'AzraelGyroSafe';           Project = 'src/AzraelGyroSafe.csproj' },
     @{ Dir = 'DroneLootFilter';    Name = 'AzraelDroneLootFilter';    Project = 'src/AzraelDroneLootFilter.csproj' },
     @{ Dir = 'SpawnTuner';         Name = 'AzraelSpawnTuner';         Project = 'src/AzraelSpawnTuner.csproj' },
+    @{ Dir = 'SlotLockFix';        Name = 'AzraelSlotLockFix';        Project = 'src/AzraelSlotLockFix.csproj' },
     @{ Dir = 'CraftableSigns';     Name = 'AzraelCraftableSigns' },
     @{ Dir = 'NoDingSound';        Name = 'AzraelNoDingSound' },
     # Private = gitignored files (e.g. a copyrighted sound clip) kept OUT of the public zip.

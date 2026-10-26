@@ -19,6 +19,7 @@ Small mods for 7 Days to Die, built and tested on **V3.3**.
 | [Drone Loot Filter](#drone-loot-filter) | Code (Harmony), needs Drone Automation | Server only | 1.2.0 |
 | [Bait UI](#bait-ui) | Code + UI | Players only (optional, needs Bait on the server) | 1.6.4 |
 | [Spawn Tuner](#spawn-tuner) | Code (Harmony) | Server only | 1.0.0 |
+| [Slot Lock Fix](#slot-lock-fix) | Code (Harmony) | Players only | 1.0.0 |
 
 **Mod manager:** the Windows mod manager is now [Survivor's Toolkit](https://github.com/AzraelGodKing/Survivor-s-Toolkit), in its own repository.
 
@@ -519,3 +520,24 @@ it is left alone rather than replaced.
 Replaces the ding you hear when your tool hits a block that can't be broken (bedrock, the map edge) with a bicycle horn. It changes the game's keystone_impact_overlay sound. The server sends sound settings to players, so only the server needs the mod.
 
 To use a different sound, edit the ClipName in `Config/sounds.xml` (any clip path from the game's `Data/Config/sounds.xml`).
+
+---
+## Slot Lock Fix
+
+Makes the padlock button in the backpack, storage bag and loot windows work again on V3.4.
+
+Vanilla bug (V3.4 b6): in lock mode, clicking a slot only flips the padlock on screen. Each window has a
+method that copies those padlocks into the bag or container's real slot locks (`UpdateLockedSlots`), but
+nothing calls it: `XUiC_ContainerStandardControls.UpdateLockedSlotStates` is never assigned and
+`LockModeToggled` only redraws the window. So Sort and the Move buttons move locked items, and the locks
+are gone the next time the window opens.
+
+The mod (Harmony) connects `UpdateLockedSlots` again. Locks are saved before Sort and every Move button,
+and whenever lock mode is turned off (the padlock button, Esc, or closing the window). If a later game
+version fixes this itself, the mod leaves the game's own hook alone.
+
+**Players only** (it is UI code), so every player installs it and needs EasyAntiCheat off. The server
+needs nothing.
+
+**Changelog**
+- 1.0.0: first version.

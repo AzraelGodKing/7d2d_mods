@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xml>
+	<Name value="AzraelSlotLockFix" />
+	<DisplayName value="Slot Lock Fix" />
+	<Description value="Fixes the V3.4 bug where locking backpack and storage slots does nothing: Sort and Move ignore the locks and they are gone when you reopen the window. Install on every player (client-side)." />
+	<Author value="Azrael" />
+	<Version value="1.0.0" />
+	<Website value="https://github.com/AzraelGodKing/7d2d_mods" />
+</xml>
