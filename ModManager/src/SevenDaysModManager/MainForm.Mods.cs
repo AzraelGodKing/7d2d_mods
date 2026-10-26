@@ -367,6 +367,7 @@ public sealed partial class MainForm
         if (Selected() is not { } m) return false;
         menu.Items.Add("Open folder", null, (_, _) => Ui.Open(this, m.Folder));
         if (ModSettingsStore.FilesOf(m.Folder).Count > 0) menu.Items.Add("Edit settings...", null, (_, _) => EditSettings(m));
+        if (m.Enabled && !m.Locked) menu.Items.Add("Its lines in the game log", null, (_, _) => OpenLog(watch: false, m.Id));
         if (!m.Locked)
         {
             var side = new ToolStripMenuItem("Side");
@@ -525,12 +526,13 @@ public sealed partial class MainForm
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception) { Error(this, "Couldn't start the game: " + e.Message); }
     }
 
-    void OpenLog(bool watch)
+    /// <param name="modId">Opens on every line of the log, filtered to this mod.</param>
+    void OpenLog(bool watch, string? modId = null)
     {
         if (_scan == null) return;
         var log = SevenDays.LatestLog(_scan.Install);
         if (log == null && !watch) { Error(this, $"No game log found yet. The game writes it to {Path.Combine(_scan.Install.UserDataFolder, "logs")} once it has run."); return; }
-        new LogForm(_scan, watch, id => { Activate(); SelectMod(id); }).Show(this);
+        new LogForm(_scan, watch, id => { Activate(); SelectMod(id); }, modId).Show(this);
     }
 
     // ------------------------------------------------------------ modlists

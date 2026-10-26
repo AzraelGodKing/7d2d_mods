@@ -29,7 +29,10 @@ loads them: the game's own `Mods` folder and `%AppData%\7DaysToDie\Mods`. Nothin
 - **Test** and **Read the log:** Test starts the game and follows its log; Read the log reads the last one. Errors
   and warnings are grouped by message, and each names the mod most likely at fault: a mod named in it (XML patch
   errors name the mod), a file in its folder, or its code in the stack trace (namespaces read from the mod's DLLs,
-  never run).
+  never run). **Every line** shows the whole log instead, each line with the mod its entry points at, filtered by mod,
+  level (everything, warnings and errors, errors only), XML patch problems, and text; lines about XML patching (a mod's
+  xpath that failed) are highlighted, and it stays at the end while following. Right-click a mod > **Its lines in the
+  game log** opens it filtered to that mod.
 - **Server, client or both:** the **Side** column says where each mod has to be installed for a multiplayer game.
   It comes from the mod's own description when it says so ("Server only: players install nothing", "Only players
   need it", "Install on the server AND every player's game"). Otherwise it is a guess from the mod's files, marked
