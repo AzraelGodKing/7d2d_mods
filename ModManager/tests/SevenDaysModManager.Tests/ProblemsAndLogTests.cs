@@ -111,3 +111,53 @@ public class LogAnalysisTests
         Assert.Equal("its code is in the stack trace", group.Why);
     }
 }
+
+public class LogLinesTests
+{
+    static readonly string[] Log =
+    {
+        "Mono path[0] = 'C:/Games/7 Days To Die/7DaysToDie_Data/Managed'",
+        "2024-07-29T20:47:41 21.590 INF [MODS] Loaded Mod: BetterLoot (1.0)",
+        "2024-07-29T20:47:42 21.600 ERR XML loader: Patching 'loot.xml' from mod 'BetterLoot' failed:",
+        "System.Xml.XPath.XPathException: bad xpath",
+        "  at XmlPatcher.Patch () [0x00000] in <abc>:0",
+        "2024-07-29T20:47:42 21.601 WRN Couldn't load texture Mods/Speedometer/UI/needle.png",
+        "2024-07-29T20:47:43 22.000 INF Done",
+    };
+
+    static List<LogLine> Lines(FakeGame g)
+    {
+        g.AddMod(g.Install.GameMods, "BetterLoot", "BetterLoot");
+        g.AddMod(g.Install.GameMods, "Speedometer", "Speedometer");
+        return LogAnalysis.Lines(Log, ModLibrary.Scan(g.Install).Mods);
+    }
+
+    [Fact]
+    public void EveryLineGetsItsEntrysLevelAndMod()
+    {
+        using var g = new FakeGame();
+        var lines = Lines(g);
+        Assert.Equal(Log.Length, lines.Count);
+        Assert.Equal(Enumerable.Range(1, Log.Length), lines.Select(l => l.Number));
+        // The stack trace belongs to the XML error before it.
+        Assert.All(lines.Skip(2).Take(3), l => Assert.Equal((LogLevel.Error, "game/BetterLoot", true), (l.Level, l.ModId, l.XmlPatch)));
+        Assert.True(lines[2].Start);
+        Assert.False(lines[3].Start);
+        Assert.Equal("game/BetterLoot", lines[1].ModId);
+        Assert.False(lines[1].XmlPatch);
+        Assert.Equal(("game/Speedometer", LogLevel.Warning), (lines[5].ModId, lines[5].Level));
+        Assert.Null(lines[0].ModId);
+    }
+
+    [Fact]
+    public void FiltersByModLevelTextAndXml()
+    {
+        using var g = new FakeGame();
+        var lines = Lines(g);
+        Assert.Equal(new[] { 2, 3, 4, 5 }, LogAnalysis.Filter(lines, "game/BetterLoot", LogLevel.Info, null).Select(l => l.Number));
+        Assert.Equal(new[] { 3, 4, 5, 6 }, LogAnalysis.Filter(lines, null, LogLevel.Warning, null).Select(l => l.Number));
+        Assert.Equal(new[] { 3, 4, 5 }, LogAnalysis.Filter(lines, null, LogLevel.Error, null).Select(l => l.Number));
+        Assert.Equal(new[] { 6 }, LogAnalysis.Filter(lines, null, LogLevel.Info, "needle").Select(l => l.Number));
+        Assert.Equal(new[] { 3, 4, 5 }, LogAnalysis.Filter(lines, null, LogLevel.Info, null, xmlOnly: true).Select(l => l.Number));
+    }
+}
