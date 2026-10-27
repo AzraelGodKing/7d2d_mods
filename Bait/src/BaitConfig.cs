@@ -22,6 +22,8 @@ public static class BaitConfig
     public static int ChargedBonus = 6;         // charged and infernal
     public static int AnimalFeedsToTame = 3;    // meals any animal needs
     public static int MaxOwned = 20;            // thralls one player may hold
+    public static bool KatsSpecial = true;      // Kats Special: every player may hold 27 thralls, whatever MaxOwned says
+    public const int KatsSpecialOwned = 27;
     public static int MaxActive = 4;            // how many may be out at once (tethered ones may not count, see below)
     public static bool TetheredCountsActive = false; // false: daycare pets don't use up the active slots
     // follow and fight

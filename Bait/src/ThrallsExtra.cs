@@ -40,7 +40,7 @@ public static partial class Thralls
         catch (Exception e) { Log.Warning("[Bait] could not save limits: " + e.Message); }
     }
 
-    static int MaxOwnedFor(string key) { int[] l; return limits.TryGetValue(key, out l) && l[0] > 0 ? l[0] : BaitConfig.MaxOwned; }
+    static int MaxOwnedFor(string key) { int[] l; return limits.TryGetValue(key, out l) && l[0] > 0 ? l[0] : BaitConfig.KatsSpecial ? BaitConfig.KatsSpecialOwned : BaitConfig.MaxOwned; }
     static int MaxActiveFor(string key) { int[] l; return limits.TryGetValue(key, out l) && l[1] > 0 ? l[1] : BaitConfig.MaxActive; }
 
     static bool Claimed(EntityPlayer p, Vector3 pos)
