@@ -9,7 +9,7 @@ public static partial class Thralls
 {
     public static void OnGameStart(ref ModEvents.SGameStartDoneData _d) { if (IsServer) Load(); }
     public static void OnShutdown(ref ModEvents.SGameShutdownData _d)
-    { Flush(); Live.Clear(); bodies.Clear(); liveByRecord.Clear(); levels.Clear(); scanned.Clear(); loaded = false; }
+    { Flush(); Live.Clear(); bodies.Clear(); liveByRecord.Clear(); levels.Clear(); scanned.Clear(); loaded = false; rosterBroken = false; }
 
     public static void OnUpdate(ref ModEvents.SGameUpdateData _d)
     {
@@ -59,7 +59,9 @@ public static partial class Thralls
         {
             if (p == null || p.IsDead()) continue;
             string k = KeyOf(p);
-            if (k != null) online[k] = p;
+            if (k == null) continue;
+            online[k] = p;
+            CheckOwner(p, k);
         }
 
         ScanZombies(world);
@@ -425,11 +427,21 @@ public static partial class Thralls
             {
                 if (!IsAdmin(me)) { Tell(me, "Admins only."); break; }
                 string sub = arg ?? "who";
-                string usage = "/thrall admin who | list <player> | release <player> <n> | limit <player> <owned> <active>";
+                string usage = "/thrall admin who | list <player> | release <player> <n> | limit <player> <owned> <active> | give <from> <to>";
                 if (sub == "who")
                 {
-                    foreach (var kv in roster) Tell(me, NameOfKey(kv.Key) + ": " + kv.Value.Count + " thralls");
+                    foreach (var kv in roster) Tell(me, OwnerLabel(kv.Key) + ": " + kv.Value.Count + " thralls");
                     if (roster.Count == 0) Tell(me, "Nobody has thralls yet.");
+                    break;
+                }
+                if (sub == "give")
+                {
+                    // give <old owner: name, id or the end of an id> <player>: moves every thrall of one owner to another
+                    string fk = a.Length > 3 ? KeyFromAnything(a[3]) : null, tk = a.Length > 4 ? KeyByName(a[4]) : null;
+                    if (fk == null || tk == null) { Tell(me, "Usage: /thrall admin give <from: name or id from /thrall admin who> <to: player>"); break; }
+                    int moved = MoveRoster(fk, tk);
+                    Tell(me, moved == 0 ? OwnerLabel(fk) + " has no thralls." : "Moved " + moved + " thralls from " + OwnerLabel(fk) + " to " + NameOfKey(tk) + ".");
+                    Log.Out("[Bait] admin #" + me + " moved " + moved + " thralls from " + fk + " to " + tk);
                     break;
                 }
                 string tkey = a.Length > 3 ? KeyByName(a[3]) : null;
