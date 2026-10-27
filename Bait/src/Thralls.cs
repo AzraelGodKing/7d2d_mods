@@ -221,6 +221,7 @@ public static partial class Thralls
         LoadLimits();
         LoadIds();
         LoadOwners();
+        LoadLedger();
         SnapshotOnVersionChange();
         try
         {
@@ -238,6 +239,7 @@ public static partial class Thralls
     {
         FlushIds();
         FlushOwners();
+        FlushLedger();
         if (!dirty || !loaded || rosterBroken) return;
         try
         {

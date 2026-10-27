@@ -62,6 +62,7 @@ public static partial class Thralls
             if (k == null) continue;
             online[k] = p;
             CheckOwner(p, k);
+            LedgerTick(p, k, now);
         }
 
         ScanZombies(world);
