@@ -10,7 +10,7 @@ using UnityEngine;
 // So the server keeps its own count of each player's bait (AzraelBaitLedger.tsv, plus the kept copy outside the save).
 // When a player comes back with none of a kind they logged out holding, that bait is given back. Only a loss across an
 // offline gap counts, and only a kind that is down to zero, so nothing used, dropped or stored while playing is refunded.
-// Bait in chests is not covered.
+// Bait in player-placed chests is covered the same way (BaitChests.cs).
 public static partial class Thralls
 {
     const string LedgerFile = "AzraelBaitLedger.tsv";
@@ -27,7 +27,7 @@ public static partial class Thralls
 
     static void LoadLedger()
     {
-        ledger.Clear(); ledgerJoined.Clear(); ledgerChecked.Clear(); ledgerKeyOf.Clear(); ledgerDirty = false;
+        ledger.Clear(); ledgerJoined.Clear(); ledgerChecked.Clear(); ledgerKeyOf.Clear(); ledgerDirty = false; ResetChests();
         foreach (string path in new[] { LedgerPath, Path.Combine(KeepDir, LedgerFile) })
         {
             try
@@ -36,10 +36,11 @@ public static partial class Thralls
                 foreach (string line in File.ReadAllLines(path))
                 {
                     string[] p = line.Split('\t');
+                    if (p.Length >= 6 && p[0] == "chest") { ReadChestLine(p); continue; }
                     if (p.Length < 4 || p[0].Length == 0) continue;
                     ledger[p[0]] = new[] { PI(p[1]), PI(p[2]), PI(p[3]) };
                 }
-                if (ledger.Count > 0) return;
+                if (ledger.Count > 0 || chests.Count > 0) return;
             }
             catch (Exception e) { Log.Warning("[Bait] could not read the bait ledger " + path + ": " + e.Message); }
         }
@@ -52,6 +53,7 @@ public static partial class Thralls
         {
             var sb = new StringBuilder();
             foreach (var kv in ledger) sb.Append(kv.Key).Append('\t').Append(kv.Value[0]).Append('\t').Append(kv.Value[1]).Append('\t').Append(kv.Value[2]).Append('\n');
+            WriteChestLines(sb);
             string text = sb.ToString();
             WriteSafe(LedgerPath, text);
             WriteSafe(Path.Combine(KeepDir, LedgerFile), text);
