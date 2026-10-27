@@ -71,6 +71,7 @@ public static class BaitConfig
     public static bool UseToasts = true;        // events (fed, tamed, level up, alerts) show as an on-screen toast instead of chat
     public static bool HealthAlerts = true;     // whisper the owner when a thrall drops below 50%, 25%, 10%
     public static bool RestoreRosterFromBackup = true; // a save with no (or an empty or unreadable) thrall roster takes the kept copy from <UserDataFolder>/AzraelBait
+    public static bool RestoreLostBait = true;  // give back bait a player held at logout but no longer has at their next login (see BaitLedger.cs)
     public static bool Debug = false;
 
     // Animal classes whose AI list is replaced by other mods and so needs the bait task added in code.
