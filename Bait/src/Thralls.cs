@@ -9,8 +9,8 @@ using UnityEngine;
 
 // Own taming for Zombie and Animal Bait. Feed a wild zombie or animal enough bait and it becomes your thrall:
 // it follows you (or stays inside a tether, for a daycare), fights hostile things and never touches a player.
-// Thralls live in a roster file (not in the world save), are spawned back when they should be out, and give the
-// owner perk buffs. Wild zombies also carry levels. All server side.
+// Thralls live in a roster file (not in the world save, see ThrallsKeep.cs for how it is kept safe), are spawned back when
+// they should be out, and give the owner perk buffs. Wild zombies also carry levels. All server side.
 
 public class ThrallRecord
 {
@@ -215,27 +215,22 @@ public static partial class Thralls
 
     public static void Load()
     {
-        roster.Clear();
+        roster.Clear(); dirty = false;
+        missingClass.Clear();
         BaitConfig.LoadSaved();
         LoadLimits();
         LoadIds();
+        LoadOwners();
+        LoadLedger();
+        SnapshotOnVersionChange();
         try
         {
-            if (File.Exists(FilePath))
-                foreach (string line in File.ReadAllLines(FilePath))
-                {
-                    string[] p = line.Split('\t');
-                    if (p.Length < 4) continue;
-                    var r = new ThrallRecord { Id = p[0], OwnerKey = p[1], ClassName = p[2], Active = p[3] == "1" };
-                    if (p.Length >= 6) { r.Level = PI(p[4]); r.Kills = PI(p[5]); }
-                    if (p.Length >= 11) { r.Tether = p[6] == "1"; r.TX = P(p[7]); r.TY = P(p[8]); r.TZ = P(p[9]); r.TR = P(p[10]); }
-                    if (p.Length >= 15) { r.Name = p[11].Length > 0 ? p[11] : null; r.Stay = p[12] == "1"; r.Mode = PI(p[13]); long ra; if (long.TryParse(p[14], out ra)) r.ReviveAt = ra; }
-                    RosterOf(r.OwnerKey).Add(r);
-                }
-            Log.Out("[Bait] Thrall roster loaded: " + CountAll() + " tamed creatures.");
+            foreach (var r in LoadRosterRecords()) { RosterOf(r.OwnerKey).Add(r); ClassExists(r); }
+            Log.Out("[Bait] Thrall roster loaded: " + CountAll() + " tamed creatures (" + FilePath + ", kept copy in " + KeepDir + ").");
         }
-        catch (Exception e) { Log.Warning("[Bait] could not load roster: " + e.Message); }
+        catch (Exception e) { rosterBroken = true; Log.Warning("[Bait] could not load roster: " + e.Message); }
         loaded = true;
+        if (dirty) Flush();
     }
 
     static int CountAll() { int n = 0; foreach (var kv in roster) n += kv.Value.Count; return n; }
@@ -243,7 +238,9 @@ public static partial class Thralls
     public static void Flush()
     {
         FlushIds();
-        if (!dirty || !loaded) return;
+        FlushOwners();
+        FlushLedger();
+        if (!dirty || !loaded || rosterBroken) return;
         try
         {
             var sb = new StringBuilder();
@@ -253,7 +250,9 @@ public static partial class Thralls
                       .Append('\t').Append(r.Level).Append('\t').Append(r.Kills).Append('\t').Append(r.Tether ? "1" : "0")
                       .Append('\t').Append(F(r.TX)).Append('\t').Append(F(r.TY)).Append('\t').Append(F(r.TZ)).Append('\t').Append(F(r.TR))
                       .Append('\t').Append(r.Name ?? "").Append('\t').Append(r.Stay ? "1" : "0").Append('\t').Append(r.Mode).Append('\t').Append(r.ReviveAt).Append('\n');
-            File.WriteAllText(FilePath, sb.ToString());
+            string text = sb.ToString();
+            WriteSafe(FilePath, text);
+            KeepCopy(text);
             dirty = false;
         }
         catch (Exception e) { Log.Warning("[Bait] could not save roster: " + e.Message); }
@@ -641,6 +640,7 @@ public static partial class Thralls
                 var ci = EntityClass.list[EntityClass.FromString(rec.ClassName)];
                 if (!string.IsNullOrEmpty(ci.PickupItem)) grabItems.Add(new GrabItem { PlayerId = cr.PlayerId, Item = ci.PickupItem, At = Time.time });
             }
+            if (!ClassExists(rec)) return;
             if (rec.ReviveAt != 0) { rec.ReviveAt = 0; dirty = true; }
             int cid = EntityClass.FromString(rec.ClassName);
             Vector3 pos;

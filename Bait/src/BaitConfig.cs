@@ -22,6 +22,8 @@ public static class BaitConfig
     public static int ChargedBonus = 6;         // charged and infernal
     public static int AnimalFeedsToTame = 3;    // meals any animal needs
     public static int MaxOwned = 20;            // thralls one player may hold
+    public static bool KatsSpecial = true;      // Kats Special: every player may hold 27 thralls, whatever MaxOwned says
+    public const int KatsSpecialOwned = 27;
     public static int MaxActive = 4;            // how many may be out at once (tethered ones may not count, see below)
     public static bool TetheredCountsActive = false; // false: daycare pets don't use up the active slots
     // follow and fight
@@ -70,6 +72,8 @@ public static class BaitConfig
     public static float LookHpAngle = 12f;       // degrees of aim tolerance
     public static bool UseToasts = true;        // events (fed, tamed, level up, alerts) show as an on-screen toast instead of chat
     public static bool HealthAlerts = true;     // whisper the owner when a thrall drops below 50%, 25%, 10%
+    public static bool RestoreRosterFromBackup = true; // a save with no (or an empty or unreadable) thrall roster takes the kept copy from <UserDataFolder>/AzraelBait
+    public static bool RestoreLostBait = true;  // give back bait a player held at logout but no longer has at their next login (see BaitLedger.cs)
     public static bool Debug = false;
 
     // Animal classes whose AI list is replaced by other mods and so needs the bait task added in code.

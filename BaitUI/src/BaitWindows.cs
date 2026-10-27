@@ -246,6 +246,9 @@ public class XUiC_AzraelBaitAdmin : XUiController
         return i >= 0 && i < BaitData.Config.Count ? BaitData.Config[i] : null;
     }
 
+    // Settings with a friendlier name in the window. The name sent to the server is still the setting's own.
+    static string Label(string key) { return key == "KatsSpecial" ? "Kats Special (27 thralls each)" : key; }
+
     string ExAt(int row)
     {
         int i = exPage * ExRows + row - 1;
@@ -335,7 +338,7 @@ public class XUiC_AzraelBaitAdmin : XUiController
                 switch (field)
                 {
                     case "vis": value = c != null ? "true" : "false"; return true;
-                    case "text": value = c == null ? "" : c[0] + " = " + c[1]; return true;
+                    case "text": value = c == null ? "" : isBool ? (c[1].Equals("true", StringComparison.OrdinalIgnoreCase) ? "[X] " : "[  ] ") + Label(c[0]) : c[0] + " = " + c[1]; return true;
                     case "minustxt": value = c == null ? "" : isBool ? "Flip" : "-"; return true;
                     case "plusvis": value = c != null && !isBool ? "true" : "false"; return true;
                     case "plustxt": value = "+"; return true;
@@ -354,4 +357,4 @@ public class XUiC_AzraelBaitAdmin : XUiController
         }
         return base.GetBindingValueInternal(ref value, name);
     }
-}
+}
