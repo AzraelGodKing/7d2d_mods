@@ -13,3 +13,13 @@ DeathBackpack=permanent
 DroppedItems=24h
 VehicleBag=24h
 ZombieLoot=24h
+
+# Owner-only: for this long after a death (real time), the death backpack opens only for
+# the player who died. 0 turns it off. After that anyone can open it, as in vanilla.
+OwnerOnly=15m
+# Let the owner's party and allies open it during that time too (on/off).
+OwnerOnlyParty=on
+OwnerOnlyAllies=on
+
+# The chat command players type to find their death backpacks.
+BagCommand=/mybag

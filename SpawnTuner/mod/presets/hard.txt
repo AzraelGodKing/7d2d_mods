@@ -1,0 +1,8 @@
+# Spawn Tuner preset 'hard'. Load it with: spawns load hard
+# Settings not listed here go back to the world's own value.
+DayDensity = 3
+NightDensity = 5
+NightRespawn = fast
+HordeFrequency = 200%
+HordeSize = 150%
+Ramp.NightDensity = +1 every 7 days max 8

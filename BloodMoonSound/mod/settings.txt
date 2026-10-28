@@ -15,6 +15,15 @@ WarningHour=21
 # 0.0 - 1.0. The game's Overall volume slider still applies on top of this.
 Volume=1.0
 
+# Volume of each kind of clip, 0.0 - 1.0, on top of Volume.
+BloodMoonVolume=1.0
+SpawnVolume=1.0
+MorningVolume=1.0
+NightVolume=1.0
+
+# More than one clip: name them bloodmoon.ogg, bloodmoon2.ogg, bloodmoon-scary.wav ...
+# (same for spawn, morning and night). Each time, one is picked at random.
+
 # Extra clips (on / off). Each needs its own file in this folder: spawn, morning or night
 # (.ogg, .wav or .mp3). A missing file means that one stays quiet.
 #   Spawn    = when you enter a world
