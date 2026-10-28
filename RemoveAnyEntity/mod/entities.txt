@@ -16,6 +16,22 @@
 #   Radiated, Charged and Infernal screamers. To remove only one version, add its
 #   full name on its own line, e.g.  zombieScreamerRadiated
 #
+#   Only in some biomes: add "in" and the biomes. This stops coyotes spawning in
+#   the open world of the desert and wasteland, but not anywhere else:
+#     animalCoyote in desert, wasteland
+#   Biomes: pine_forest (or forest), burnt_forest (or burnt), desert, snow,
+#   wasteland. Sleepers in buildings and hordes aren't tied to a biome, so a
+#   biome line doesn't change them.  Console:  rae remove animalCoyote in desert
+#
+#   Swap one creature for another: write  ->  and the one to spawn instead.
+#   It keeps the same chance, so zombie dogs become wolves one for one:
+#     animalZombieDog -> animalWolf
+#   Console:  rae replace animalZombieDog animalWolf
+#   rae keep <name>  undoes any of these.
+#
+#   Creatures already out stay until they die. To clear them now, type
+#     rae cull          (despawns them in the loaded areas; rae cull count  only counts)
+#
 #   Names from other mods work too: add them on their own line.
 #   Type  rae  in the server console to see what was removed.
 #

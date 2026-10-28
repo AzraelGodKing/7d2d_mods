@@ -2,8 +2,8 @@
 <xml>
 	<Name value="AzraelKeepBackpacks" />
 	<DisplayName value="Keep Backpacks (No Despawn)" />
-	<Description value="Server-side. Death backpacks stay; other bag times come from settings.txt. kbags reload applies them without a restart. kbclear removes dropped items in loaded areas. Players do not install this mod." />
+	<Description value="Server-side. Death backpacks stay; other bag times come from settings.txt. kbags reload applies them without a restart. Players find their bags with /mybag, and a death backpack opens only for its owner (and friends) for the first 15 minutes. kbclear removes dropped items (optionally near you, or just counts). Players do not install this mod." />
 	<Author value="Azrael" />
-	<Version value="1.2.2" />
+	<Version value="1.3.0" />
 	<Website value="https://github.com/AzraelGodKing/7d2d_mods" />
 </xml>

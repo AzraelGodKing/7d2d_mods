@@ -11,7 +11,7 @@ using HarmonyLib;
 public static class BaitXui
 {
     public static Mod Mod;
-    static readonly string[] Groups = { "azraelBaitRoster", "azraelBaitName", "azraelBaitAdmin" };
+    static readonly string[] Groups = { "azraelBaitRoster", "azraelBaitRoster12", "azraelBaitRoster16", "azraelBaitStats", "azraelBaitName", "azraelBaitAdmin" };
 
     public static void ApplyIfNeeded(XmlFile xml)
     {

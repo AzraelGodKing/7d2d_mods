@@ -89,7 +89,7 @@ public static class BmsHordeSoundPatch
             var p = BmsPlayer.Instance;
             if (p == null || p.Clip == null || !BmsSettings.PlaysAtHorde || _world == null) return true;
             if (!p.InHordeWindow(_world.worldTime)) return true;
-            Log.Out($"[BloodMoonSound] Server horde sound '{name.Substring(Marker.Length)}' replaced by {p.ClipFile}.");
+            Log.Out($"[BloodMoonSound] Server horde sound '{name.Substring(Marker.Length)}' replaced by your own clip.");
             p.TryPlayHorde(GameStats.GetInt(EnumGameStats.BloodMoonDay));
             return false;
         }
@@ -144,6 +144,8 @@ public static class BmsSettings
     public static bool Spawn = true;
     public static bool Morning = true;
     public static bool Night = true;
+    // Per-clip volume, on top of Volume.
+    public static float BloodMoonVolume = 1f, SpawnVolume = 1f, MorningVolume = 1f, NightVolume = 1f;
 
     // Server only: vanilla sound the server tells every player to play at horde start.
     public const string DefaultHordeSoundName = "alarm1_oneshot";
@@ -152,12 +154,31 @@ public static class BmsSettings
 
     public static bool PlaysAtHorde => PlayAt == Trigger.Horde || PlayAt == Trigger.Both;
 
+    static bool Vol(string v, out float vol)
+    {
+        bool ok = float.TryParse(v, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out vol);
+        vol = Mathf.Clamp01(vol);
+        return ok;
+    }
+
+    public static float VolumeFor(string key)
+    {
+        switch (key)
+        {
+            case "spawn": return SpawnVolume;
+            case "morning": return MorningVolume;
+            case "night": return NightVolume;
+            default: return BloodMoonVolume;
+        }
+    }
+
     public static bool On(string v) => !(v == "off" || v == "false" || v == "no" || v == "0");
 
     public static void Load()
     {
         PlayAt = Trigger.Horde; WarningHour = 21; Volume = 1f;
         Spawn = true; Morning = true; Night = true;
+        BloodMoonVolume = SpawnVolume = MorningVolume = NightVolume = 1f;
         HordeSound = true; HordeSoundName = DefaultHordeSoundName;
         try
         {
@@ -172,7 +193,11 @@ public static class BmsSettings
                 var k = kv[0].Trim().ToLowerInvariant(); var v = kv[1].Trim().ToLowerInvariant();
                 if (k == "playat") PlayAt = v == "warning" ? Trigger.Warning : v == "both" ? Trigger.Both : Trigger.Horde;
                 else if (k == "warninghour" && int.TryParse(v, out var h)) WarningHour = Mathf.Clamp(h, 0, 23);
-                else if (k == "volume" && float.TryParse(v, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var vol)) Volume = Mathf.Clamp01(vol);
+                else if (k == "volume" && Vol(v, out var vol)) Volume = vol;
+                else if (k == "bloodmoonvolume" && Vol(v, out var bv)) BloodMoonVolume = bv;
+                else if (k == "spawnvolume" && Vol(v, out var sv)) SpawnVolume = sv;
+                else if (k == "morningvolume" && Vol(v, out var mv)) MorningVolume = mv;
+                else if (k == "nightvolume" && Vol(v, out var nv)) NightVolume = nv;
                 else if (k == "spawn") Spawn = On(v);
                 else if (k == "morning") Morning = On(v);
                 else if (k == "night") Night = On(v);
@@ -186,19 +211,51 @@ public static class BmsSettings
 
 public class BmsPlayer : MonoBehaviour
 {
+    // One kind of clip (bloodmoon, spawn, morning, night). Several files of a kind can be loaded,
+    // e.g. bloodmoon.ogg, bloodmoon2.ogg, bloodmoon-scary.wav; each play picks one at random.
     public class LoadedClip
     {
-        public AudioClip Clip;
-        public string File;
+        public string Key;
+        public readonly List<AudioClip> Clips = new List<AudioClip>();
+        public readonly List<string> Files = new List<string>();
+        public AudioClip Clip;   // the one picked last (the first one until something plays)
+        public string File;      // its file name
         public string Error;
         public bool Ready => Clip != null;
+        int last = -1;
+
+        public LoadedClip(string key) { Key = key; }
+
+        public void Clear() { Clips.Clear(); Files.Clear(); Clip = null; File = null; Error = null; last = -1; }
+
+        public void Add(AudioClip clip, string file)
+        {
+            Clips.Add(clip); Files.Add(file);
+            if (Clip == null) { Clip = clip; File = file; }
+        }
+
+        // A different clip from last time when there's more than one.
+        public AudioClip Pick()
+        {
+            if (Clips.Count == 0) return null;
+            int i;
+            if (Clips.Count == 1) i = 0;
+            else if (last < 0) i = UnityEngine.Random.Range(0, Clips.Count);
+            else { i = UnityEngine.Random.Range(0, Clips.Count - 1); if (i >= last) i++; }
+            last = i;
+            Clip = Clips[i]; File = Files[i];
+            return Clip;
+        }
+
+        public string Describe() =>
+            Clips.Count <= 1 ? File : $"{Clips.Count} clips ({string.Join(", ", Files)}), one at random";
     }
 
     public static BmsPlayer Instance;
-    public readonly LoadedClip BloodMoon = new LoadedClip();
-    public readonly LoadedClip Spawn = new LoadedClip();
-    public readonly LoadedClip Morning = new LoadedClip();
-    public readonly LoadedClip Night = new LoadedClip();
+    public readonly LoadedClip BloodMoon = new LoadedClip("bloodmoon");
+    public readonly LoadedClip Spawn = new LoadedClip("spawn");
+    public readonly LoadedClip Morning = new LoadedClip("morning");
+    public readonly LoadedClip Night = new LoadedClip("night");
     public AudioClip Clip => BloodMoon.Clip;
     public string ClipFile => BloodMoon.File;
     public string LoadError => BloodMoon.Error;
@@ -262,7 +319,7 @@ public class BmsPlayer : MonoBehaviour
     {
         yield return LoadOne("bloodmoon", BloodMoon);
         if (BloodMoon.Ready)
-            Log.Out($"[BloodMoonSound] Loaded {BloodMoon.File} ({BloodMoon.Clip.length:0.0}s). Plays at: {Describe()}.");
+            Log.Out($"[BloodMoonSound] Loaded {BloodMoon.Describe()}. Plays at: {Describe()}.");
         else
             Log.Warning("[BloodMoonSound] " + BloodMoon.Error);
 
@@ -277,39 +334,65 @@ public class BmsPlayer : MonoBehaviour
     static string BellStatus(bool enabled, LoadedClip slot, string name)
     {
         if (!enabled) return name + " off";
-        return slot.Ready ? name + " " + slot.File : name + " (no " + name + ".ogg / .wav / .mp3)";
+        return slot.Ready ? name + " " + slot.Describe() : name + " (no " + name + ".ogg / .wav / .mp3)";
+    }
+
+    static readonly (string ext, AudioType type)[] AudioTypes =
+        { (".ogg", AudioType.OGGVORBIS), (".wav", AudioType.WAV), (".mp3", AudioType.MPEG) };
+
+    // Every <key>*.ogg / .wav / .mp3 in the mod folder: bloodmoon.ogg, bloodmoon2.ogg, bloodmoon-scary.wav ...
+    static List<string> FilesFor(string key)
+    {
+        var found = new List<string>();
+        try
+        {
+            foreach (var full in Directory.GetFiles(BmsSettings.ModPath))
+            {
+                var name = Path.GetFileName(full);
+                var ext = Path.GetExtension(name).ToLowerInvariant();
+                if (!name.StartsWith(key, StringComparison.OrdinalIgnoreCase) || Array.FindIndex(AudioTypes, a => a.ext == ext) < 0) continue;
+                found.Add(name);
+            }
+        }
+        catch (Exception e) { Log.Warning("[BloodMoonSound] Could not list sound files: " + e.Message); }
+        // bloodmoon.ogg first, then the rest by name.
+        found.Sort((a, b) =>
+        {
+            bool ab = Path.GetFileNameWithoutExtension(a).Equals(key, StringComparison.OrdinalIgnoreCase);
+            bool bb = Path.GetFileNameWithoutExtension(b).Equals(key, StringComparison.OrdinalIgnoreCase);
+            return ab != bb ? (ab ? -1 : 1) : string.Compare(a, b, StringComparison.OrdinalIgnoreCase);
+        });
+        return found;
     }
 
     IEnumerator LoadOne(string key, LoadedClip dest)
     {
-        dest.Clip = null; dest.File = null; dest.Error = null;
-        var candidates = new List<(string file, AudioType type)> {
-            (key + ".ogg", AudioType.OGGVORBIS), (key + ".wav", AudioType.WAV), (key + ".mp3", AudioType.MPEG) };
-        bool any = false;
-        foreach (var (file, type) in candidates)
+        dest.Clear();
+        var files = FilesFor(key);
+        string lastError = null;
+        foreach (var file in files)
         {
+            var type = AudioTypes[Array.FindIndex(AudioTypes, a => a.ext == Path.GetExtension(file).ToLowerInvariant())].type;
             var full = Path.Combine(BmsSettings.ModPath, file);
-            if (!File.Exists(full)) continue;
-            any = true;
             var uri = new Uri(Path.GetFullPath(full)).AbsoluteUri;
             using (var req = UnityWebRequestMultimedia.GetAudioClip(uri, type))
             {
                 yield return req.SendWebRequest();
                 if (req.result != UnityWebRequest.Result.Success)
                 {
-                    dest.Error = $"{file}: {req.error}";
-                    Log.Warning("[BloodMoonSound] Could not load " + dest.Error);
+                    lastError = $"{file}: {req.error}";
+                    Log.Warning("[BloodMoonSound] Could not load " + lastError);
                     continue;
                 }
                 var clip = DownloadHandlerAudioClip.GetContent(req);
-                if (clip == null || clip.length <= 0f) { dest.Error = file + ": empty or unsupported audio"; continue; }
-                clip.name = file; dest.Clip = clip; dest.File = file; dest.Error = null;
-                yield break;
+                if (clip == null || clip.length <= 0f) { lastError = file + ": empty or unsupported audio"; continue; }
+                clip.name = file;
+                dest.Add(clip, file);
             }
         }
-        if (dest.Error == null)
-            dest.Error = any
-                ? "could not load " + key
+        if (!dest.Ready)
+            dest.Error = files.Count > 0
+                ? lastError ?? "could not load " + key
                 : "no " + key + ".ogg / .wav / .mp3 found in " + BmsSettings.ModPath;
     }
 
@@ -345,12 +428,12 @@ public class BmsPlayer : MonoBehaviour
             Log.Warning("[BloodMoonSound] Nothing to play for " + label + ": " + (slot != null ? slot.Error : "missing"));
             return;
         }
-        source.PlayOneShot(slot.Clip, BmsSettings.Volume);
+        source.PlayOneShot(slot.Pick(), BmsSettings.Volume * BmsSettings.VolumeFor(slot.Key));
     }
 
     void PlayIfReady(LoadedClip slot)
     {
-        if (slot != null && slot.Ready) source.PlayOneShot(slot.Clip, BmsSettings.Volume);
+        if (slot != null && slot.Ready) source.PlayOneShot(slot.Pick(), BmsSettings.Volume * BmsSettings.VolumeFor(slot.Key));
     }
 
     void Update()
@@ -497,12 +580,12 @@ public class ConsoleCmdAzraelBloodMoonSound : ConsoleCmdAbstract
             BmsPlayer.LoadedClip slot = which == "spawn" ? p.Spawn : which == "morning" ? p.Morning : which == "night" ? p.Night : p.BloodMoon;
             string label = which == "spawn" || which == "morning" || which == "night" ? which : "blood moon";
             p.Play(slot, label);
-            con.Output(slot.Ready ? "Playing " + slot.File : "No " + label + " sound loaded: " + slot.Error);
+            con.Output(slot.Ready ? "Playing " + slot.File + (slot.Clips.Count > 1 ? $" (1 of {slot.Clips.Count}, picked at random)" : "") : "No " + label + " sound loaded: " + slot.Error);
             return;
         }
         if (arg == "reload") { p.Reload(); con.Output("Reloading settings and sounds..."); return; }
-        con.Output($"Blood Moon Sound: {(p.Clip != null ? p.ClipFile + $" ({p.Clip.length:0.0}s)" : "NO SOUND - " + p.LoadError)}");
-        con.Output($"Plays {BmsPlayer.Describe()}, volume {BmsSettings.Volume:0.##}. Next blood moon: day {GameStats.GetInt(EnumGameStats.BloodMoonDay)}.");
+        con.Output($"Blood Moon Sound: {(p.Clip != null ? p.BloodMoon.Describe() : "NO SOUND - " + p.LoadError)}");
+        con.Output($"Plays {BmsPlayer.Describe()}, volume {BmsSettings.Volume:0.##} x {BmsSettings.BloodMoonVolume:0.##}. Next blood moon: day {GameStats.GetInt(EnumGameStats.BloodMoonDay)}.");
         con.Output("Spawn " + SlotLine(BmsSettings.Spawn, p.Spawn) + ". Morning " + SlotLine(BmsSettings.Morning, p.Morning) + ". Night " + SlotLine(BmsSettings.Night, p.Night) + ".");
         con.Output("Morning and night follow this world's dawn and dusk.");
     }
@@ -510,6 +593,6 @@ public class ConsoleCmdAzraelBloodMoonSound : ConsoleCmdAbstract
     static string SlotLine(bool enabled, BmsPlayer.LoadedClip slot)
     {
         if (!enabled) return "off";
-        return slot.Ready ? slot.File : "no clip";
+        return slot.Ready ? slot.Describe() + $" at {BmsSettings.VolumeFor(slot.Key):0.##}" : "no clip";
     }
 }

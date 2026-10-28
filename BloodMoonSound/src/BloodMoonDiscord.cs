@@ -34,6 +34,18 @@ public static class BmdSettings
 
     public static string MsgCountdown, MsgStart, MsgUpdate, MsgEnd;
 
+    // Horde recap added to the dawn post.
+    public static bool Recap;
+    // Server events.
+    public static bool ServerStart, ServerStop, PlayerJoin, PlayerLeave;
+    public static string MsgServerStart, MsgServerStop, MsgJoin, MsgLeave;
+    // Coloured Discord embeds instead of plain text.
+    public static bool Embeds;
+    // Also show these messages in the game's chat, for every player.
+    public static bool InGameChat;
+    public static readonly HashSet<BmdKind> ChatKinds = new HashSet<BmdKind>();
+    public static bool AnyOutput => Enabled || InGameChat;
+
     public static readonly List<string> Problems = new List<string>(); // bad lines, shown by 'bmdiscord'
 
     public static string Status; // why posting is off, or null when it's on
@@ -53,6 +65,16 @@ public static class BmdSettings
         MsgStart     = "\U0001F315 The Blood Moon has risen! Horde incoming. Online: {players}";
         MsgUpdate    = "\U0001FA78 The Blood Moon rages on. Still standing: {players}";
         MsgEnd       = "\U0001F305 Dawn! Blood Moon day {day} survived. Online: {players}";
+        Recap = true;
+        ServerStart = false; ServerStop = false; PlayerJoin = false; PlayerLeave = false;
+        MsgServerStart = "\U0001F7E2 The server is up.";
+        MsgServerStop  = "\U0001F534 The server is shutting down.";
+        MsgJoin        = "\u27A1\uFE0F **{player}** joined. Online: {count}";
+        MsgLeave       = "\u2B05\uFE0F **{player}** left. Online: {count}";
+        Embeds = true;
+        InGameChat = true;
+        ChatKinds.Clear();
+        ChatKinds.UnionWith(new[] { BmdKind.Reminder, BmdKind.Countdown, BmdKind.Start, BmdKind.End });
     }
 
     public static void Load()
@@ -62,7 +84,8 @@ public static class BmdSettings
         bool sawReminder = false;
         try
         {
-            if (!File.Exists(FilePath)) { Status = $"no {FileName} (copy discord.example.txt to {FileName} and paste the webhook URL)"; return; }
+            // No discord.txt means nothing was set up: no Discord posts and no game chat messages.
+            if (!File.Exists(FilePath)) { Status = $"no {FileName} (copy discord.example.txt to {FileName} and paste the webhook URL)"; InGameChat = false; return; }
             int lineNo = 0;
             foreach (var raw in File.ReadAllLines(FilePath, Encoding.UTF8))
             {
@@ -98,6 +121,29 @@ public static class BmdSettings
                     case "msgstart": MsgStart = Msg(v, MsgStart); break;
                     case "msgupdate": MsgUpdate = Msg(v, MsgUpdate); break;
                     case "msgend": MsgEnd = Msg(v, MsgEnd); break;
+
+                    case "recap": Recap = Bool(v, Recap); break;
+                    case "serverstart": ServerStart = Bool(v, ServerStart); break;
+                    case "serverstop": ServerStop = Bool(v, ServerStop); break;
+                    case "playerjoin": PlayerJoin = Bool(v, PlayerJoin); break;
+                    case "playerleave": PlayerLeave = Bool(v, PlayerLeave); break;
+                    case "msgserverstart": MsgServerStart = Msg(v, MsgServerStart); break;
+                    case "msgserverstop": MsgServerStop = Msg(v, MsgServerStop); break;
+                    case "msgjoin": MsgJoin = Msg(v, MsgJoin); break;
+                    case "msgleave": MsgLeave = Msg(v, MsgLeave); break;
+                    case "embeds": Embeds = Bool(v, Embeds); break;
+                    case "ingamechat": InGameChat = Bool(v, InGameChat); break;
+                    case "ingamechatfor":
+                        ChatKinds.Clear();
+                        foreach (var w in v.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries))
+                        {
+                            var kw = w.Trim().ToLowerInvariant();
+                            if (kw == "reminders") kw = "reminder";
+                            if (kw == "all") { ChatKinds.UnionWith((BmdKind[])Enum.GetValues(typeof(BmdKind))); ChatKinds.Remove(BmdKind.Test); continue; }
+                            if (Enum.TryParse<BmdKind>(kw, true, out var kind) && kind != BmdKind.Test) ChatKinds.Add(kind);
+                            else Problems.Add($"line {lineNo}: InGameChatFor doesn't know '{w}' (use reminder, countdown, start, update, end, serverstart, serverstop, join, leave or all)");
+                        }
+                        break;
 
                     default: Problems.Add($"line {lineNo}: unknown setting '{line.Substring(0, eq).Trim()}'"); break;
                 }
@@ -162,11 +208,84 @@ public static class BmdSettings
     }
 }
 
+// What a message is about: picks its embed colour and whether it also goes to game chat.
+public enum BmdKind { Reminder, Countdown, Start, Update, End, ServerStart, ServerStop, Join, Leave, Test }
+
+// Who killed what and who died during the current horde, for the dawn recap.
+public static class BmdRecap
+{
+    public static readonly Dictionary<string, int> Kills = new Dictionary<string, int>();
+    public static readonly Dictionary<string, int> Deaths = new Dictionary<string, int>();
+    public static int Total;
+    public static bool Tracking;
+
+    public static void Begin() { Kills.Clear(); Deaths.Clear(); Total = 0; Tracking = true; }
+
+    public static void OnEntityKilled(ref ModEvents.SEntityKilledData data)
+    {
+        try
+        {
+            if (!Tracking || !(data.KilledEntitiy is EntityEnemy)) return;
+            Total++;
+            if (data.KillingEntity is EntityPlayer p)
+            {
+                var name = p.PlayerDisplayName ?? p.EntityName;
+                Kills.TryGetValue(name, out var n);
+                Kills[name] = n + 1;
+            }
+        }
+        catch (Exception e) { Log.Warning("[BloodMoonDiscord] recap kill: " + e.Message); }
+    }
+
+    // Players die on their own PC, which tells the server through a "was killed" game message.
+    public static ModEvents.EModEventResult OnGameMessage(ref ModEvents.SGameMessageData data)
+    {
+        try
+        {
+            if (Tracking && data.MessageType == EnumGameMessages.EntityWasKilled && !string.IsNullOrEmpty(data.MainName)
+                && IsPlayerName(data.MainName))
+            {
+                Deaths.TryGetValue(data.MainName, out var n);
+                Deaths[data.MainName] = n + 1;
+            }
+        }
+        catch (Exception e) { Log.Warning("[BloodMoonDiscord] recap death: " + e.Message); }
+        return ModEvents.EModEventResult.Continue;
+    }
+
+    static bool IsPlayerName(string name)
+    {
+        var players = GameManager.Instance?.World?.Players?.list;
+        if (players == null) return false;
+        foreach (var p in players) if (p != null && p.PlayerDisplayName == name) return true;
+        return false;
+    }
+
+    static string List(Dictionary<string, int> d, int max)
+    {
+        var items = new List<KeyValuePair<string, int>>(d);
+        items.Sort((a, b) => b.Value != a.Value ? b.Value.CompareTo(a.Value) : string.Compare(a.Key, b.Key, StringComparison.OrdinalIgnoreCase));
+        var parts = new List<string>();
+        for (int i = 0; i < items.Count && i < max; i++) parts.Add($"{BmdNotifier.EscapeMarkdown(items[i].Key)} {items[i].Value}");
+        if (items.Count > max) parts.Add($"and {items.Count - max} more");
+        return string.Join(", ", parts);
+    }
+
+    public static string Text()
+    {
+        var sb = new StringBuilder();
+        sb.Append($"**Horde recap:** {Total} zombie{(Total == 1 ? "" : "s")} killed");
+        if (Kills.Count > 0) sb.Append("\nKills: ").Append(List(Kills, 10));
+        sb.Append("\nDeaths: ").Append(Deaths.Count > 0 ? List(Deaths, 10) : "none \U0001F389");
+        return sb.ToString();
+    }
+}
+
 public class BmdNotifier : MonoBehaviour
 {
     public static BmdNotifier Instance;
 
-    readonly Queue<string> outbox = new Queue<string>();
+    readonly Queue<(string text, BmdKind kind)> outbox = new Queue<(string, BmdKind)>();
     bool sending;
     public string LastResult = "nothing sent yet";
 
@@ -178,7 +297,56 @@ public class BmdNotifier : MonoBehaviour
     int lastCountdownDay = -1;
     readonly Dictionary<string, int> reminderSentFor = new Dictionary<string, int>(); // reminder -> blood moon day
 
-    void Start() => Reload();
+    void Start()
+    {
+        Reload();
+        ModEvents.EntityKilled.RegisterHandler(BmdRecap.OnEntityKilled);
+        ModEvents.GameMessage.RegisterHandler(BmdRecap.OnGameMessage);
+        ModEvents.GameStartDone.RegisterHandler(OnGameStartDone);
+        ModEvents.WorldShuttingDown.RegisterHandler(OnWorldShuttingDown);
+        ModEvents.PlayerSpawnedInWorld.RegisterHandler(OnPlayerSpawned);
+        ModEvents.PlayerDisconnected.RegisterHandler(OnPlayerDisconnected);
+    }
+
+    void OnDestroy()
+    {
+        ModEvents.EntityKilled.UnregisterHandler(BmdRecap.OnEntityKilled);
+        ModEvents.GameMessage.UnregisterHandler(BmdRecap.OnGameMessage);
+        ModEvents.GameStartDone.UnregisterHandler(OnGameStartDone);
+        ModEvents.WorldShuttingDown.UnregisterHandler(OnWorldShuttingDown);
+        ModEvents.PlayerSpawnedInWorld.UnregisterHandler(OnPlayerSpawned);
+        ModEvents.PlayerDisconnected.UnregisterHandler(OnPlayerDisconnected);
+    }
+
+    void OnGameStartDone(ref ModEvents.SGameStartDoneData _data)
+    {
+        if (BmdSettings.ServerStart) Post(BmdSettings.MsgServerStart, GameStats.GetInt(EnumGameStats.BloodMoonDay), 0, BmdKind.ServerStart);
+    }
+
+    // The server is about to stop, so a queued post would never go out: send this one right away.
+    void OnWorldShuttingDown(ref ModEvents.SWorldShuttingDownData _data)
+    {
+        if (!BmdSettings.ServerStop) return;
+        var text = Fill(BmdSettings.MsgServerStop, GameStats.GetInt(EnumGameStats.BloodMoonDay), 0, OnlinePlayers(), null);
+        if (BmdSettings.ChatKinds.Contains(BmdKind.ServerStop)) SendChat(text);
+        if (BmdSettings.Enabled) PostNow(text, BmdKind.ServerStop);
+    }
+
+    void OnPlayerSpawned(ref ModEvents.SPlayerSpawnedInWorldData data)
+    {
+        if (!BmdSettings.PlayerJoin || (data.RespawnType != RespawnType.JoinMultiplayer && data.RespawnType != RespawnType.EnterMultiplayer)) return;
+        var name = data.ClientInfo?.playerName;
+        if (string.IsNullOrEmpty(name)) return;
+        Post(BmdSettings.MsgJoin, GameStats.GetInt(EnumGameStats.BloodMoonDay), 0, BmdKind.Join, name);
+    }
+
+    void OnPlayerDisconnected(ref ModEvents.SPlayerDisconnectedData data)
+    {
+        if (!BmdSettings.PlayerLeave || data.GameShuttingDown) return;
+        var name = data.ClientInfo?.playerName;
+        if (string.IsNullOrEmpty(name)) return;
+        Post(BmdSettings.MsgLeave, GameStats.GetInt(EnumGameStats.BloodMoonDay), 0, BmdKind.Leave, name);
+    }
 
     // Tells every player's game to play one vanilla sound (no mod needed on their side).
     // The name carries a "folder" marker: vanilla games ignore it, modded games use it to
@@ -226,7 +394,11 @@ public class BmdNotifier : MonoBehaviour
             lines.Add($"countdown: daily at {BmdSettings.CountdownHour:00}:00 from {BmdSettings.CountdownFromDays} days out");
         if (BmdSettings.Start) lines.Add("start: when the horde starts");
         if (BmdSettings.UpdateEveryHours > 0) lines.Add($"update: every {BmdSettings.UpdateEveryHours} in-game hour(s) during the horde");
-        if (BmdSettings.End) lines.Add("end: at dawn after");
+        if (BmdSettings.End) lines.Add("end: at dawn after" + (BmdSettings.Recap ? ", with a horde recap (kills and deaths)" : ""));
+        if (BmdSettings.ServerStart) lines.Add("server start");
+        if (BmdSettings.ServerStop) lines.Add("server stop");
+        if (BmdSettings.PlayerJoin) lines.Add("player joins");
+        if (BmdSettings.PlayerLeave) lines.Add("player leaves");
         return lines;
     }
 
@@ -235,8 +407,13 @@ public class BmdNotifier : MonoBehaviour
         var s = Schedule();
         var text = s.Count > 0 ? string.Join("; ", s) : "no messages turned on";
         if (BmdSettings.SkipEmpty) text += " (start/update/dawn skipped when nobody is online)";
+        text += BmdSettings.Embeds ? ". Coloured embeds" : ". Plain text";
+        if (BmdSettings.InGameChat) text += $". Also in game chat: {ChatKindsText()}";
         return text;
     }
+
+    public static string ChatKindsText() =>
+        BmdSettings.ChatKinds.Count == 0 ? "nothing" : string.Join(", ", new List<BmdKind>(BmdSettings.ChatKinds).ConvertAll(k => k.ToString().ToLowerInvariant()));
 
     void Update()
     {
@@ -250,7 +427,7 @@ public class BmdNotifier : MonoBehaviour
     void Tick()
     {
         var world = GameManager.Instance != null ? GameManager.Instance.World : null;
-        if (world == null) { lastBloodMoon = null; hordeDay = -1; return; }
+        if (world == null) { lastBloodMoon = null; hordeDay = -1; BmdRecap.Tracking = false; return; }
 
         ulong t = world.worldTime;
         int bmDay = GameStats.GetInt(EnumGameStats.BloodMoonDay);
@@ -274,14 +451,15 @@ public class BmdNotifier : MonoBehaviour
             hordeDay = bmDay;
             nextUpdateAt = t + (ulong)BmdSettings.UpdateEveryHours * 1000UL;
             if (BmsSettings.HordeSound) BroadcastHordeSound();
-            if (BmdSettings.Start && PlayersOkay()) Post(BmdSettings.MsgStart, bmDay);
+            BmdRecap.Begin();
+            if (BmdSettings.Start && PlayersOkay()) Post(BmdSettings.MsgStart, bmDay, 0, BmdKind.Start);
         }
 
         // Updates while the horde is on (1000 world time = 1 in-game hour).
         if (hordeDay >= 0 && bloodMoon && BmdSettings.UpdateEveryHours > 0 && t >= nextUpdateAt)
         {
             ulong step = (ulong)BmdSettings.UpdateEveryHours * 1000UL;
-            if (lastBloodMoon == true && PlayersOkay()) Post(BmdSettings.MsgUpdate, hordeDay);
+            if (lastBloodMoon == true && PlayersOkay()) Post(BmdSettings.MsgUpdate, hordeDay, 0, BmdKind.Update);
             while (nextUpdateAt <= t) nextUpdateAt += step; // a time skip posts once, not once per missed hour
         }
 
@@ -289,8 +467,9 @@ public class BmdNotifier : MonoBehaviour
         // because the game moves that stat on to the next blood moon around dawn.
         if (hordeDay >= 0 && !GameUtils.IsBloodMoonTime(t, duskDawn, hordeDay))
         {
-            if (BmdSettings.End && PlayersOkay()) Post(BmdSettings.MsgEnd, hordeDay);
+            if (BmdSettings.End && PlayersOkay()) Post(BmdSettings.MsgEnd, hordeDay, 0, BmdKind.End);
             hordeDay = -1;
+            BmdRecap.Tracking = false;
         }
 
         if (bmDay > 0 && !bloodMoon)
@@ -303,14 +482,14 @@ public class BmdNotifier : MonoBehaviour
                 var key = $"{r.DaysBefore}/{r.Hour}/{r.Message}";
                 if (reminderSentFor.TryGetValue(key, out var sent) && sent == bmDay) continue;
                 reminderSentFor[key] = bmDay;
-                Post(r.Message, bmDay, daysLeft);
+                Post(r.Message, bmDay, daysLeft, BmdKind.Reminder);
             }
 
             if (BmdSettings.Countdown && daysLeft >= 1 && daysLeft <= BmdSettings.CountdownFromDays
                 && Crossed(day, hour, BmdSettings.CountdownHour) && lastCountdownDay != day)
             {
                 lastCountdownDay = day;
-                Post(BmdSettings.MsgCountdown, bmDay, daysLeft);
+                Post(BmdSettings.MsgCountdown, bmDay, daysLeft, BmdKind.Countdown);
             }
         }
 
@@ -344,20 +523,82 @@ public class BmdNotifier : MonoBehaviour
         return Math.Max(0, bmDay - GameUtils.WorldTimeToDays(world.worldTime));
     }
 
-    // Returns false (and says why) when posting is off.
-    public bool Post(string template, int day, int daysLeft = 0)
+    // Fill in the placeholders. player is the one joining/leaving, for {player}.
+    public static string Fill(string template, int day, int daysLeft, List<string> players, string player)
     {
-        if (!BmdSettings.Enabled) { LastResult = "not sent: " + BmdSettings.Status; return false; }
-        var players = OnlinePlayers();
         var text = template
             .Replace("{day}", day.ToString())
             .Replace("{days}", daysLeft.ToString())
             .Replace("{count}", players.Count.ToString())
-            .Replace("{players}", players.Count > 0 ? string.Join(", ", players.ConvertAll(EscapeMarkdown)) : "nobody");
+            .Replace("{players}", players.Count > 0 ? string.Join(", ", players.ConvertAll(EscapeMarkdown)) : "nobody")
+            .Replace("{player}", EscapeMarkdown(player ?? ""));
+        if (text.Contains("{recap}")) text = text.Replace("{recap}", BmdRecap.Text());
+        return text;
+    }
+
+    // Returns false (and says why) when nothing could go out.
+    public bool Post(string template, int day, int daysLeft = 0, BmdKind kind = BmdKind.Test, string player = null)
+    {
+        var players = OnlinePlayers();
+        // A player who is leaving is still in the client list for a moment.
+        if (kind == BmdKind.Leave && player != null) players.Remove(player);
+        var text = Fill(template, day, daysLeft, players, player);
+        if (kind == BmdKind.End && BmdSettings.Recap && !template.Contains("{recap}")) text += "\n" + BmdRecap.Text();
+        bool any = false;
+        if (BmdSettings.InGameChat && BmdSettings.ChatKinds.Contains(kind)) { SendChat(text); any = true; }
+        if (!BmdSettings.Enabled) { if (!any) LastResult = "not sent: " + BmdSettings.Status; return any; }
         if (text.Length > 2000) text = text.Substring(0, 1997) + "..."; // Discord's content limit
-        outbox.Enqueue(text);
+        outbox.Enqueue((text, kind));
         if (!sending) StartCoroutine(Drain());
         return true;
+    }
+
+    // Game chat: no Discord markdown, and emoji become nothing (the game font has none).
+    public static string ForChat(string text)
+    {
+        var t = text.Replace("**", "").Replace("__", "").Replace("~~", "").Replace("`", "");
+        t = Regex.Replace(t, @"(?<![\w\\])[*_](?=\S)|(?<=\S)[*_](?![\w])", "");
+        t = t.Replace("\\", "");
+        var sb = new StringBuilder();
+        for (int i = 0; i < t.Length; i++)
+        {
+            char c = t[i];
+            if (char.IsSurrogate(c)) continue;
+            if ((c >= '\u2190' && c <= '\u21FF') || (c >= '\u2300' && c <= '\u27BF') || (c >= '\u2B00' && c <= '\u2BFF')
+                || c == '\uFE0F' || c == '\u200D') continue;
+            sb.Append(c);
+        }
+        return Regex.Replace(sb.ToString(), @"[ \t]{2,}", " ").Trim();
+    }
+
+    public static void SendChat(string text)
+    {
+        try
+        {
+            var gm = GameManager.Instance;
+            if (gm == null || gm.World == null) return;
+            foreach (var line in ForChat(text).Split('\n'))
+                if (line.Trim().Length > 0)
+                    gm.ChatMessageServer(null, EChatType.Global, -1, "[ff6060]" + line.Trim() + "[-]", null, EMessageSender.Server);
+        }
+        catch (Exception e) { Log.Warning("[BloodMoonDiscord] game chat: " + e.Message); }
+    }
+
+    // Blocking post, only for shutdown: the coroutine wouldn't get to run. Gives up after 5 seconds.
+    static void PostNow(string text, BmdKind kind)
+    {
+        try
+        {
+            var req = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(BmdSettings.Webhook);
+            req.Method = "POST";
+            req.ContentType = "application/json";
+            req.Timeout = 5000;
+            var body = Encoding.UTF8.GetBytes(BuildJson(text, kind));
+            using (var stream = req.GetRequestStream()) stream.Write(body, 0, body.Length);
+            using (var resp = (System.Net.HttpWebResponse)req.GetResponse())
+                Log.Out($"[BloodMoonDiscord] Posted ({(int)resp.StatusCode}): " + FirstLine(text));
+        }
+        catch (Exception e) { Log.Warning("[BloodMoonDiscord] Shutdown post failed: " + e.Message); }
     }
 
     IEnumerator Drain()
@@ -365,13 +606,13 @@ public class BmdNotifier : MonoBehaviour
         sending = true;
         while (outbox.Count > 0)
         {
-            var text = outbox.Dequeue();
+            var (text, kind) = outbox.Dequeue();
             for (int attempt = 0; attempt < 2; attempt++)
             {
                 float retryAfter = 0f;
                 using (var req = new UnityWebRequest(BmdSettings.Webhook, "POST"))
                 {
-                    req.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(BuildJson(text)));
+                    req.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(BuildJson(text, kind)));
                     req.downloadHandler = new DownloadHandlerBuffer();
                     req.SetRequestHeader("Content-Type", "application/json");
                     req.timeout = 15;
@@ -412,11 +653,33 @@ public class BmdNotifier : MonoBehaviour
         return line.Length > 100 ? line.Substring(0, 97) + "..." : line;
     }
 
-    static string BuildJson(string text)
+    public static int Colour(BmdKind kind)
+    {
+        switch (kind)
+        {
+            case BmdKind.Reminder: return 0xE67E22;   // orange
+            case BmdKind.Countdown: return 0xF1C40F;  // yellow
+            case BmdKind.Start: return 0xC0392B;      // red
+            case BmdKind.Update: return 0x7B0000;     // dark red
+            case BmdKind.End: return 0xF5B041;        // dawn gold
+            case BmdKind.ServerStart: return 0x2ECC71;
+            case BmdKind.ServerStop: return 0x7F8C8D;
+            case BmdKind.Join: return 0x3498DB;
+            case BmdKind.Leave: return 0x95A5A6;
+            default: return 0x9B59B6;
+        }
+    }
+
+    static string BuildJson(string text, BmdKind kind)
     {
         // allowed_mentions: by default nothing pings, even if a message or player name contains @everyone.
         var mentions = BmdSettings.Mentions ? "[\"everyone\",\"roles\",\"users\"]" : "[]";
-        return "{\"username\":" + Json(BmdSettings.BotName) + ",\"content\":" + Json(text) +
+        // Pings only work in plain content, so a message that pings is never an embed.
+        bool pings = BmdSettings.Mentions && (text.Contains("@everyone") || text.Contains("@here") || text.Contains("<@"));
+        var body = BmdSettings.Embeds && !pings
+            ? ",\"embeds\":[{\"description\":" + Json(text) + ",\"color\":" + Colour(kind) + "}]"
+            : ",\"content\":" + Json(text);
+        return "{\"username\":" + Json(BmdSettings.BotName) + body +
                ",\"allowed_mentions\":{\"parse\":" + mentions + "}}";
     }
 
@@ -442,7 +705,7 @@ public class BmdNotifier : MonoBehaviour
     }
 
     // Player names shouldn't turn into bold/italics/spoilers in Discord.
-    static string EscapeMarkdown(string s) => Regex.Replace(s, @"([\\*_~`|>])", @"\$1");
+    public static string EscapeMarkdown(string s) => Regex.Replace(s, @"([\\*_~`|>])", @"\$1");
 }
 
 // Server console (F1 as admin, telnet, or the host's web console)
@@ -457,7 +720,9 @@ public class ConsoleCmdAzraelBloodMoonDiscord : ConsoleCmdAbstract
         "bmdiscord                    - show status and the full schedule\n" +
         "bmdiscord test               - post a test message\n" +
         "bmdiscord test reminder <n>  - post reminder number n now (numbers are shown by 'bmdiscord')\n" +
-        "bmdiscord test <countdown|start|update|end> - post that message now\n" +
+        "bmdiscord test <countdown|start|update|end> - post that message now (end includes the recap so far)\n" +
+        "bmdiscord test <serverstart|serverstop|join|leave> - post that message now\n" +
+        "bmdiscord recap              - show the horde recap so far (or from the last horde)\n" +
         "bmdiscord sound              - play the horde sound for everyone online now (a test: players with\n" +
         "                               their own clip hear the game sound too, since it's not horde time)\n" +
         "bmdiscord reload             - re-read discord.txt and settings.txt";
@@ -486,15 +751,20 @@ public class ConsoleCmdAzraelBloodMoonDiscord : ConsoleCmdAbstract
         {
             int bmDay = GameStats.GetInt(EnumGameStats.BloodMoonDay);
             string template;
+            var kind = BmdKind.Test;
             int daysLeft = BmdNotifier.DaysUntil(bmDay);
             string which = _params.Count > 1 ? _params[1].ToLowerInvariant() : "";
             switch (which)
             {
                 case "": template = "✅ Blood Moon Discord test message. Posting works!"; break;
-                case "countdown": template = BmdSettings.MsgCountdown; break;
-                case "start": template = BmdSettings.MsgStart; break;
-                case "update": template = BmdSettings.MsgUpdate; break;
-                case "end": template = BmdSettings.MsgEnd; break;
+                case "countdown": template = BmdSettings.MsgCountdown; kind = BmdKind.Countdown; break;
+                case "start": template = BmdSettings.MsgStart; kind = BmdKind.Start; break;
+                case "update": template = BmdSettings.MsgUpdate; kind = BmdKind.Update; break;
+                case "end": template = BmdSettings.MsgEnd; kind = BmdKind.End; break;
+                case "serverstart": template = BmdSettings.MsgServerStart; kind = BmdKind.ServerStart; break;
+                case "serverstop": template = BmdSettings.MsgServerStop; kind = BmdKind.ServerStop; break;
+                case "join": template = BmdSettings.MsgJoin; kind = BmdKind.Join; break;
+                case "leave": template = BmdSettings.MsgLeave; kind = BmdKind.Leave; break;
                 case "reminder":
                     if (_params.Count < 3 || !int.TryParse(_params[2], out var idx) || idx < 1 || idx > BmdSettings.Reminders.Count)
                     {
@@ -503,19 +773,27 @@ public class ConsoleCmdAzraelBloodMoonDiscord : ConsoleCmdAbstract
                     }
                     template = BmdSettings.Reminders[idx - 1].Message;
                     daysLeft = BmdSettings.Reminders[idx - 1].DaysBefore;
+                    kind = BmdKind.Reminder;
                     break;
-                default: con.Output("Unknown message. Use: reminder <n>, countdown, start, update or end."); return;
+                default: con.Output("Unknown message. Use: reminder <n>, countdown, start, update, end, serverstart, serverstop, join or leave."); return;
             }
-            if (n.Post(template, bmDay, daysLeft))
-                con.Output("Sending... type 'bmdiscord' in a few seconds to see if it went through.");
+            if (n.Post(template, bmDay, daysLeft, kind, kind == BmdKind.Join || kind == BmdKind.Leave ? "TestPlayer" : null))
+                con.Output((BmdSettings.Enabled ? "Sending... type 'bmdiscord' in a few seconds to see if it went through." : "Not posted to Discord: " + BmdSettings.Status + ".")
+                           + (BmdSettings.InGameChat && BmdSettings.ChatKinds.Contains(kind) ? " Also shown in game chat." : ""));
             else
                 con.Output("Not sent: " + BmdSettings.Status);
             return;
         }
+        if (arg == "recap")
+        {
+            con.Output((BmdRecap.Tracking ? "Horde in progress. " : "Last horde. ") + BmdNotifier.ForChat(BmdRecap.Text()).Replace("\n", " | "));
+            return;
+        }
 
         con.Output(BmdSettings.Enabled
-            ? $"Blood Moon Discord: ON, posting to {BmdSettings.MaskedWebhook()} as '{BmdSettings.BotName}'."
+            ? $"Blood Moon Discord: ON, posting to {BmdSettings.MaskedWebhook()} as '{BmdSettings.BotName}'" + (BmdSettings.Embeds ? " (coloured embeds)." : " (plain text).")
             : $"Blood Moon Discord: OFF ({BmdSettings.Status}).");
+        con.Output(BmdSettings.InGameChat ? $"In-game chat: {BmdNotifier.ChatKindsText()}." : "In-game chat: off.");
         ShowSchedule(con);
         con.Output(BmsSettings.HordeSound
             ? $"Horde sound for all players: '{BmsSettings.HordeSoundName}' (settings.txt)."

@@ -58,6 +58,34 @@ public static class BaitConfig
     public static int ReviveCostPlain = 3;        // /thrall revive costs this many Plain bait...
     public static int ReviveCostRich = 2;         // ...or this many Rich bait...
     public static int ReviveCostFeast = 1;        // ...or this many Feast bait. Tried in that order; the first you can afford is taken.
+    public static bool AutoRevive = true;       // players may turn on auto-revive for a thrall (/thrall autorevive <n>)
+    public static int AutoReviveCost = 3;       // plain Zombie and Animal Bait an auto-revive takes from the owner's inventory
+    public static bool AutoHeal = true;         // players may turn on auto-heal for a thrall (/thrall autoheal <n>)
+    public static float AutoHealBelowPct = 30f; // auto-heal kicks in below this much health
+    public static float AutoHealCooldownSeconds = 20f; // at most one auto-heal per thrall this often
+    public static bool LowBaitWarning = true;   // toast when you carry too little plain bait for auto-revive/auto-heal
+    public static float HereCooldownSeconds = 30f; // /thrall here once every this many seconds (0 = no cooldown)
+    public static int MaxTeams = 8;             // teams one player may save
+    public static bool ReturnUneatenBait = true; // a thrown bait nothing ate goes back to the thrower when it stops calling
+    // roles (1.10.0)
+    public static int PerkLevel1 = 10;          // levels that open the three perk slots (/thrall perk)
+    public static int PerkLevel2 = 25;
+    public static int PerkLevel3 = 50;
+    public static float PerkToughPct = 25f;     // tough perk: damage taken is divided by 1 + this percent
+    public static float PerkHitPct = 25f;       // hit perk: extra damage to creatures
+    public static float PerkRegenMult = 3f;     // regen perk: regen times this, also while fighting
+    public static int PerkResetFeast = 1;       // Feast Bait to clear a thrall's perks (0 = free)
+    public static float GuardAlertSeconds = 60f; // a guard or patrol fighting while you are away tells you at most this often
+    public static int PatrolMaxPoints = 8;
+    public static bool BloodMoonMode = true;    // players may pick a blood moon mode (/thrall bloodmoon)
+    public static float ScoutDistance = 30f;    // /thrall scout runs this far ahead...
+    public static float ScoutRange = 40f;       // ...and reports hostiles within this many blocks of where it got to
+    public static float ScoutCooldownSeconds = 30f;
+    public static int EvolveLevel = 50;         // /thrall evolve: zombie thralls of this level or more (0 = off)
+    public static int EvolveFeastCost = 3;      // Feast Bait an evolution takes
+    public static bool WebhookEvents = true;    // post rare tames, level milestones and evolutions to Discord (webhook.txt, or Blood Moon Sound's discord.txt)
+    public static int WebhookLevelStep = 50;    // post at every multiple of this level (0 = never)
+    public static bool TamingHelper = true;     // Bait UI shows meals needed for the creature you aim at while holding bait
     public static int HealBaitCost = 1;         // bait for /thrall heal
     public static float NewThrallGraceSeconds = 8f; // a thrall that was just tamed or called can't be targeted or hurt for this long (0 = off)
     public static float HealPct = 40f;          // health restored by /thrall heal
@@ -85,6 +113,7 @@ public static class BaitConfig
     };
 
     static string modPath;
+    public static string ModPath { get { return modPath; } }
 
     // Meals each kind of animal needs (AnimalFeedsToTame is the fallback for anything not listed).
     // Set in AzraelBait.cfg:  AnimalFeeds=animalChicken:1,animalBear:6

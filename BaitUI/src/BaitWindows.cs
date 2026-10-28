@@ -4,12 +4,16 @@ using System.Globalization;
 using UnityEngine;
 
 // The roster window: one row per thrall with the buttons the /thrall commands give you.
-// Referenced from XUi as controller="AzraelBaitRoster, AzraelBaitUI".
+// Referenced from XUi as controller="AzraelBaitRoster, AzraelBaitUI". There is one window per page size (8, 12, 16 rows);
+// the controller counts its rows.
 public class XUiC_AzraelBaitRoster : XUiController
 {
-    public const int Rows = 8;
-    int page, seen = -1, relRow = -1;
+    int Rows = 8;
+    int page, seen = -1, relRow = -1, selIdx = -1;
     float relAt, nextRefresh;
+    Vector2i homePos;
+    Vector2 dragAcc;
+    List<UiThrall> view = new List<UiThrall>();
 
     void Hook(string id, Action a)
     {
@@ -18,23 +22,37 @@ public class XUiC_AzraelBaitRoster : XUiController
         c.OnPress += (s, b) => { try { a(); } catch (Exception e) { Log.Warning("[BaitUI] click " + id + ": " + e.Message); } };
     }
 
+    // buttons that need Bait 1.9.0 on the server do nothing (and show blank) on an older one
+    void HookQol(string id, Action a) { Hook(id, () => { if (BaitData.ServerHasQol) a(); }); }
+
+    static void CloseAll(XUiController c) { var wm = c.xui.playerUI.windowManager; foreach (string g in BaitData.RosterGroups) wm.Close(g); }
+
     public override void Init()
     {
         base.Init();
+        Rows = 0;
+        while (GetChildById("row" + (Rows + 1)) != null) Rows++;
+        if (Rows == 0) Rows = 8;
+        homePos = ViewComponent.Position;
         for (int i = 1; i <= Rows; i++)
         {
             int row = i;
+            Hook("r" + i + "sel", () => { var t = At(row); if (t != null) { selIdx = selIdx == t.Idx ? -1 : t.Idx; seen = -1; } });
             Hook("r" + i + "call", () => { var t = At(row); if (t != null) BaitData.Cmd(t.Active ? "/thrall stow " + t.Idx : "/thrall call " + t.Idx); });
             Hook("r" + i + "stay", () => { var t = At(row); if (t != null) BaitData.Cmd((t.Stay ? "/thrall follow " : "/thrall stay ") + t.Idx); });
             Hook("r" + i + "mode", () => { var t = At(row); if (t != null) BaitData.Cmd("/thrall mode " + t.Idx + " " + BaitData.ModeWord((t.Mode + 1) % 4)); });
             Hook("r" + i + "teth", () => { var t = At(row); if (t != null) BaitData.Cmd((t.Tether ? "/thrall untether " : "/thrall tether ") + t.Idx); });
-            Hook("r" + i + "heal", () => { var t = At(row); if (t != null) BaitData.Cmd((t.Down > 0 ? "/thrall revive " : "/thrall heal ") + t.Idx); });
+            Hook("r" + i + "heal", () => { var t = At(row); if (t != null) BaitData.Cmd((t.DownLeft > 0 ? "/thrall revive " : "/thrall heal ") + t.Idx); });
+            Hook("r" + i + "auto", () => { var t = At(row); if (t != null && BaitData.ServerHasAutoRevive) BaitData.Cmd("/thrall autorevive " + t.Idx + (t.AutoRevive ? " off" : " on")); });
+            HookQol("r" + i + "hbox", () => { var t = At(row); if (t != null) BaitData.Cmd("/thrall autoheal " + t.Idx + (t.AutoHeal ? " off" : " on")); });
+            HookQol("r" + i + "up", () => { var t = At(row); if (t != null && t.Idx > 1) BaitData.Cmd("/thrall move " + t.Idx + " up"); });
+            HookQol("r" + i + "down", () => { var t = At(row); if (t != null && t.Idx < BaitData.Thralls.Count) BaitData.Cmd("/thrall move " + t.Idx + " down"); });
             Hook("r" + i + "name", () =>
             {
                 var t = At(row);
                 if (t == null) return;
                 BaitData.RenameIdx = t.Idx; BaitData.RenameFrom = t.Label;
-                var wm = xui.playerUI.windowManager; wm.Close("azraelBaitRoster"); wm.Open("azraelBaitName", true);
+                CloseAll(this); xui.playerUI.windowManager.Open("azraelBaitName", true);
             });
             Hook("r" + i + "rel", () =>
             {
@@ -46,44 +64,129 @@ public class XUiC_AzraelBaitRoster : XUiController
             });
         }
         Hook("prev", () => { if (page > 0) page--; seen = -1; });
-        Hook("next", () => { if ((page + 1) * Rows < BaitData.Thralls.Count) page++; seen = -1; });
+        Hook("next", () => { if ((page + 1) * Rows < view.Count) page++; seen = -1; });
+        Hook("filter", () => { UiSettings.Filter = (UiSettings.Filter + 1) % UiSettings.FilterNames.Length; page = 0; UiSettings.Save(); seen = -1; });
+        Hook("sort", () => { UiSettings.Sort = (UiSettings.Sort + 1) % UiSettings.SortNames.Length; UiSettings.Save(); seen = -1; });
+        Hook("pagesize", () =>
+        {
+            UiSettings.RowsPerPage = UiSettings.RowsPerPage >= 16 ? 8 : UiSettings.RowsPerPage >= 12 ? 16 : 12;
+            UiSettings.Save();
+            CloseAll(this);
+            BaitData.TryOpenRoster();
+        });
         Hook("stowall", () => BaitData.Cmd("/thrall stow all"));
         Hook("stowactive", () => BaitData.Cmd("/thrall stow active"));
         Hook("stowtethered", () => BaitData.Cmd("/thrall stow tethered"));
         Hook("followall", () => BaitData.Cmd("/thrall follow all"));
         Hook("stayall", () => BaitData.Cmd("/thrall stay all"));
-        Hook("admin", () => { var wm = xui.playerUI.windowManager; wm.Close("azraelBaitRoster"); wm.Open("azraelBaitAdmin", true); });
-        Hook("close", () => xui.playerUI.windowManager.Close("azraelBaitRoster"));
+        HookQol("allhere", () => BaitData.Cmd("/thrall here"));
+        HookQol("deaths", () => { BaitData.Cmd("/thrall deaths", false); BaitData.SetStatus("The last deaths are listed in chat."); });
+        Hook("resetpos", () => { UiSettings.RosterDX = 0; UiSettings.RosterDY = 0; UiSettings.Save(); ApplyPos(); });
+        Hook("admin", () => { CloseAll(this); xui.playerUI.windowManager.Open("azraelBaitAdmin", true); });
+        Hook("close", () => CloseAll(this));
         Hook("tgltags", () => { UiSettings.Nameplates = !UiSettings.Nameplates; UiSettings.Save(); seen = -1; });
         Hook("tglparty", () => { UiSettings.Party = !UiSettings.Party; UiSettings.Save(); seen = -1; });
         Hook("tglfed", () => { UiSettings.Feed = !UiSettings.Feed; UiSettings.Save(); seen = -1; });
         Hook("tglpbars", () => { UiSettings.PartyBars = !UiSettings.PartyBars; UiSettings.Save(); seen = -1; });
+        Hook("tglkills", () => { UiSettings.KillFeed = !UiSettings.KillFeed; UiSettings.Save(); seen = -1; });
+        Hook("tglglow", () => { UiSettings.LevelGlow = !UiSettings.LevelGlow; UiSettings.Save(); seen = -1; });
+        Hook("tgllowhp", () => { UiSettings.LowHpAlert = !UiSettings.LowHpAlert; UiSettings.Save(); seen = -1; });
+        Hook("tgllowsnd", () => { UiSettings.LowHpSound = !UiSettings.LowHpSound; UiSettings.Save(); seen = -1; });
+        Hook("tgldowned", () => { UiSettings.DownedTags = !UiSettings.DownedTags; UiSettings.Save(); seen = -1; });
         Hook("cyclecolor", () => { UiSettings.CycleName(); seen = -1; });
-        Hook("pickkey", () => { UiSettings.CaptureKey = !UiSettings.CaptureKey; seen = -1; });
+        Hook("pickkey", () => { UiSettings.CaptureGroup = 0; UiSettings.CaptureWheel = false; UiSettings.CaptureKey = !UiSettings.CaptureKey; seen = -1; });
+        Hook("pickgroup", () => { UiSettings.CaptureKey = false; UiSettings.CaptureWheel = false; UiSettings.CaptureGroup = UiSettings.CaptureGroup > 0 ? 0 : 1; seen = -1; });
+        Hook("pickwheel", () => { UiSettings.CaptureKey = false; UiSettings.CaptureGroup = 0; UiSettings.CaptureWheel = !UiSettings.CaptureWheel; seen = -1; });
         Hook("cycletarget", () => { UiSettings.NextTarget(); seen = -1; });
         Hook("cyclebar", () => { UiSettings.CycleBar(); seen = -1; });
         Hook("sizedown", () => { UiSettings.Scale = Mathf.Clamp(Mathf.Round((UiSettings.Scale - 0.2f) * 10f) / 10f, 0.5f, 4f); UiSettings.Save(); seen = -1; });
         Hook("sizeup", () => { UiSettings.Scale = Mathf.Clamp(Mathf.Round((UiSettings.Scale + 0.2f) * 10f) / 10f, 0.5f, 4f); UiSettings.Save(); seen = -1; });
+        // teams
+        Hook("teamcycle", () => { if (BaitData.Teams.Count > 0) BaitData.TeamSel = (BaitData.TeamSel + 1) % BaitData.Teams.Count; seen = -1; });
+        HookQol("teamcall", () => { var tn = TeamName(); if (tn != null) BaitData.Cmd("/thrall team call " + tn); });
+        HookQol("teamsave", () => { BaitData.Cmd("/thrall team save " + (TeamName() ?? NewTeamName()) + " active"); });
+        HookQol("teamnew", () => { string n = NewTeamName(); BaitData.Cmd("/thrall team save " + n + " active"); BaitData.TeamSel = BaitData.Teams.Count; });
+        // search, thrall page, leaderboard, map markers, HP strip, compact list, theme, taming helper
+        var search = GetChildById("search") as XUiC_TextInput;
+        if (search != null)
+        {
+            search.Text = BaitData.Search;
+            search.OnChangeHandler += (s, text, fromCode) => { BaitData.Search = (text ?? "").Trim(); page = 0; seen = -1; };
+        }
+        Hook("thrallpage", () =>
+        {
+            if (!BaitData.ServerHasRoles || BaitData.Thralls.Count == 0) return;
+            var t = SelectedThrall ?? (view.Count > 0 ? view[0] : BaitData.Thralls[0]);
+            BaitData.StatsIdx = t.Idx;
+            CloseAll(this); xui.playerUI.windowManager.Open("azraelBaitStats", true);
+        });
+        Hook("top", () => { if (BaitData.ServerHasRoles) { BaitData.Cmd("/thrall top", false); BaitData.SetStatus("The leaderboard is in chat."); } });
+        Hook("tglmap", () => { UiSettings.MapMarkers = !UiSettings.MapMarkers; UiSettings.Save(); seen = -1; });
+        Hook("tglstrip", () => { UiSettings.HpStrip = !UiSettings.HpStrip; UiSettings.Save(); seen = -1; });
+        Hook("tglcompact", () => { UiSettings.CompactParty = !UiSettings.CompactParty; UiSettings.Save(); seen = -1; });
+        Hook("cycletheme", () => { UiSettings.Theme = (UiSettings.Theme + 1) % UiSettings.ThemeNames.Length; UiSettings.Save(); seen = -1; });
+        Hook("tglhelp", () => { UiSettings.TamingHelp = !UiSettings.TamingHelp; UiSettings.Save(); seen = -1; });
+        Tips.Apply(this, Rows);
+        // drag the title bar to move the window; the spot is remembered
+        var drag = GetChildById("dragbar");
+        if (drag != null) drag.OnDrag += (s, type, delta) =>
+        {
+            try
+            {
+                if (type == EDragType.DragStart) dragAcc = Vector2.zero;
+                float k = 1080f / Mathf.Max(1, Screen.height);   // screen pixels to XUi units
+                dragAcc += delta * k;
+                int dx = Mathf.RoundToInt(dragAcc.x), dy = Mathf.RoundToInt(dragAcc.y);
+                if (dx == 0 && dy == 0 && type != EDragType.DragEnd) return;
+                dragAcc -= new Vector2(dx, dy);
+                UiSettings.RosterDX = Mathf.Clamp(UiSettings.RosterDX + dx, -900, 900);
+                UiSettings.RosterDY = Mathf.Clamp(UiSettings.RosterDY + dy, -500, 500);
+                ApplyPos();
+                if (type == EDragType.DragEnd) UiSettings.Save();
+            }
+            catch (Exception e) { Log.Warning("[BaitUI] drag: " + e.Message); }
+        };
+    }
+
+    void ApplyPos() { ViewComponent.Position = new Vector2i(homePos.x + UiSettings.RosterDX, homePos.y + UiSettings.RosterDY); }
+
+    string TeamName()
+    {
+        if (BaitData.Teams.Count == 0) return null;
+        if (BaitData.TeamSel >= BaitData.Teams.Count) BaitData.TeamSel = 0;
+        return BaitData.Teams[BaitData.TeamSel].Key;
+    }
+    static string NewTeamName()
+    {
+        for (int n = 1; ; n++)
+        {
+            string s = "team" + n;
+            if (!BaitData.Teams.Exists(t => string.Equals(t.Key, s, StringComparison.OrdinalIgnoreCase))) return s;
+        }
     }
 
     UiThrall At(int row)
     {
         int i = page * Rows + row - 1;
-        return i >= 0 && i < BaitData.Thralls.Count ? BaitData.Thralls[i] : null;
+        return i >= 0 && i < view.Count ? view[i] : null;
     }
+
+    UiThrall SelectedThrall { get { return selIdx < 0 ? null : BaitData.Thralls.Find(t => t.Idx == selIdx); } }
 
     public override void OnClose()
     {
         base.OnClose();
-        UiSettings.CaptureKey = false;
+        UiSettings.CaptureKey = false; UiSettings.CaptureGroup = 0; UiSettings.CaptureWheel = false;
     }
 
     public override void OnOpen()
     {
         base.OnOpen();
-        UiSettings.CaptureKey = false;
+        UiSettings.CaptureKey = false; UiSettings.CaptureGroup = 0; UiSettings.CaptureWheel = false;
         page = 0; relRow = -1; seen = -1;
+        ApplyPos();
         BaitData.Cmd("/thrall ui", false);   // ask for a fresh copy of everything
+        view = BaitData.View();
         RefreshBindings();
     }
 
@@ -95,18 +198,37 @@ public class XUiC_AzraelBaitRoster : XUiController
         {
             seen = BaitData.Version;
             nextRefresh = Time.time + 0.4f;
-            int pages = Math.Max(1, (BaitData.Thralls.Count + Rows - 1) / Rows);
+            view = BaitData.View();
+            int pages = Math.Max(1, (view.Count + Rows - 1) / Rows);
             if (page >= pages) page = pages - 1;
+            if (Time.time > nextTips) { nextTips = Time.time + 3f; Tips.Apply(this, Rows); }
             RefreshBindings();
         }
     }
+    float nextTips;
 
     static string Hp(UiThrall t)
     {
-        if (t.Down > 0) return "downed " + t.Down + "s";
+        if (t.DownLeft > 0) return "downed " + t.DownLeft + "s";
         var e = BaitData.LiveThrall(t);
         if (e == null) return t.Active ? "away" : "";
         return Mathf.CeilToInt(e.Stats.Health.Value) + "/" + e.GetMaxHealth();
+    }
+
+    static string OnOff(bool b) { return b ? "on" : "off"; }
+    static string Box(bool b) { return b ? "[X]" : "[  ]"; }
+
+    static string Details(UiThrall t)
+    {
+        if (t == null) return "";
+        int per = 0;
+        foreach (var c in BaitData.Config) if (c[0] == "KillsPerLevel") int.TryParse(c[1], out per);
+        string next = per > 0 ? "   " + (per - t.Kills % per) + " to the next level" : "";
+        string where = t.DownLeft > 0 ? "downed, back in " + BaitHud.Clock(t.DownLeft) : t.Tether ? "tethered (radius " + t.Radius.ToString("0.#", CultureInfo.InvariantCulture) + ")" : t.Active ? (t.Stay ? "out, holding position" : "out, following you") : "stowed";
+        var e = BaitData.LiveThrall(t);
+        string hp = e != null ? "   HP " + Mathf.CeilToInt(e.Stats.Health.Value) + "/" + e.GetMaxHealth() : "";
+        return t.Idx + ". " + t.Label + (string.IsNullOrEmpty(t.Name) ? "" : " (" + t.Pretty + ")") + "   level " + t.Level + "   kills " + t.Kills + next + hp + "\n"
+             + where + "   mode " + BaitData.ModeWord(t.Mode) + "   auto-revive " + OnOff(t.AutoRevive) + (BaitData.ServerHasQol ? "   auto-heal " + OnOff(t.AutoHeal) : "") + "   (click the row again to close)";
     }
 
     public override bool GetBindingValueInternal(ref string value, string name)
@@ -114,45 +236,92 @@ public class XUiC_AzraelBaitRoster : XUiController
         switch (name)
         {
             case "title":
-                value = BaitData.HasData ? (BaitData.ServerTooOld ? "Thralls   (server Bait " + BaitData.ServerVersion + " is too old: this UI needs " + BaitData.NeedsServer + " or newer)   " : "Thralls   ") + BaitData.ActiveCount + "/" + BaitData.MaxActive + " active   " + BaitData.Thralls.Count + "/" + BaitData.MaxOwned + " held   power " + BaitData.Power + (string.IsNullOrEmpty(BaitData.ServerVersion) ? "" : "   Bait " + BaitData.ServerVersion)
+                value = BaitData.HasData ? (BaitData.ServerTooOld ? "Thralls   (server Bait " + BaitData.ServerVersion + " is too old: this UI needs " + BaitData.NeedsServer + " or newer)   " : "Thralls   ") + BaitData.ActiveCount + "/" + BaitData.MaxActive + " active   " + BaitData.Thralls.Count + "/" + BaitData.MaxOwned + " held   power " + BaitData.Power
+                          + (BaitData.BaitCounts ? "   bait " + BaitData.Plain + " / " + BaitData.Rich + " rich / " + BaitData.Feast + " feast" : "")
+                          + (string.IsNullOrEmpty(BaitData.ServerVersion) ? "" : "   Bait " + BaitData.ServerVersion)
                                          : BaitData.HelloGaveUp ? "Thralls   (no answer from the server: it needs the Zombie and Animal Bait mod, 1.3 or newer)" : "Thralls   (waiting for the server...)";
                 return true;
             case "status": value = BaitData.StatusText; return true;
-            case "pagetext": value = "Page " + (page + 1) + "/" + Math.Max(1, (BaitData.Thralls.Count + Rows - 1) / Rows); return true;
-            case "pbarstxt": value = BaitData.HasData && !BaitData.ServerHasPartyBars ? "Party bars: server needs " + BaitData.PartyBarsNeed + "+" : "Party members' bars: " + (UiSettings.PartyBars ? "on" : "off"); return true;
+            case "details": value = Details(SelectedThrall); return true;
+            case "pagetext": value = "Page " + (page + 1) + "/" + Math.Max(1, (view.Count + Rows - 1) / Rows); return true;
+            case "filtertxt": value = "Show: " + UiSettings.FilterNames[UiSettings.Filter]; return true;
+            case "sorttxt": value = "Sort: " + UiSettings.SortNames[UiSettings.Sort]; return true;
+            case "pagesizetxt": value = Rows + " per page"; return true;
+            case "allheretxt": value = BaitData.ServerHasQol ? "Bring all here" : ""; return true;
+            case "deathstxt": value = BaitData.ServerHasQol ? "Deaths" : ""; return true;
+            case "pbarstxt": value = BaitData.HasData && !BaitData.ServerHasPartyBars ? "Party bars: server needs " + BaitData.PartyBarsNeed + "+" : "Party members' bars: " + OnOff(UiSettings.PartyBars); return true;
             case "colortxt": value = "Name color: " + UiSettings.NameLabel(); return true;
             case "bartxt": value = "Bar color: " + UiSettings.BarLabel(); return true;
             case "targettxt": { var tt = UiSettings.TargetThrall; value = "Colors for: " + (tt == null ? "all thralls" : tt.Idx + ". " + tt.Label) + " (click)"; return true; }
-            case "keytxt": value = UiSettings.CaptureKey ? "Press a key..." : "Hotkey: " + (UiSettings.Key == KeyCode.None ? "none" : UiSettings.Key.ToString()); return true;
-            case "tagstxt": value = "Name tags: " + (UiSettings.Nameplates ? "on" : "off"); return true;
-            case "partytxt": value = "Party list: " + (UiSettings.Party ? "on" : "off"); return true;
-            case "fedtxt": value = "Fed tags: " + (UiSettings.Feed ? "on" : "off"); return true;
-            case "sizetxt": value = "Size " + UiSettings.Scale.ToString("0.0", CultureInfo.InvariantCulture); return true;            case "adminvis": value = BaitData.Admin ? "true" : "false"; return true;
+            case "keytxt": value = UiSettings.CaptureKey ? "Press a key..." : "Hotkey: " + UiSettings.KeyText(UiSettings.Key); return true;
+            case "grouptxt":
+                value = UiSettings.CaptureGroup > 0 ? "Press a key for " + UiSettings.GroupNames[UiSettings.CaptureGroup] + " (Del = none)"
+                      : "Keys: follow " + UiSettings.KeyText(UiSettings.FollowKey) + ", stay " + UiSettings.KeyText(UiSettings.StayKey) + ", here " + UiSettings.KeyText(UiSettings.HereKey);
+                return true;
+            case "wheeltxt": value = UiSettings.CaptureWheel ? "Press a key..." : "Wheel: " + UiSettings.KeyText(UiSettings.WheelKey); return true;
+            case "tagstxt": value = "Name tags: " + OnOff(UiSettings.Nameplates); return true;
+            case "partytxt": value = "Party list: " + OnOff(UiSettings.Party); return true;
+            case "fedtxt": value = "Fed tags: " + OnOff(UiSettings.Feed); return true;
+            case "killstxt": value = "Kill feed: " + OnOff(UiSettings.KillFeed); return true;
+            case "glowtxt": value = "Level glow: " + OnOff(UiSettings.LevelGlow); return true;
+            case "lowhptxt": value = "Low HP flash: " + OnOff(UiSettings.LowHpAlert); return true;
+            case "lowsndtxt": value = "Low HP sound: " + OnOff(UiSettings.LowHpSound); return true;
+            case "downedtxt": value = "Downed tags: " + OnOff(UiSettings.DownedTags); return true;
+            case "teamtxt":
+            {
+                if (!BaitData.ServerHasQol) { value = BaitData.HasData ? "Teams need Bait " + BaitData.QolNeed + "+" : ""; return true; }
+                var tn = TeamName();
+                value = tn == null ? "Team: none yet" : "Team: " + tn + " (" + BaitData.Teams[BaitData.TeamSel].Value + ")" + (BaitData.Teams.Count > 1 ? "  >" : "");
+                return true;
+            }
+            case "teamcalltxt": value = BaitData.ServerHasQol && TeamName() != null ? "Call team" : ""; return true;
+            case "teamsavetxt": value = BaitData.ServerHasQol ? (TeamName() != null ? "Save active" : "") : ""; return true;
+            case "teamnewtxt": value = BaitData.ServerHasQol ? "New team" : ""; return true;
+            case "sizetxt": value = "Size " + UiSettings.Scale.ToString("0.0", CultureInfo.InvariantCulture); return true;
+            case "adminvis": value = BaitData.Admin ? "true" : "false"; return true;
+            case "bgcol": value = UiSettings.BgCol; return true;
+            case "textcol": value = UiSettings.TextCol; return true;
+            case "pagebtntxt": value = BaitData.ServerHasRoles ? "Thrall page" : ""; return true;
+            case "toptxt": value = BaitData.ServerHasRoles ? "Top" : ""; return true;
+            case "maptxt": value = "Map: " + OnOff(UiSettings.MapMarkers); return true;
+            case "striptxt": value = "HP strip: " + OnOff(UiSettings.HpStrip); return true;
+            case "compacttxt": value = "Compact: " + OnOff(UiSettings.CompactParty); return true;
+            case "themetxt": value = "Theme: " + UiSettings.ThemeNames[Mathf.Clamp(UiSettings.Theme, 0, 2)]; return true;
+            case "helptxt": value = "Tame help: " + OnOff(UiSettings.TamingHelp); return true;
             case "emptytext":
-                value = BaitData.HasData ? (BaitData.Thralls.Count == 0 ? "You have no thralls yet. Throw bait at a zombie or animal and let it eat." : "")
+                value = BaitData.HasData ? (BaitData.Thralls.Count == 0 ? "You have no thralls yet. Throw bait at a zombie or animal and let it eat."
+                                          : view.Count == 0 && BaitData.Search.Length > 0 ? "No thrall matches \"" + BaitData.Search + "\"."
+                                          : view.Count == 0 ? "No " + UiSettings.FilterNames[UiSettings.Filter].ToLowerInvariant() + " on your roster. Click Show to see the rest." : "")
                                          : "No data from the server yet. This needs the Zombie and Animal Bait mod on the server.";
                 return true;
         }
         // r<N><field>
         if (name.Length > 2 && name[0] == 'r' && char.IsDigit(name[1]))
         {
-            int row = name[1] - '0';
-            string field = name.Substring(2);
+            int k = 1;
+            while (k < name.Length && char.IsDigit(name[k])) k++;
+            int row = int.Parse(name.Substring(1, k - 1));
+            string field = name.Substring(k);
             var t = At(row);
             switch (field)
             {
                 case "vis": value = t != null ? "true" : "false"; return true;
+                case "col": value = UiSettings.RowCol(t); return true;
                 case "text":
                     if (t == null) { value = ""; return true; }
-                    string st = t.Down > 0 ? "downed" : t.Tether ? "tethered r" + t.Radius.ToString("0.#", CultureInfo.InvariantCulture) : t.Active ? "active" : "inactive";
+                    string st = t.DownLeft > 0 ? "downed" : t.Patrol ? "patrol" : t.Guard ? "guard r" + t.Radius.ToString("0.#", CultureInfo.InvariantCulture) : t.Tether ? "tethered r" + t.Radius.ToString("0.#", CultureInfo.InvariantCulture) : t.Active ? "active" : "inactive";
                     string hp = Hp(t);
-                    value = t.Idx + ". " + (t.Level > 0 ? "Lv" + t.Level + " " : "") + t.Label + (string.IsNullOrEmpty(t.Name) ? "" : " (" + t.Pretty + ")") + "\n" + st + (t.Stay ? ", holding" : "") + (hp.Length > 0 ? "   HP " + hp : "") + "   kills " + t.Kills;
+                    value = (t.Idx == selIdx ? "> " : "") + t.Idx + ". " + (t.Level > 0 ? "Lv" + t.Level + " " : "") + t.Label + (string.IsNullOrEmpty(t.Name) ? "" : " (" + t.Pretty + ")") + "\n" + st + (t.Stay ? ", holding" : "") + (hp.Length > 0 ? "   HP " + hp : "") + "   kills " + t.Kills;
                     return true;
                 case "calltxt": value = t == null ? "" : t.Active ? "Stow" : "Call"; return true;
                 case "staytxt": value = t == null ? "" : t.Stay ? "Follow" : "Stay"; return true;
                 case "modetxt": value = t == null ? "" : BaitData.ModeName(t.Mode); return true;
                 case "tethtxt": value = t == null ? "" : t.Tether ? "Untether" : "Tether"; return true;
-                case "healtxt": value = t == null ? "" : t.Down > 0 ? "Revive" : "Heal"; return true;
+                case "autotxt": value = t == null || !BaitData.ServerHasAutoRevive ? "" : Box(t.AutoRevive) + " Auto"; return true;
+                case "hboxtxt": value = t == null || !BaitData.ServerHasQol ? "" : Box(t.AutoHeal) + " Heal"; return true;
+                case "uptxt": value = t == null || !BaitData.ServerHasQol || t.Idx <= 1 ? "" : "^"; return true;
+                case "downtxt": value = t == null || !BaitData.ServerHasQol || t.Idx >= BaitData.Thralls.Count ? "" : "v"; return true;
+                case "healtxt": value = t == null ? "" : t.DownLeft > 0 ? "Revive" : "Heal"; return true;
                 case "nametxt": value = t == null ? "" : "Rename"; return true;
                 case "reltxt": value = t == null ? "" : (relRow == row && Time.time - relAt < 4f) ? "Sure?" : "Release"; return true;
             }
@@ -170,7 +339,7 @@ public class XUiC_AzraelBaitName : XUiController
     {
         var wm = xui.playerUI.windowManager;
         wm.Close("azraelBaitName");
-        wm.Open("azraelBaitRoster", true);
+        wm.Open(BaitData.RosterGroup, true);
     }
 
     void Ok()
@@ -236,7 +405,7 @@ public class XUiC_AzraelBaitAdmin : XUiController
         Hook("exnext", () => { if ((exPage + 1) * ExRows < BaitData.Exclude.Count) exPage++; seen = -1; });
         Hook("addlook", AddLooked);
         Hook("clearex", () => BaitData.Cmd("/thrall exclude clear"));
-        Hook("back", () => { var wm = xui.playerUI.windowManager; wm.Close("azraelBaitAdmin"); wm.Open("azraelBaitRoster", true); });
+        Hook("back", () => { var wm = xui.playerUI.windowManager; wm.Close("azraelBaitAdmin"); wm.Open(BaitData.RosterGroup, true); });
         Hook("close", () => xui.playerUI.windowManager.Close("azraelBaitAdmin"));
     }
 
@@ -357,4 +526,4 @@ public class XUiC_AzraelBaitAdmin : XUiController
         }
         return base.GetBindingValueInternal(ref value, name);
     }
-}
+}

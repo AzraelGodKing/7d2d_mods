@@ -2,11 +2,11 @@
   "slug": "blood-moon-sound",
   "name": "Blood Moon Sound",
   "game": "7-days-to-die",
-  "description": "Plays your own sound clips: blood moon horde (and/or a warning earlier that day), when you enter the world, and morning and night bells at this world's dawn and dusk. Drop bloodmoon / spawn / morning / night as .ogg, .wav, or .mp3 into this folder. Players: the server does not need it. Server (optional): posts blood moon updates to Discord; players do not need it for that.",
-  "version": "1.2.2",
+  "description": "Plays your own sound clips: blood moon horde (and/or a warning earlier that day), when you enter the world, and morning and night bells at this world's dawn and dusk. Drop bloodmoon / spawn / morning / night as .ogg, .wav, or .mp3 into this folder (several of a kind play at random). Players: the server does not need it. Server (optional): posts blood moon updates, a horde recap and server events to Discord and game chat; players do not need it for that.",
+  "version": "1.3.0",
   "screenshots": [],
   "download": {
-    "file": "blood-moon-sound-1.2.2.zip"
+    "file": "blood-moon-sound-1.3.0.zip"
   },
   "links": {
     "steam": null,

@@ -53,3 +53,31 @@ The buttons send the normal `/thrall` chat commands (they are hidden from other 
 **1.6.3:** Version check. The roster title shows the server's Bait version (Bait 1.7.6 or newer sends it) and warns when it is older than 1.3.0, the oldest this UI can talk to. The `Party members' bars` button says so when the server is older than 1.7.3. The UI asks the server for its roster 3 times (15 s apart) instead of 8, hides the `/thrall` command lines from your chat, and says when the server never answered.
 
 **1.6.5:** On/off settings in the admin window show as a tick box (`[X]` on, `[  ]` off; the Flip button toggles it). The new server setting `KatsSpecial` (Bait 1.7.9) shows as **Kats Special (27 thralls each)**: ticked, every player may hold 27 thralls.
+
+**1.6.6:** Each roster row has an `Auto` tick box (`[X] Auto` on, `[  ] Auto` off) that turns auto-revive on or off for that thrall (`/thrall autorevive <n>`): when it falls and you carry the base Zombie and Animal Bait, the server takes the bait and brings it straight back. The roster window is a little wider to fit it. Needs Bait 1.8.0 or newer on the server; with an older server the box stays blank.
+
+**1.7.0:** Needs Bait 1.9.0 on the server for the parts marked (1.9.0); with an older server those buttons stay blank.
+- Roster rows: `[X] Heal` auto-heal box (1.9.0) and `^`/`v` to move a thrall up or down the roster (1.9.0). Click a row's name to open a details line (level, kills to the next level, HP, where it is, mode, auto toggles); click it again to close.
+- Title shows the bait the server sees in your inventory (1.9.0).
+- `Show: All/Zombies/Animals` filter, `Sort: Number/Level/HP` (HP puts downed and hurt ones first) and `8/12/16 per page` (three roster windows; `tools/gen-roster.py` writes them).
+- Bottom rows: `Bring all here` and `Deaths` (listed in chat) (1.9.0), `Re-center`, team picker with `Call team`, `Save active` and `New team` (1.9.0).
+- Drag the window by its title bar; the spot is remembered (`Re-center` puts it back).
+- Group hotkeys: F6 follow all, F7 stay all, F8 bring all here (1.9.0). Click the `Keys:` button and press three keys in turn to change them (Del = none), or `baitui followkey|staykey|herekey <key>`.
+- Quick-actions wheel: hold the middle mouse button (`Wheel:` button or `baitui wheelkey <key>` to change), move the mouse, scroll or press 1-5 to pick Follow all, Stay all, Bring all here, Stow active or Call team, then let go. The camera still turns while you aim.
+- Name tags: a thrall under 25% HP flashes red with a short sound (`Low HP flash`, `Low HP sound`); a downed thrall keeps a grey `back in m:ss` tag where it fell (`Downed tags`); a level-up turns the tag gold with `Lv N!` for 4 s (`Level glow`).
+- Kill feed: your thralls' kills fade in at the right of the screen for 6 s (1.9.0) (`Kill feed`).
+- `tools/gen-windows.ps1` is gone: it no longer matched the windows file. The roster windows come from `tools/gen-roster.py`; the rename and admin windows are edited by hand.
+
+
+**1.8.0:** Needs Bait 1.10.0 on the server for the parts marked (1.10.0); with an older server those buttons stay blank.
+- **Thrall page** (1.10.0): select a row and click `Thrall page` (or it opens the first one). It shows level, kills to the next level, deaths, when it was tamed, where it is, HP, mode, the auto toggles, its perks and slots, and what it evolves into. Its buttons: the four perks and `Reset perks`, `Guard here`, `Add patrol point`, `Start/Stop patrol`, `Clear points`, `Scout`, `Evolve`, and your `Blood moon` mode. `Prev`/`Next` step through your thralls.
+- **Search box** at the bottom left of the roster: type part of a name, the creature name or a number. It works with Show and Sort.
+- **Tooltips** on every roster button. Heal, revive, auto-revive, auto-heal and Bring all here show what they cost on this server.
+- **Map markers:** your thralls show on the map and compass (green), and their daycare, guard post or patrol spot too (blue, 1.10.0). `Map: on/off`.
+- **HP strip:** small HP bars for your active thralls in the bottom-right corner, in place of the party list. `HP strip: on/off`.
+- **Compact party list:** name and bar on one line, so 10 or more thralls fit. `Compact: on/off`.
+- **Coloured rows:** a thrall you gave its own name colour gets a row tinted that colour.
+- **Themes:** `Theme: Dark/Light/High contrast` recolours the roster and thrall page, and the backing behind the party list and HP strip.
+- **Taming helper** (1.10.0): while you hold bait, the creature under your crosshair shows its meals needed (or how far you are), or why it can't be tamed: already a thrall, excluded on this server, your roster is full, or someone else is feeding it. `Tame help: on/off`.
+- Roster rows show guards and patrols. The party list marks them `[G]` and `[P]`.
+- The roster windows are 46 px taller for the new row. The 16-row one is 1022 tall.

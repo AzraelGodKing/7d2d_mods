@@ -1,10 +1,10 @@
 # 7 Days to Die mods
 
-Small mods for 7 Days to Die, built and tested on **V3.3**.
+Small mods for 7 Days to Die. Every mod builds against **V3.4** (b6), and each one's Harmony patches and XML were checked against it.
 
 | Mod | Type | Install on | Version |
 |---|---|---|---|
-| [Remove Any Entity](#remove-any-entity) | Code (Harmony) | Server only | 2.1.0 |
+| [Remove Any Entity](#remove-any-entity) | Code (Harmony) | Server only | 2.2.0 |
 | [Quest Disconnect Fix](#quest-disconnect-fix) | Code (Harmony) | Server only | 1.1.0 |
 | [Honk Door Fix](#honk-door-fix) | Code (Harmony) | Server only | 1.0.0 |
 | [Craftable Canvas Signs](#craftable-canvas-signs) | XML only | Server only | 1.0.0 |
@@ -12,14 +12,17 @@ Small mods for 7 Days to Die, built and tested on **V3.3**.
 | [Craft From Chests](#craft-from-chests) | Code (Harmony) | Players only | 1.2.0 |
 | [Upgrade Bench](#upgrade-bench) | Code + XML | Server **and** every player | 1.0.2 |
 | [No Ding Sound](#no-ding-sound) | XML only | Server only | 1.0.0 |
-| [Keep Backpacks](#keep-backpacks) | Code | Server only | 1.2.2 |
-| [Blood Moon Sound](#blood-moon-sound) | Code (Harmony) | Players (own sound); server optional (sound for everyone, Discord posts) | 1.2.2 |
-| [Zombie and Animal Bait](#zombie-and-animal-bait) | Code (Harmony) + XML | Server only | 1.7.9 |
+| [Keep Backpacks](#keep-backpacks) | Code (Harmony) | Server only | 1.3.0 |
+| [Blood Moon Sound](#blood-moon-sound) | Code (Harmony) | Players (own sound); server optional (sound for everyone, Discord and game chat posts) | 1.3.0 |
+| [Zombie and Animal Bait](#zombie-and-animal-bait) | Code (Harmony) + XML | Server only | 1.10.0 |
 | [Gyro Safe](#gyro-safe) | Code (Harmony) | Server and players who fly | 1.0.0 |
 | [Drone Loot Filter](#drone-loot-filter) | Code (Harmony), needs Drone Automation | Server only | 1.2.0 |
-| [Bait UI](#bait-ui) | Code + UI | Players only (optional, needs Bait on the server) | 1.6.5 |
-| [Spawn Tuner](#spawn-tuner) | Code (Harmony) | Server only | 1.0.0 |
+| [Bait UI](#bait-ui) | Code + UI | Players only (optional, needs Bait on the server) | 1.8.0 |
+| [Spawn Tuner](#spawn-tuner) | Code (Harmony) | Server only | 1.1.0 |
 | [Slot Lock Fix](#slot-lock-fix) | Code (Harmony) | Players only | 1.0.0 |
+| [K9 Death Sound](#k9-death-sound) | XML (+ optional own clip) | Server; players optional | 1.1.0 |
+
+Ideas not built yet are kept in [docs/ideas.md](docs/ideas.md).
 
 **Mod manager:** the Windows mod manager is now [Survivor's Toolkit](https://github.com/AzraelGodKing/Survivor-s-Toolkit), in its own repository.
 
@@ -61,7 +64,26 @@ goes in your own Mods folder.
 | `rae group <name>` | What a spawn group can spawn now, with chances (partial names are suggested) |
 | `rae reload` | Re-read `entities.txt` and apply it now, without a restart |
 | `rae remove <name>` | Stop `<name>` (and its tiers) spawning: saves it to `entities.txt` and applies it now |
-| `rae keep <name>` | Let `<name>` spawn again: comments its line out in `entities.txt` and applies it now |
+| `rae remove <name> in <biomes>` | Stop `<name>` only in the open-world spawns of those biomes, e.g. `rae remove animalCoyote in desert, wasteland` |
+| `rae replace <name> <other>` | Spawn `<other>` wherever `<name>` would have, at the same chance, e.g. `rae replace animalZombieDog animalWolf` |
+| `rae keep <name>` | Let `<name>` spawn again (undoes remove, remove-in and replace): comments its line out and applies it now |
+| `rae cull [<name>]` | Despawn creatures already out that the rules no longer allow, in loaded areas (or just `<name>` and its tiers) |
+| `rae cull count [<name>]` | Only count what `rae cull` would despawn |
+
+The same rules can be written in `entities.txt`:
+
+```
+animalCoyote in desert, wasteland     removed from those biomes only
+animalZombieDog -> animalWolf         every zombie dog spawn becomes a wolf
+```
+
+- **Per biome** only changes open-world (biome) spawns. Sleepers in buildings, wandering and blood moon
+  hordes aren't tied to a biome, so they keep it. Biomes: `pine_forest` (or `forest`), `burnt_forest`
+  (or `burnt`), `desert`, `snow`, `wasteland`. When a biome spawn rolls a creature removed there, it
+  rolls again; if nothing else comes up, that spot stays empty.
+- **Replace** keeps a group zombies-first or animals-first as it was, so swapping a zombie for an animal
+  doesn't change which spawner uses the group. The target must exist and not be removed itself.
+- **Cull** never touches players, vehicles or Bait thralls.
 
 Live changes affect new spawns only: creatures already in the world stay, and a horde that has already
 picked its zombies keeps them. `rae reload` rebuilds the groups from what `entitygroups.xml` defined, so
@@ -76,6 +98,7 @@ old `RemoveZombieDogs` folder from `Mods` first (running both would remove creat
 Known side effect: challenges that need a removed creature (e.g. "Kill 50 coyotes") can't be completed.
 
 **Changelog**
+- 2.2.0: `name -> other` lines and `rae replace` swap one creature for another at the same chance. `name in <biomes>` lines and `rae remove <name> in <biomes>` stop a creature in some biomes only. `rae cull` despawns creatures already out that the rules no longer allow (`rae cull count` just counts); players, vehicles and Bait thralls are skipped.
 - 2.1.0: change spawns without a restart. `rae reload` applies an edited `entities.txt` straight away, and `rae remove <name>` / `rae keep <name>` edit the file from the console and apply it.
 - 2.0.1: replaces Remove Zombie Dogs / Remove Entities on its Nexus page (the `rement` version is retired). A Twitch spawn whose creatures are all removed, with no usable `Replacement=`, is left unchanged (with one warning), the same as an emptied spawn group. It used to end up empty, which made the action rebuild its list every tick and never finish.
 - 2.0.0: renamed to Remove Any Entity. Now a code mod driven by `entities.txt` (any entity, all tiers,
@@ -246,6 +269,11 @@ Dawn and dusk follow this world's day length, so a short day still rings at sunr
 The mod ships **without** sounds: drop `bloodmoon.ogg`, `.wav` or `.mp3` into the mod folder, and the
 same for `spawn`, `morning`, and `night`. A missing bell file means that bell stays quiet.
 
+Several clips of one kind play at random, never the same one twice in a row: name them
+`bloodmoon.ogg`, `bloodmoon2.ogg`, `bloodmoon-scary.wav` and so on (any name that starts with
+`bloodmoon`, `spawn`, `morning` or `night`). `BloodMoonVolume`, `SpawnVolume`, `MorningVolume` and
+`NightVolume` in `settings.txt` set each kind's volume on top of `Volume`.
+
 | Command (F1 console) | What it does |
 |---|---|
 | `bmsound` | Show status (sound loaded, when it plays, next blood moon day) |
@@ -265,7 +293,7 @@ same session does not play it again.
 
 **Only players need it for the sound; the server doesn't.** Players launch without EAC.
 
-Any `bloodmoon.*`, `spawn.*`, `morning.*`, or `night.*` file in `BloodMoonSound/mod/` is gitignored.
+Any `bloodmoon*`, `spawn*`, `morning*` or `night*` .ogg/.wav/.mp3 in `BloodMoonSound/mod/` is gitignored.
 `build.ps1` leaves them out of the public zip and makes a second `-with-sound` zip (private, for your
 own group) which `-Install` uses.
 
@@ -300,10 +328,15 @@ The whole schedule is set in `discord.txt`:
 | `Start` | on | When the horde starts |
 | `UpdateEveryHours` | 0 (off) | Extra posts every N in-game hours while the horde is on |
 | `End` | on | At dawn afterwards |
+| `Recap` | on | Adds a horde recap to the dawn post: zombies killed, kills per player, who died (`{recap}` places it) |
+| `ServerStart` / `ServerStop` | off / off | When the server is up, and as it shuts down |
+| `PlayerJoin` / `PlayerLeave` | off / off | When a player joins or leaves (`{player}`) |
+| `Embeds` | on | Coloured Discord embeds: orange reminders, red horde, gold dawn. `off` = plain text |
+| `InGameChat` / `InGameChatFor` | on / reminder, countdown, start, end | Show those messages in game chat too (no emoji or bold there). Works without a webhook |
 | `MsgCountdown`, `MsgStart`, `MsgUpdate`, `MsgEnd` | see file | Message text |
 
 Placeholders: `{day}` blood moon day, `{days}` days left,
-`{players}` who's online, `{count}` how many, `\n` new line.
+`{players}` who's online, `{count}` how many, `{player}` who joined or left, `{recap}` the horde recap, `\n` new line.
 
 Reminders and the countdown follow the game's own "next blood moon day", so they work with any
 blood moon frequency (a 30-day server gets its reminders before day 30, 60, ...) and with a random range.
@@ -317,19 +350,24 @@ Setup: copy `discord.example.txt` to `discord.txt` **on the server**, paste the 
 | `bmdiscord` | Status: on/off, full schedule, next blood moon day, result of the last post |
 | `bmdiscord test` | Post a test message |
 | `bmdiscord test reminder <n>` | Post reminder number n now |
-| `bmdiscord test countdown\|start\|update\|end` | Post that message now |
+| `bmdiscord test countdown\|start\|update\|end` | Post that message now (`end` includes the recap so far) |
+| `bmdiscord test serverstart\|serverstop\|join\|leave` | Post that message now |
+| `bmdiscord recap` | The horde recap so far, or from the last horde |
 | `bmdiscord sound` | Play the horde sound for everyone online now |
 | `bmdiscord reload` | Re-read `discord.txt` and `settings.txt` |
 
 - Nothing is posted when the server starts in the middle of a blood moon.
 - Start/update/dawn are skipped when nobody is online (`SkipEmptyServer=off` to always post).
 - Every successful post is logged as `[BloodMoonDiscord] Posted: ...`.
-- Nobody gets pinged unless `Mentions=true`, even if a message contains `@everyone`.
+- Nobody gets pinged unless `Mentions=true`, even if a message contains `@everyone`. A message that pings goes out as plain text, since Discord doesn't ping from an embed.
+- The shutdown post is sent straight away (it waits up to 5 seconds), since the server stops right after.
+- Without a `discord.txt` nothing is posted, in Discord or game chat.
 - Posting is asynchronous, so a slow or unreachable Discord never lags the server.
 - `discord.txt` holds a secret (anyone with the URL can post there): it's gitignored, and `build.ps1`
   leaves it out of **every** zip, including the private `-with-sound` one.
 
 **Changelog**
+- 1.3.0: players: several clips per kind (`bloodmoon2.ogg`, `bloodmoon-scary.wav`...) play one at random, and each kind has its own volume (`BloodMoonVolume`, `SpawnVolume`, `MorningVolume`, `NightVolume`). Server: horde recap in the dawn post (`Recap`), server start/stop and player join/leave posts, coloured embeds (`Embeds`), and the same messages in game chat (`InGameChat`, `InGameChatFor`). `bmdiscord recap`, and `bmdiscord test` covers the new messages.
 - 1.2.2: the morning and night bells replace the game's own dawn and dusk sounds instead of playing on top of them (only while that bell is on and its file is loaded). If `WarningHour` is at or after this world's dusk, the warning plays one hour before dusk instead of never, and the log and `bmsound` say so. `settings.txt` now lists `Spawn`, `Morning` and `Night`. `PUT_YOUR_SOUND_HERE.txt` names those clips too.
 - 1.2.1: morning and night no longer play together when a world finishes loading. The enter-world clip waits until the clock has settled. Dawn and dusk also play once per event day, and a second init keeps a single player or Discord object.
 - 1.2.0: optional clips for entering the world (`spawn`), dawn (`morning`), and dusk (`night`).
@@ -344,6 +382,8 @@ Setup: copy `discord.example.txt` to `discord.txt` **on the server**, paste the 
 ## Bait UI
 
 Optional client add-on for Zombie and Animal Bait: roster window (Home key), name tags with HP bars, party list, fed tags and an admin window. Players only; needs Bait 1.3.0+ on the server. See [BaitUI/README.md](BaitUI/README.md).
+
+**1.8.0:** thrall page (stats, perks, guard, patrol, scout, evolve, blood moon mode), name search, tooltips on every button, map markers, HP strip, compact party list, coloured rows, Dark/Light/High contrast themes and a taming helper. Parts need Bait 1.10.0. **1.7.0:** filter, sort and 8/12/16 rows per page, row details, Heal box and move arrows, team buttons, Bring all here, draggable window, group hotkeys (F6/F7/F8), a quick-actions wheel (middle mouse), low HP flash and sound, downed countdown tags, level-up glow and a kill feed. Parts need Bait 1.9.0. **1.6.6:** Auto (auto-revive) tick box per row.
 
 ## Gyro Safe
 
@@ -363,6 +403,9 @@ Companion for tehAon's Drone Automation. Each player chooses items their Auto-Lo
 - **Protected while baited (1.1.0):** a creature that is going for (or eating) the bait is only hurt by the player who threw it. Turrets (auto and mini) stop picking it as a target, and damage from traps, fire, other monsters and other defences is cancelled. Damage the thrower deals still counts, and so do hunger, falling and despawn, so nothing gets stuck alive. Once the bait is gone the creature is a normal target again.
 - **Limits:** turret bullets are credited to the turret's owner, so a stray bullet from the thrower's own turret can still hit a baited creature in its line of fire (the turret just won't aim at it). Hits from other players are not blocked (their client sends that damage to the server).
 - Tune the radius, time and eat ticks in `Config/items.xml`.
+- Taming, thralls and every `/thrall` command: see [Bait/README.md](Bait/README.md).
+- **1.10.0:** perks at levels 10/25/50, guard posts, patrol routes, blood moon mode, `/thrall top` leaderboard, `/thrall scout`, `/thrall evolve`, admin heal/revive/tp, and Discord posts for rare tames, level milestones and evolutions.
+- **1.9.0:** thralls by name, `/thrall here`, `where`, `move`, `deaths`, teams, auto-heal, a low bait warning, uneaten bait comes back to the thrower, new Lure Bait (zombies only), bait stacks to 100. **1.8.0:** per-thrall auto-revive with plain bait (`/thrall autorevive <n>`).
 
 Note: this changes animal AI for the whole server, but only things marked for animals pull them. Vanilla rocks and snowballs are still zombie-only, so only the bait draws animals.
 
@@ -389,13 +432,20 @@ The timer only counts while a player is near enough to keep the bag's area loade
 | `kbags` | admin | Show the current times |
 | `kbags reload` | admin | Re-read `settings.txt` and apply it. No server restart. |
 | `kbags password <word>` | admin | Set the password `kbclear` requires. Saved in `password.txt` on the server. |
-| `kbclear <password>` | admin, with the password | Remove dropped-item bags and loose items on the ground |
+| `kbclear <password> [r=<blocks>] [count]` | admin, with the password | Remove dropped-item bags and loose items on the ground. `r=50` only within 50 blocks of you (from the server console: of the only player online). `count` only counts. |
+| `/mybag` (chat) | every player | Your death backpacks: distance, direction, height and when you died, newest first. Works for bags in unloaded areas too. |
+
+**Owner-only window.** For the first `OwnerOnly` (default `15m`, real time) after a death, the backpack
+opens only for the player who died, and for their party (`OwnerOnlyParty=on`) and allies
+(`OwnerOnlyAllies=on`). Anyone else is told whose bag it is and how long is left. After that it opens for
+everyone, as in vanilla. `OwnerOnly=0` turns it off. `BagCommand` changes `/mybag`.
 
 `kbclear` does not remove death backpacks, zombie loot bags, or vehicle storage bags. It only removes things in areas that are loaded right then. Bags in unloaded areas stay until someone goes there.
 
 People already connected keep the old times until they rejoin. Anyone who connects after `kbags reload` gets the new times. There is no command that reloads a mod DLL. Replacing this mod's code still needs a server restart. `kbags reload` only refreshes the bag times.
 
 **Changelog**
+- 1.3.0: `/mybag` tells players where their death backpacks are. Death backpacks open only for their owner (and party/allies) for the first 15 minutes (`OwnerOnly`, `OwnerOnlyParty`, `OwnerOnlyAllies`). `kbclear` takes `r=<blocks>` to clear only near you, and `count` to only count. Now uses Harmony (the game's own `0_TFP_Harmony`), still server only.
 - 1.2.2: `kbclear` is admin-only (permission 0) and still asks for the password. It used to be open to every player with only the password guarding it. A server that set its own permission for `kbclear` in `serveradmin.xml` keeps that setting.
 - 1.2.1: works on game version 3.3 (3.3 removed the old backpack timer, which made the mod error at start-up). Times live in `settings.txt`; `kbags reload` applies them without a restart; `kbclear` removes dropped items in loaded areas.
 - 1.2.0: dropped items and vehicle storage bags last 24 hours (were permanent).
@@ -418,6 +468,10 @@ spawns BloodMoonCount 16    16 zombies per player at the next blood moon
 spawns MaxZombies 100       allow 100 zombies alive at once
 spawns NightDensity world   back to the world's own setting
 spawns refresh              apply density and respawn changes to the areas already loaded
+spawns HordeFrequency 200   wandering hordes twice as often
+spawns ramp NightDensity +1 every 7 max 8   one more per spot each week, up to 8
+spawns save hard            save every change as a preset
+spawns load chill           switch to a preset
 ```
 
 | Setting | Values | What it is |
@@ -427,6 +481,8 @@ spawns refresh              apply density and respawn changes to the areas alrea
 | `AnimalDayDensity`, `AnimalNightDensity`, `AnimalDayRespawn`, `AnimalNightRespawn` | as above | The same for animals. |
 | `BloodMoonCount` | 0-1000 | Zombies per player at a blood moon (the game offers 4-64). |
 | `MaxZombies`, `MaxAnimals` | 0-1000 | Most zombies / animals alive in the whole world at once. |
+| `HordeFrequency` | 0-1000% | How often wandering hordes come. 100% is vanilla (one every 12-24 game hours), 200% twice as often, 0% none. |
+| `HordeSize` | 0-1000% | How many zombies each wandering horde has, as a percentage of vanilla. |
 
 These are the same values as the Sandbox Options you pick when making a world (`MaxZombies` and
 `MaxAnimals` are the server's `MaxSpawnedZombies` / `MaxSpawnedAnimals`). Spawn Tuner sets them on
@@ -440,10 +496,20 @@ top of the world's options, and a setting you never change keeps the world's val
 - High numbers cost server performance. `MaxZombies` is the cap that protects the server: density
   can't push past it.
 - Edited `spawns.txt` by hand? Type `spawns reload`.
+- `spawns` also shows how many zombies and animals are alive against the caps, and when the next
+  wandering horde is due. `HordeFrequency` and `HordeSize` apply from the next wandering horde.
+- **Ramps** move a setting as game days pass: `spawns ramp NightDensity +1 every 7 max 8` adds 1 on
+  day 8, 2 on day 15 and so on, never past 8, starting from the setting's value (or the world's). Use a
+  minus to go down. Saved as `Ramp.NightDensity = ...` in `spawns.txt`; `spawns ramp <setting> off` stops it.
+  Density and respawn need a number to start from (not `none`/`default`).
+- **Presets** are whole sets of settings in the `presets` folder. `spawns save <name>` saves the current
+  changes, `spawns load <name>` switches to one (everything not in it goes back to the world's value),
+  `spawns presets` lists them. `chill` and `hard` come with the mod.
 
 **Server only**: spawning is decided by the server, so players install nothing.
 
 **Changelog**
+- 1.1.0: wandering hordes (`HordeFrequency`, `HordeSize`), presets (`spawns save/load/presets`, ships `chill` and `hard`), ramps by game day (`spawns ramp`), and `spawns` shows zombies/animals alive and the next wandering horde.
 - 1.0.0: first version.
 
 ---
@@ -541,3 +607,15 @@ needs nothing.
 
 **Changelog**
 - 1.0.0: first version.
+
+## K9 Death Sound
+
+Wolves, dire wolves, coyotes and zombie dogs honk a bicycle horn when they die, and make a random silly
+noise from the game when they're hurt. Install it on the server and everyone hears the horn. Players who
+also install it and drop `k9death.ogg` / `.wav` / `.mp3` in its folder hear their own clip instead
+(EAC off). `settings.txt` (each player's own copy): `Volume`, `MaxDistance`.
+
+This folder is the built mod as shipped; its source isn't in this repository.
+
+**Changelog**
+- 1.1.0: the version in this folder (earlier history wasn't recorded).

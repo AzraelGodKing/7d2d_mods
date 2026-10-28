@@ -14,6 +14,8 @@
 #   {day}      the blood moon's day number
 #   {days}     days left until the blood moon (reminders and countdown)
 #   {players}  names of who's online       {count}  how many are online
+#   {player}   who joined or left (join/leave messages)
+#   {recap}    the horde recap (dawn message)
 #   \n         a new line
 # Discord formatting works too: **bold**, *italics*, emoji.
 
@@ -62,10 +64,40 @@ MsgUpdate=🩸 The Blood Moon rages on. Still standing: {players}
 End=on
 MsgEnd=🌅 Dawn! Blood Moon day {day} survived. Online: {players}
 
+# Add a horde recap to the dawn post: zombies killed, kills per player, and who died.
+# Put {recap} in MsgEnd to choose where it goes; otherwise it's added at the end.
+Recap=on
+
+
+# ---- SERVER EVENTS (off unless you turn them on) ----------------------------------------
+# {player} is who joined or left; {count} and {players} are who's online now.
+ServerStart=off
+MsgServerStart=🟢 The server is up.
+ServerStop=off
+MsgServerStop=🔴 The server is shutting down.
+PlayerJoin=off
+MsgJoin=➡️ **{player}** joined. Online: {count}
+PlayerLeave=off
+MsgLeave=⬅️ **{player}** left. Online: {count}
+
+
+# ---- IN-GAME CHAT ----------------------------------------------------------------------
+# Also show messages in the game's chat, so players without Discord see them.
+# Works even with no webhook. Emoji and **bold** are left out in game chat.
+# InGameChatFor: any of  reminder, countdown, start, update, end, serverstart, serverstop,
+#                join, leave  (comma separated), or  all
+InGameChat=on
+InGameChatFor=reminder, countdown, start, end
+
 
 # ---- OTHER ------------------------------------------------------------------------------
 # Skip the start / during / dawn posts when nobody is online.
 SkipEmptyServer=on
 
+# Coloured Discord embeds (red for the horde, orange for reminders, gold at dawn...).
+# off = plain text messages, as before 1.3.0.
+Embeds=on
+
 # Allow @everyone / @role pings written in the messages above (off = never ping anyone).
 Mentions=off
+# A message that pings is sent as plain text (Discord doesn't ping from an embed).

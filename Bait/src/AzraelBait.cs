@@ -157,4 +157,10 @@ public static class BaitLifetimePatch
         }
         catch { }
     }
+
+    static void Postfix(EntityItem __instance)
+    {
+        try { if (!__instance.isEntityRemote && __instance.distractionLifetime <= 0) Thralls.CheckUneatenBait(__instance); }
+        catch { }
+    }
 }

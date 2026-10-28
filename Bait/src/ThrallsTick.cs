@@ -19,8 +19,8 @@ public static partial class Thralls
         try
         {
             ClearBodies(world, now);
-            if (now >= nextTaunt) { nextTaunt = now + 1f; ChestScan(world); ChestTick(world); RemoveStaleCopies(world); Taunt(world, now); VehicleWatch(world); UiPush(); }
-            if (now >= nextLook) { nextLook = now + 0.5f; Calm(); LookHp(world, now); }
+            if (now >= nextTaunt) { nextTaunt = now + 1f; ChestScan(world); ChestTick(world); RemoveStaleCopies(world); Taunt(world, now); VehicleWatch(world); GuardTick(world, now); ScoutTick(world, now); WebTick(); UiPush(); }
+            if (now >= nextLook) { nextLook = now + 0.5f; Calm(); LookHp(world, now); TamingHelperTick(world); }
             if (now >= nextSlow) { nextSlow = now + 5f; Slow(world, now); }
         }
         catch (Exception e) { Log.Warning("[Bait] tick: " + e.Message); }
@@ -32,8 +32,9 @@ public static partial class Thralls
         foreach (var lt in new List<LiveThrall>(Live.Values))
         {
             var th = world.GetEntity(lt.EntityId) as EntityAlive;
-            if (th == null || th.IsDead() || th is EntityAnimal || lt.Mode >= 2) continue;
-            float r = BaitConfig.TauntRadius;
+            int perk = string.IsNullOrEmpty(lt.Perks) ? 0 : PerkCount(lt.EntityId, 'A');   // the taunt perk: every zombie near it, animals too, wider
+            if (th == null || th.IsDead() || (th is EntityAnimal && perk == 0) || lt.Mode >= 2) continue;
+            float r = BaitConfig.TauntRadius * (1f + 0.5f * perk);
             world.GetEntitiesInBounds(typeof(EntityEnemy), new Bounds(th.position, new Vector3(r * 2f, 8f, r * 2f)), tmp);
             foreach (var o in tmp)
             {
@@ -42,7 +43,7 @@ public static partial class Thralls
                 if ((z.entityFlags & EntityFlags.Zombie) == 0) continue;
                 bool chosen;
                 if (!tauntRoll.TryGetValue(z.entityId, out chosen)) { chosen = UnityEngine.Random.value < BaitConfig.TauntShare; tauntRoll[z.entityId] = chosen; }
-                if (!chosen) continue;
+                if (!chosen && perk == 0) continue;
                 TeachFightBack(z);
                 TauntedUntil[z.entityId] = now + BaitConfig.TauntSeconds;
                 var cur = z.GetAttackTarget();
@@ -104,7 +105,7 @@ public static partial class Thralls
             foreach (var rec in kv.Value)
             {
                 if (!rec.Active || liveByRecord.ContainsKey(rec.Id)) continue;
-                if (rec.ReviveAt > NowSec()) continue;
+                if (rec.ReviveAt > NowSec() && !(has && TryAutoRevive(rec, owner, null))) continue;
                 if (!has && !rec.Tether) continue;
                 if (rec.Tether && !ChunkLoaded(new Vector3(rec.TX, rec.TY, rec.TZ))) continue;
                 float at;
@@ -115,6 +116,9 @@ public static partial class Thralls
         }
 
         HealthAlerts(world);
+        AutoHealTick(world, online, now);
+        BloodMoonTick(world, online, now);
+        LowBaitTick(online);
         foreach (var kv in online) { ApplyPerks(kv.Value, PowerOf(kv.Key)); ApplyPack(kv.Value, kv.Key); }
 
         if (tauntRoll.Count > 400 || feeds.Count > 200 || counted.Count > 400)
@@ -233,6 +237,7 @@ public static partial class Thralls
         if (arg == "all") { l.AddRange(list); return l; }
         int n;
         if (Index(arg, list.Count, out n)) l.Add(list[n]);
+        else if ((n = IndexByName(arg, list)) >= 0) l.Add(list[n]);
         return l;
     }
 
@@ -266,8 +271,9 @@ public static partial class Thralls
                         var r = list[i];
                         if (IsAnimalClass(r.ClassName) != wantAnimals) continue;
                         if (!any) { Tell(me, wantAnimals ? "Animals:" : "Zombies:"); any = true; }
-                        string st = r.Tether ? "[tethered r" + F(r.TR) + "]" : r.Active ? "[active]" : "[inactive]";
-                        Tell(me, "  " + (i + 1) + ". " + Label(r) + " " + st + (liveByRecord.ContainsKey(r.Id) ? " " + HpText(r) : ""));
+                        string st = r.Patrol ? "[patrol, " + PatrolPoints(r).Count + " points]" : r.Guard ? "[guard r" + F(r.TR) + "]" : r.Tether ? "[tethered r" + F(r.TR) + "]" : r.Active ? "[active]" : "[inactive]";
+                        if (!string.IsNullOrEmpty(r.Perks)) st += " [" + PerkText(r.Perks) + "]";
+                        Tell(me, "  " + (i + 1) + ". " + Label(r) + " " + st + (r.AutoRevive ? " [auto-revive]" : "") + (r.AutoHeal ? " [auto-heal]" : "") + (liveByRecord.ContainsKey(r.Id) ? " " + HpText(r) : ""));
                     }
                 }
                 Tell(me, "Thrall power " + PowerOf(key) + (PackSlots(key) > 0 ? ", pack +" + PackSlots(key) + " slots" : "") + ", holding " + list.Count + "/" + MaxOwnedFor(key) + ".");
@@ -308,7 +314,7 @@ public static partial class Thralls
                 else if (what == "tethered") { t = list.FindAll(r => r.Tether); none = "Nothing is tethered."; }
                 else t = Pick(arg, list);
                 if (t.Count == 0) { Tell(me, none ?? "Usage: /thrall stow [number|all|active|tethered]"); break; }
-                foreach (var r in t) { r.Active = false; r.Tether = false; DespawnLive(r.Id); }
+                foreach (var r in t) { r.Active = false; r.Tether = false; ClearPost(r); DespawnLive(r.Id); }
                 dirty = true;
                 Tell(me, t.Count == 1 ? Label(t[0]) + " is now inactive." : t.Count + " thralls are now inactive" + (what == "active" ? " (the active ones)." : what == "tethered" ? " (the tethered ones)." : "."));
                 break;
@@ -324,6 +330,7 @@ public static partial class Thralls
                 foreach (var r in t)
                 {
                     r.Tether = true; r.Active = true; r.TX = owner.position.x; r.TY = owner.position.y; r.TZ = owner.position.z; r.TR = radius;
+                    ClearPost(r);
                     DespawnLive(r.Id); nextSpawn.Remove(r.Id);
                 }
                 dirty = true; nextSlow = 0f;
@@ -334,7 +341,7 @@ public static partial class Thralls
             {
                 var t = Pick(arg, list);
                 if (t.Count == 0) { Tell(me, "Usage: /thrall untether <number|all>"); break; }
-                foreach (var r in t) { if (!r.Tether) continue; r.Tether = false; DespawnLive(r.Id); nextSpawn.Remove(r.Id); }
+                foreach (var r in t) { if (!r.Tether) continue; r.Tether = false; ClearPost(r); DespawnLive(r.Id); nextSpawn.Remove(r.Id); }
                 dirty = true; nextSlow = 0f;
                 Tell(me, "Untethered. They follow you again.");
                 break;
@@ -391,7 +398,7 @@ public static partial class Thralls
                 if (t.Count == 0 || mode < 0) { Tell(me, "Usage: /thrall mode <number|all> aggressive|defensive|passive|invulnerable"); break; }
                 foreach (var r in t)
                 {
-                    r.Mode = mode;
+                    r.Mode = mode; r.BmPrevMode = -1;
                     int lid; LiveThrall l;
                     if (liveByRecord.TryGetValue(r.Id, out lid) && Live.TryGetValue(lid, out l)) l.Mode = mode;
                 }
@@ -424,11 +431,31 @@ public static partial class Thralls
                 Tell(me, Label(t[0]) + " is back on its feet.");
                 break;
             }
+            case "autorevive":
+            case "autoheal":
+                ToggleCommand(me, verb, arg, arg2, list, verb == "autoheal");
+                break;
+            case "here": HereCommand(me, owner, arg, list); break;
+            case "where": WhereCommand(me, owner, arg, list); break;
+            case "team":
+            case "teams": TeamCommand(me, key, a, list); break;
+            case "move": MoveCommand(me, arg, arg2, list); break;
+            case "deaths": DeathsCommand(me, key); break;
+            case "perk":
+            case "perks": PerkCommand(me, owner, arg, arg2, list); break;
+            case "guard": GuardCommand(me, owner, arg, arg2, list); break;
+            case "patrol": PatrolCommand(me, owner, arg, arg2, list); break;
+            case "bloodmoon":
+            case "bm": BloodMoonCommand(me, key, arg); break;
+            case "top": TopCommand(me, arg); break;
+            case "scout": ScoutCommand(me, owner, arg, list); break;
+            case "evolve": EvolveCommand(me, owner, arg, list); break;
             case "admin":
             {
                 if (!IsAdmin(me)) { Tell(me, "Admins only."); break; }
                 string sub = arg ?? "who";
-                string usage = "/thrall admin who | list <player> | release <player> <n> | limit <player> <owned> <active> | give <from> <to>";
+                string usage = "/thrall admin who | list <player> | release <player> <n> | limit <player> <owned> <active> | give <from> <to> | heal|revive|tp <player> <n|all>";
+                if (AdminCare(me, sub, a)) break;
                 if (sub == "who")
                 {
                     foreach (var kv in roster) Tell(me, OwnerLabel(kv.Key) + ": " + kv.Value.Count + " thralls");
@@ -522,7 +549,7 @@ public static partial class Thralls
                 break;
             }
             default:
-                Tell(me, "/thrall list | hp | name <n> <name> | call <n> | stow [n|all|active|tethered] | stay/follow <n|all> | mode <n|all> aggressive|defensive|passive|invulnerable | heal <n> | revive <n> | tether <n|all> [radius] | untether <n|all> | release <n> | kill <n|all> | exclude list|add|remove <class> | config [name value] | admin ...");
+                Tell(me, "/thrall list | hp | name <n> <name> | call <n> | stow [n|all|active|tethered] | stay/follow <n|all> | mode <n|all> aggressive|defensive|passive|invulnerable | heal <n> | revive <n> | autorevive/autoheal <n|all> [on|off] | here [n] | where [n] | team list|save|call|delete | move <n> <pos|top|up|down> | deaths | perk <n> [perk] | guard <n|all> [radius] | patrol <n> add|start|stop|clear | bloodmoon off|call|fight|both | top [kills] | scout <n> | evolve <n> | tether <n|all> [radius] | untether <n|all> | release <n> | kill <n|all> | exclude list|add|remove <class> | config [name value] | admin ...");
                 break;
         }
         Flush();
