@@ -115,6 +115,8 @@ public static partial class Thralls
         }
 
         HealthAlerts(world);
+        AutoHealTick(world, online, now);
+        LowBaitTick(online);
         foreach (var kv in online) { ApplyPerks(kv.Value, PowerOf(kv.Key)); ApplyPack(kv.Value, kv.Key); }
 
         if (tauntRoll.Count > 400 || feeds.Count > 200 || counted.Count > 400)
@@ -233,6 +235,7 @@ public static partial class Thralls
         if (arg == "all") { l.AddRange(list); return l; }
         int n;
         if (Index(arg, list.Count, out n)) l.Add(list[n]);
+        else if ((n = IndexByName(arg, list)) >= 0) l.Add(list[n]);
         return l;
     }
 
@@ -267,7 +270,7 @@ public static partial class Thralls
                         if (IsAnimalClass(r.ClassName) != wantAnimals) continue;
                         if (!any) { Tell(me, wantAnimals ? "Animals:" : "Zombies:"); any = true; }
                         string st = r.Tether ? "[tethered r" + F(r.TR) + "]" : r.Active ? "[active]" : "[inactive]";
-                        Tell(me, "  " + (i + 1) + ". " + Label(r) + " " + st + (r.AutoRevive ? " [auto-revive]" : "") + (liveByRecord.ContainsKey(r.Id) ? " " + HpText(r) : ""));
+                        Tell(me, "  " + (i + 1) + ". " + Label(r) + " " + st + (r.AutoRevive ? " [auto-revive]" : "") + (r.AutoHeal ? " [auto-heal]" : "") + (liveByRecord.ContainsKey(r.Id) ? " " + HpText(r) : ""));
                     }
                 }
                 Tell(me, "Thrall power " + PowerOf(key) + (PackSlots(key) > 0 ? ", pack +" + PackSlots(key) + " slots" : "") + ", holding " + list.Count + "/" + MaxOwnedFor(key) + ".");
@@ -425,23 +428,15 @@ public static partial class Thralls
                 break;
             }
             case "autorevive":
-            {
-                var t = Pick(arg, list);
-                if (t.Count == 0) { Tell(me, "Usage: /thrall autorevive <number|all> [on|off]   (a downed thrall comes straight back for " + AutoReviveCostText() + " from your inventory)"); break; }
-                if (!BaitConfig.AutoRevive) { Tell(me, "Auto-revive is turned off on this server."); break; }
-                string onoff = arg2 != null ? arg2.ToLowerInvariant() : null;
-                bool? want = onoff == "on" || onoff == "1" || onoff == "true" ? true : onoff == "off" || onoff == "0" || onoff == "false" ? (bool?)false : null;
-                if (want == null && arg == "all") want = !t.TrueForAll(r => r.AutoRevive);   // all: on unless every one already has it
-                foreach (var r in t)
-                {
-                    r.AutoRevive = want ?? !r.AutoRevive;
-                    if (r.AutoRevive && r.ReviveAt > NowSec()) TryAutoRevive(r, owner, null);
-                }
-                dirty = true;
-                if (t.Count == 1) Tell(me, "Auto-revive " + (t[0].AutoRevive ? "on" : "off") + " for " + Label(t[0]) + (t[0].AutoRevive ? " (" + AutoReviveCostText() + " each time it falls)." : "."));
-                else Tell(me, "Auto-revive " + (want == true ? "on" : "off") + " for " + t.Count + " thralls" + (want == true ? " (" + AutoReviveCostText() + " each time one falls)." : "."));
+            case "autoheal":
+                ToggleCommand(me, verb, arg, arg2, list, verb == "autoheal");
                 break;
-            }
+            case "here": HereCommand(me, owner, arg, list); break;
+            case "where": WhereCommand(me, owner, arg, list); break;
+            case "team":
+            case "teams": TeamCommand(me, key, a, list); break;
+            case "move": MoveCommand(me, arg, arg2, list); break;
+            case "deaths": DeathsCommand(me, key); break;
             case "admin":
             {
                 if (!IsAdmin(me)) { Tell(me, "Admins only."); break; }
@@ -540,7 +535,7 @@ public static partial class Thralls
                 break;
             }
             default:
-                Tell(me, "/thrall list | hp | name <n> <name> | call <n> | stow [n|all|active|tethered] | stay/follow <n|all> | mode <n|all> aggressive|defensive|passive|invulnerable | heal <n> | revive <n> | autorevive <n|all> [on|off] | tether <n|all> [radius] | untether <n|all> | release <n> | kill <n|all> | exclude list|add|remove <class> | config [name value] | admin ...");
+                Tell(me, "/thrall list | hp | name <n> <name> | call <n> | stow [n|all|active|tethered] | stay/follow <n|all> | mode <n|all> aggressive|defensive|passive|invulnerable | heal <n> | revive <n> | autorevive/autoheal <n|all> [on|off] | here [n] | where [n] | team list|save|call|delete | move <n> <pos|top|up|down> | deaths | tether <n|all> [radius] | untether <n|all> | release <n> | kill <n|all> | exclude list|add|remove <class> | config [name value] | admin ...");
                 break;
         }
         Flush();

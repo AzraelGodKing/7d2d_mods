@@ -65,10 +65,20 @@ public class BaitHud : MonoBehaviour
             var ui = LocalPlayerUI.GetUIForPrimaryPlayer();
             if (ui == null || ui.windowManager == null) return;
             var wm = ui.windowManager;
-            if (UiSettings.Key == KeyCode.None || !Input.GetKeyDown(UiSettings.Key)) return;
-            if (wm.IsInputActive()) return;
+            if (wm.IsInputActive()) { wheelOpen = false; return; }
             if (GameManager.Instance != null && GameManager.Instance.IsPaused()) return;
-            if (p.IsDead()) return;
+            if (p.IsDead()) { wheelOpen = false; return; }
+            bool free = !wm.IsCursorWindowOpen() && !wm.IsModalWindowOpen();   // playing, no window up
+            if (free && BaitData.HasData && !UiSettings.CaptureKey && UiSettings.CaptureGroup == 0 && !UiSettings.CaptureWheel)
+            {
+                // group hotkeys: follow all, stay all, bring all here
+                if (UiSettings.FollowKey != KeyCode.None && Input.GetKeyDown(UiSettings.FollowKey)) BaitData.Cmd("/thrall follow all");
+                if (UiSettings.StayKey != KeyCode.None && Input.GetKeyDown(UiSettings.StayKey)) BaitData.Cmd("/thrall stay all");
+                if (UiSettings.HereKey != KeyCode.None && Input.GetKeyDown(UiSettings.HereKey) && BaitData.ServerHasQol) BaitData.Cmd("/thrall here");
+                WheelUpdate();
+            }
+            else wheelOpen = false;
+            if (UiSettings.Key == KeyCode.None || !Input.GetKeyDown(UiSettings.Key)) return;
             BaitData.TryOpenRoster();
         }
         catch (Exception e) { Log.Warning("[BaitUI] update: " + e.Message); }
@@ -99,6 +109,21 @@ public class BaitHud : MonoBehaviour
                 if (ui != null && ui.windowManager != null && !ui.windowManager.IsFullHUDDisabled())
                     edit = ui.windowManager.IsCursorWindowOpen() || ui.windowManager.IsModalWindowOpen();
             }
+            if ((UiSettings.CaptureGroup > 0 || UiSettings.CaptureWheel) && Event.current.type == EventType.KeyDown && Event.current.keyCode != KeyCode.None)
+            {
+                var pressed = Event.current.keyCode;
+                var k = pressed == KeyCode.Delete || pressed == KeyCode.Backspace ? KeyCode.None : pressed;
+                if (UiSettings.CaptureWheel) { UiSettings.CaptureWheel = false; if (pressed != KeyCode.Escape) UiSettings.WheelKey = k; }
+                else
+                {
+                    // one click sets all three in turn: follow, stay, here
+                    if (pressed != KeyCode.Escape) UiSettings.SetGroupKey(UiSettings.CaptureGroup, k);
+                    UiSettings.CaptureGroup = pressed == KeyCode.Escape || UiSettings.CaptureGroup >= 3 ? 0 : UiSettings.CaptureGroup + 1;
+                }
+                UiSettings.Save(); BaitData.SetStatus("Key saved.");
+                Event.current.Use();
+                return;
+            }
             if (UiSettings.CaptureKey && Event.current.type == EventType.KeyDown && Event.current.keyCode != KeyCode.None)
             {
                 var pressed = Event.current.keyCode;
@@ -122,7 +147,22 @@ public class BaitHud : MonoBehaviour
                 foreach (var t in BaitData.Thralls)
                 {
                     var e = BaitData.LiveThrall(t);
-                    if (hud && UiSettings.Nameplates && e != null && t.Active) Plate(cam, p, e, Title(t), HpFrac(e), t.Mode == 3 ? InvColor : UiSettings.BarColorFor(t, HpColor(HpFrac(e))), t.Mode == 3 ? (t.Stay ? "invulnerable, hold" : "invulnerable") : (t.Stay ? "hold" : null), 45f, UiSettings.NameColorFor(t));
+                    string tk = UiSettings.ThrallKey(t);
+                    if (e != null) lastPos[tk] = e.position + Vector3.up * (e.height + 0.35f);
+                    if (hud && UiSettings.Nameplates && e != null && t.Active)
+                    {
+                        float hf = HpFrac(e);
+                        Color nameCol = UiSettings.NameColorFor(t);
+                        string title = Title(t);
+                        float lv;
+                        if (UiSettings.LevelGlow && BaitData.LevelUpAt.TryGetValue(tk, out lv) && Time.time - lv < 4f)
+                        { nameCol = Color.Lerp(Gold, Color.white, Mathf.PingPong(Time.time * 3f, 1f) * 0.5f); title = "Lv " + t.Level + "!  " + t.Label; }
+                        bool low = UiSettings.LowHpAlert && t.Mode != 3 && hf < 0.25f;
+                        if (low && Mathf.Repeat(Time.time, 0.6f) < 0.3f) nameCol = Color.red;
+                        LowHpSound(tk, hf, t.Mode == 3);
+                        Plate(cam, p, e, title, hf, t.Mode == 3 ? InvColor : low && Mathf.Repeat(Time.time, 0.6f) < 0.3f ? Color.red : UiSettings.BarColorFor(t, HpColor(hf)), t.Mode == 3 ? (t.Stay ? "invulnerable, hold" : "invulnerable") : (t.Stay ? "hold" : null), 45f, nameCol);
+                    }
+                    else if (hud && UiSettings.Nameplates && UiSettings.DownedTags && t.DownLeft > 0) DownedTag(cam, p, t, tk);
                     if (UiSettings.Party && t.Active)
                     {
                         float s = Sc, y = PartyRect.y + 22 * s + row * 36 * s;
@@ -158,6 +198,8 @@ public class BaitHud : MonoBehaviour
                     Plate(cam, p, e, label, HpFrac(e), UiSettings.BarColor(HpFrac(e), HpColor(HpFrac(e))), null, 45f);
                 }
             }
+            if (hud && UiSettings.KillFeed) DrawKillFeed();
+            if (hud && wheelOpen) DrawWheel();
             if (hud && UiSettings.Feed)
             {
                 foreach (var kv in BaitData.Feeds)
@@ -204,6 +246,107 @@ public class BaitHud : MonoBehaviour
             ev.Use();
         }
         else if (dragging && ev.type == EventType.MouseUp) { dragging = false; UiSettings.Save(); ev.Use(); }
+    }
+
+    static readonly Color Gold = new Color(1f, 0.82f, 0.2f);
+    readonly Dictionary<string, Vector3> lastPos = new Dictionary<string, Vector3>();   // where each thrall's tag was last drawn
+    readonly HashSet<string> lowWarned = new HashSet<string>();
+
+    public static string Clock(long secs) { return (secs / 60) + ":" + (secs % 60).ToString("00"); }
+
+    // a short sound once when a thrall drops under 25%; again only after it was back above 40%
+    void LowHpSound(string key, float frac, bool invulnerable)
+    {
+        if (invulnerable || frac >= 0.4f) { lowWarned.Remove(key); return; }
+        if (frac >= 0.25f || !lowWarned.Add(key) || !UiSettings.LowHpAlert || !UiSettings.LowHpSound) return;
+        try { Audio.Manager.PlayInsidePlayerHead("ui_denied"); } catch { }
+    }
+
+    // A downed thrall has no entity, so its tag stays where it was last seen, grey, with the time until it comes back.
+    void DownedTag(Camera cam, EntityPlayerLocal p, UiThrall t, string key)
+    {
+        Vector3 at;
+        if (!lastPos.TryGetValue(key, out at) || (at - p.position).magnitude > 60f) return;
+        Vector3 sp = cam.WorldToScreenPoint(at - Origin.position);
+        if (sp.z <= 0.1f) return;
+        float s = Sc, x = sp.x, y = Screen.height - sp.y;
+        Shadow(new Rect(x - 140 * s, y - 20 * s, 280 * s, 18 * s), Title(t) + "  back in " + Clock(t.DownLeft) + (t.AutoRevive ? " (auto-revive)" : ""), label, new Color(0.65f, 0.65f, 0.65f));
+    }
+
+    // The last few kills of your thralls, on the right, fading out after 6 s.
+    void DrawKillFeed()
+    {
+        var kf = BaitData.KillFeed;
+        kf.RemoveAll(k => Time.time - k.Value > 6f);
+        float s = Sc, w = 420 * s, y0 = Screen.height * 0.32f;
+        for (int i = 0; i < kf.Count; i++)
+        {
+            float age = Time.time - kf[i].Value;
+            var c = new Color(1f, 0.85f, 0.55f, age < 5f ? 1f : 6f - age);
+            Shadow(new Rect(Screen.width - w - 12 * s, y0 + i * 20 * s, w, 20 * s), kf[i].Key, small, c);
+        }
+    }
+
+    // ---- quick-actions wheel: hold the wheel key, move the mouse (or scroll, or press 1-5) towards an action, let go.
+    static readonly string[] WheelNames = { "Follow all", "Stay all", "Bring all here", "Stow active", "Call team" };
+    bool wheelOpen;
+    int wheelSel = -1;
+    Vector2 wheelAim;
+    static bool axisBroken;
+
+    void WheelUpdate()
+    {
+        var k = UiSettings.WheelKey;
+        if (k == KeyCode.None) { wheelOpen = false; return; }
+        if (Input.GetKeyDown(k)) { wheelOpen = true; wheelSel = -1; wheelAim = Vector2.zero; }
+        if (!wheelOpen) return;
+        if (Input.GetKey(k))
+        {
+            if (!axisBroken)
+            {
+                try { wheelAim += new Vector2(Input.GetAxisRaw("Mouse X"), Input.GetAxisRaw("Mouse Y")); }
+                catch { axisBroken = true; }
+                if (wheelAim.magnitude > 6f) wheelAim = wheelAim.normalized * 6f;
+                if (wheelAim.magnitude > 1.5f)
+                {
+                    float ang = Mathf.Atan2(wheelAim.x, wheelAim.y) * Mathf.Rad2Deg;   // 0 = up, clockwise
+                    if (ang < 0f) ang += 360f;
+                    wheelSel = Mathf.RoundToInt(ang / 72f) % 5;
+                }
+            }
+            float sc = Input.mouseScrollDelta.y;
+            if (sc > 0.1f) wheelSel = (wheelSel + 4) % 5; else if (sc < -0.1f) wheelSel = (wheelSel + 1) % 5;
+            for (int i = 0; i < 5; i++) if (Input.GetKeyDown(KeyCode.Alpha1 + i)) wheelSel = i;
+            return;
+        }
+        wheelOpen = false;   // released: run the chosen action
+        switch (wheelSel)
+        {
+            case 0: BaitData.Cmd("/thrall follow all"); break;
+            case 1: BaitData.Cmd("/thrall stay all"); break;
+            case 2: if (BaitData.ServerHasQol) BaitData.Cmd("/thrall here"); break;
+            case 3: BaitData.Cmd("/thrall stow active"); break;
+            case 4: if (BaitData.ServerHasQol && BaitData.Teams.Count > 0) BaitData.Cmd("/thrall team call " + BaitData.Teams[Mathf.Clamp(BaitData.TeamSel, 0, BaitData.Teams.Count - 1)].Key); break;
+        }
+    }
+
+    void DrawWheel()
+    {
+        float s = Sc, cx = Screen.width / 2f, cy = Screen.height / 2f, r = 110 * s;
+        var old = GUI.color;
+        GUI.color = new Color(0, 0, 0, 0.45f);
+        GUI.DrawTexture(new Rect(cx - r - 90 * s, cy - r - 30 * s, 2 * r + 180 * s, 2 * r + 60 * s), Texture2D.whiteTexture);
+        GUI.color = old;
+        for (int i = 0; i < 5; i++)
+        {
+            float a = i * 72f * Mathf.Deg2Rad;
+            float x = cx + Mathf.Sin(a) * r, y = cy - Mathf.Cos(a) * r;
+            string n = (i + 1) + ". " + WheelNames[i];
+            if (i == 4) n = "5. Call team" + (BaitData.Teams.Count > 0 ? " " + BaitData.Teams[Mathf.Clamp(BaitData.TeamSel, 0, BaitData.Teams.Count - 1)].Key : " (none)");
+            if ((i == 2 || i == 4) && !BaitData.ServerHasQol) n = (i + 1) + ". (server too old)";
+            Shadow(new Rect(x - 90 * s, y - 11 * s, 180 * s, 22 * s), n, label, i == wheelSel ? Gold : Color.white);
+        }
+        Shadow(new Rect(cx - 90 * s, cy - 11 * s, 180 * s, 22 * s), wheelSel < 0 ? "move the mouse, scroll or 1-5" : "let go to run", label, new Color(0.8f, 0.8f, 0.8f));
     }
 
     static string Title(UiThrall t) { return (t.Level > 0 ? "Lv" + t.Level + " " : "") + t.Label; }
@@ -292,6 +435,8 @@ public class ConsoleCmdBaitUI : ConsoleCmdAbstract
                "baitui reset                - party list back to the default spot and size\n" +
                "baitui key <key>             - roster window hotkey (default Home), 'none' to disable\n" +
                "baitui open                  - open or close the roster window\n" +
+               "baitui followkey|staykey|herekey <key>  - group hotkeys (default F6, F7, F8), 'none' to disable\n" +
+               "baitui wheelkey <key>        - hold for the quick-actions wheel (default Mouse2, the middle button)\n" +
                "baitui version               - this Bait UI's version and the server's Bait version";
     }
 
@@ -326,6 +471,12 @@ public class ConsoleCmdBaitUI : ConsoleCmdAbstract
                 float sc;
                 if (!float.TryParse(p[1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out sc)) { con.Output("baitui scale <number>, e.g. 1.6 (default), 2.2 for bigger"); return; }
                 UiSettings.Scale = Mathf.Clamp(sc, 0.5f, 4f);
+            }
+            else if (what == "followkey" || what == "staykey" || what == "herekey" || what == "wheelkey")
+            {
+                KeyCode k = KeyCode.None;
+                if (v != "none" && !UiSettings.TryParseKey(p[1], out k)) { con.Output("'" + p[1] + "' is not a key name I know. Examples: F6, G, Keypad5, Mouse2."); return; }
+                if (what == "followkey") UiSettings.FollowKey = k; else if (what == "staykey") UiSettings.StayKey = k; else if (what == "herekey") UiSettings.HereKey = k; else UiSettings.WheelKey = k;
             }
             else if (what == "key")
             {
