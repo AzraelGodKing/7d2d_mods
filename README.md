@@ -14,10 +14,10 @@ Small mods for 7 Days to Die, built and tested on **V3.3**.
 | [No Ding Sound](#no-ding-sound) | XML only | Server only | 1.0.0 |
 | [Keep Backpacks](#keep-backpacks) | Code | Server only | 1.2.2 |
 | [Blood Moon Sound](#blood-moon-sound) | Code (Harmony) | Players (own sound); server optional (sound for everyone, Discord posts) | 1.2.2 |
-| [Zombie and Animal Bait](#zombie-and-animal-bait) | Code (Harmony) + XML | Server only | 1.9.0 |
+| [Zombie and Animal Bait](#zombie-and-animal-bait) | Code (Harmony) + XML | Server only | 1.10.0 |
 | [Gyro Safe](#gyro-safe) | Code (Harmony) | Server and players who fly | 1.0.0 |
 | [Drone Loot Filter](#drone-loot-filter) | Code (Harmony), needs Drone Automation | Server only | 1.2.0 |
-| [Bait UI](#bait-ui) | Code + UI | Players only (optional, needs Bait on the server) | 1.7.0 |
+| [Bait UI](#bait-ui) | Code + UI | Players only (optional, needs Bait on the server) | 1.8.0 |
 | [Spawn Tuner](#spawn-tuner) | Code (Harmony) | Server only | 1.0.0 |
 | [Slot Lock Fix](#slot-lock-fix) | Code (Harmony) | Players only | 1.0.0 |
 
@@ -345,7 +345,7 @@ Setup: copy `discord.example.txt` to `discord.txt` **on the server**, paste the 
 
 Optional client add-on for Zombie and Animal Bait: roster window (Home key), name tags with HP bars, party list, fed tags and an admin window. Players only; needs Bait 1.3.0+ on the server. See [BaitUI/README.md](BaitUI/README.md).
 
-**1.7.0:** filter, sort and 8/12/16 rows per page, row details, Heal box and move arrows, team buttons, Bring all here, draggable window, group hotkeys (F6/F7/F8), a quick-actions wheel (middle mouse), low HP flash and sound, downed countdown tags, level-up glow and a kill feed. Parts need Bait 1.9.0. **1.6.6:** Auto (auto-revive) tick box per row.
+**1.8.0:** thrall page (stats, perks, guard, patrol, scout, evolve, blood moon mode), name search, tooltips on every button, map markers, HP strip, compact party list, coloured rows, Dark/Light/High contrast themes and a taming helper. Parts need Bait 1.10.0. **1.7.0:** filter, sort and 8/12/16 rows per page, row details, Heal box and move arrows, team buttons, Bring all here, draggable window, group hotkeys (F6/F7/F8), a quick-actions wheel (middle mouse), low HP flash and sound, downed countdown tags, level-up glow and a kill feed. Parts need Bait 1.9.0. **1.6.6:** Auto (auto-revive) tick box per row.
 
 ## Gyro Safe
 
@@ -366,6 +366,7 @@ Companion for tehAon's Drone Automation. Each player chooses items their Auto-Lo
 - **Limits:** turret bullets are credited to the turret's owner, so a stray bullet from the thrower's own turret can still hit a baited creature in its line of fire (the turret just won't aim at it). Hits from other players are not blocked (their client sends that damage to the server).
 - Tune the radius, time and eat ticks in `Config/items.xml`.
 - Taming, thralls and every `/thrall` command: see [Bait/README.md](Bait/README.md).
+- **1.10.0:** perks at levels 10/25/50, guard posts, patrol routes, blood moon mode, `/thrall top` leaderboard, `/thrall scout`, `/thrall evolve`, admin heal/revive/tp, and Discord posts for rare tames, level milestones and evolutions.
 - **1.9.0:** thralls by name, `/thrall here`, `where`, `move`, `deaths`, teams, auto-heal, a low bait warning, uneaten bait comes back to the thrower, new Lure Bait (zombies only), bait stacks to 100. **1.8.0:** per-thrall auto-revive with plain bait (`/thrall autorevive <n>`).
 
 Note: this changes animal AI for the whole server, but only things marked for animals pull them. Vanilla rocks and snowballs are still zombie-only, so only the bait draws animals.

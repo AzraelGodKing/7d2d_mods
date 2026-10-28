@@ -65,9 +65,11 @@ public static partial class Thralls
             long down = r.ReviveAt - NowSec();
             l.Add("T|" + (i + 1) + "|" + eid + "|" + Clean(r.ClassName) + "|" + (r.Active ? 1 : 0) + "|" + r.Level + "|" + r.Kills + "|" + (r.Tether ? 1 : 0) + "|" + F(r.TR) +
                   "|" + r.Mode + "|" + (r.Stay ? 1 : 0) + "|" + (down > 0 ? down : 0) + "|" + Clean(r.Name) + "|" + (r.AutoRevive ? 1 : 0) + "|" + (r.AutoHeal ? 1 : 0)
-                  // 1.10.0: perks, guard, patrol, patrol points, deaths, tamed at (unix s), perk slots open, evolves into
+                  // 1.10.0: perks, guard, patrol, patrol points, deaths, tamed at (unix s), perk slots open, evolves into, tether x y z
                   + "|" + Clean(r.Perks) + "|" + (r.Guard ? 1 : 0) + "|" + (r.Patrol ? 1 : 0) + "|" + PatrolPoints(r).Count + "|" + r.Deaths + "|" + r.TamedAt
-                  + "|" + PerkSlots(r.Level) + "|" + Clean(EvolveTarget(r)));
+                  + "|" + PerkSlots(r.Level) + "|" + Clean(EvolveTarget(r))
+                  // where its tether, guard post or patrol is (for Bait UI's map markers); blank when it follows
+                  + "|" + (r.Tether ? F(r.TX) + "|" + F(r.TY) + "|" + F(r.TZ) : "||"));
         }
         // teams: TM|<count>|name:size,name:size (older Bait UI ignores it)
         var tl = new List<string>();

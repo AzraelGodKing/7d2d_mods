@@ -1,0 +1,4 @@
+# Copy this file to webhook.txt and put your Discord webhook URL on the line below.
+# Bait posts rare tames, level milestones (WebhookLevelStep) and evolutions there.
+# Without webhook.txt, Bait uses the Webhook= line of Blood Moon Sound's discord.txt if that mod is installed.
+# https://discord.com/api/webhooks/...

@@ -106,6 +106,27 @@ public class XUiC_AzraelBaitRoster : XUiController
         HookQol("teamcall", () => { var tn = TeamName(); if (tn != null) BaitData.Cmd("/thrall team call " + tn); });
         HookQol("teamsave", () => { BaitData.Cmd("/thrall team save " + (TeamName() ?? NewTeamName()) + " active"); });
         HookQol("teamnew", () => { string n = NewTeamName(); BaitData.Cmd("/thrall team save " + n + " active"); BaitData.TeamSel = BaitData.Teams.Count; });
+        // search, thrall page, leaderboard, map markers, HP strip, compact list, theme, taming helper
+        var search = GetChildById("search") as XUiC_TextInput;
+        if (search != null)
+        {
+            search.Text = BaitData.Search;
+            search.OnChangeHandler += (s, text, fromCode) => { BaitData.Search = (text ?? "").Trim(); page = 0; seen = -1; };
+        }
+        Hook("thrallpage", () =>
+        {
+            if (!BaitData.ServerHasRoles || BaitData.Thralls.Count == 0) return;
+            var t = SelectedThrall ?? (view.Count > 0 ? view[0] : BaitData.Thralls[0]);
+            BaitData.StatsIdx = t.Idx;
+            CloseAll(this); xui.playerUI.windowManager.Open("azraelBaitStats", true);
+        });
+        Hook("top", () => { if (BaitData.ServerHasRoles) { BaitData.Cmd("/thrall top", false); BaitData.SetStatus("The leaderboard is in chat."); } });
+        Hook("tglmap", () => { UiSettings.MapMarkers = !UiSettings.MapMarkers; UiSettings.Save(); seen = -1; });
+        Hook("tglstrip", () => { UiSettings.HpStrip = !UiSettings.HpStrip; UiSettings.Save(); seen = -1; });
+        Hook("tglcompact", () => { UiSettings.CompactParty = !UiSettings.CompactParty; UiSettings.Save(); seen = -1; });
+        Hook("cycletheme", () => { UiSettings.Theme = (UiSettings.Theme + 1) % UiSettings.ThemeNames.Length; UiSettings.Save(); seen = -1; });
+        Hook("tglhelp", () => { UiSettings.TamingHelp = !UiSettings.TamingHelp; UiSettings.Save(); seen = -1; });
+        Tips.Apply(this, Rows);
         // drag the title bar to move the window; the spot is remembered
         var drag = GetChildById("dragbar");
         if (drag != null) drag.OnDrag += (s, type, delta) =>
@@ -180,9 +201,11 @@ public class XUiC_AzraelBaitRoster : XUiController
             view = BaitData.View();
             int pages = Math.Max(1, (view.Count + Rows - 1) / Rows);
             if (page >= pages) page = pages - 1;
+            if (Time.time > nextTips) { nextTips = Time.time + 3f; Tips.Apply(this, Rows); }
             RefreshBindings();
         }
     }
+    float nextTips;
 
     static string Hp(UiThrall t)
     {
@@ -256,8 +279,18 @@ public class XUiC_AzraelBaitRoster : XUiController
             case "teamnewtxt": value = BaitData.ServerHasQol ? "New team" : ""; return true;
             case "sizetxt": value = "Size " + UiSettings.Scale.ToString("0.0", CultureInfo.InvariantCulture); return true;
             case "adminvis": value = BaitData.Admin ? "true" : "false"; return true;
+            case "bgcol": value = UiSettings.BgCol; return true;
+            case "textcol": value = UiSettings.TextCol; return true;
+            case "pagebtntxt": value = BaitData.ServerHasRoles ? "Thrall page" : ""; return true;
+            case "toptxt": value = BaitData.ServerHasRoles ? "Top" : ""; return true;
+            case "maptxt": value = "Map: " + OnOff(UiSettings.MapMarkers); return true;
+            case "striptxt": value = "HP strip: " + OnOff(UiSettings.HpStrip); return true;
+            case "compacttxt": value = "Compact: " + OnOff(UiSettings.CompactParty); return true;
+            case "themetxt": value = "Theme: " + UiSettings.ThemeNames[Mathf.Clamp(UiSettings.Theme, 0, 2)]; return true;
+            case "helptxt": value = "Tame help: " + OnOff(UiSettings.TamingHelp); return true;
             case "emptytext":
                 value = BaitData.HasData ? (BaitData.Thralls.Count == 0 ? "You have no thralls yet. Throw bait at a zombie or animal and let it eat."
+                                          : view.Count == 0 && BaitData.Search.Length > 0 ? "No thrall matches \"" + BaitData.Search + "\"."
                                           : view.Count == 0 ? "No " + UiSettings.FilterNames[UiSettings.Filter].ToLowerInvariant() + " on your roster. Click Show to see the rest." : "")
                                          : "No data from the server yet. This needs the Zombie and Animal Bait mod on the server.";
                 return true;
@@ -273,9 +306,10 @@ public class XUiC_AzraelBaitRoster : XUiController
             switch (field)
             {
                 case "vis": value = t != null ? "true" : "false"; return true;
+                case "col": value = UiSettings.RowCol(t); return true;
                 case "text":
                     if (t == null) { value = ""; return true; }
-                    string st = t.DownLeft > 0 ? "downed" : t.Tether ? "tethered r" + t.Radius.ToString("0.#", CultureInfo.InvariantCulture) : t.Active ? "active" : "inactive";
+                    string st = t.DownLeft > 0 ? "downed" : t.Patrol ? "patrol" : t.Guard ? "guard r" + t.Radius.ToString("0.#", CultureInfo.InvariantCulture) : t.Tether ? "tethered r" + t.Radius.ToString("0.#", CultureInfo.InvariantCulture) : t.Active ? "active" : "inactive";
                     string hp = Hp(t);
                     value = (t.Idx == selIdx ? "> " : "") + t.Idx + ". " + (t.Level > 0 ? "Lv" + t.Level + " " : "") + t.Label + (string.IsNullOrEmpty(t.Name) ? "" : " (" + t.Pretty + ")") + "\n" + st + (t.Stay ? ", holding" : "") + (hp.Length > 0 ? "   HP " + hp : "") + "   kills " + t.Kills;
                     return true;

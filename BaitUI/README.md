@@ -68,3 +68,16 @@ The buttons send the normal `/thrall` chat commands (they are hidden from other 
 - Kill feed: your thralls' kills fade in at the right of the screen for 6 s (1.9.0) (`Kill feed`).
 - `tools/gen-windows.ps1` is gone: it no longer matched the windows file. The roster windows come from `tools/gen-roster.py`; the rename and admin windows are edited by hand.
 
+
+**1.8.0:** Needs Bait 1.10.0 on the server for the parts marked (1.10.0); with an older server those buttons stay blank.
+- **Thrall page** (1.10.0): select a row and click `Thrall page` (or it opens the first one). It shows level, kills to the next level, deaths, when it was tamed, where it is, HP, mode, the auto toggles, its perks and slots, and what it evolves into. Its buttons: the four perks and `Reset perks`, `Guard here`, `Add patrol point`, `Start/Stop patrol`, `Clear points`, `Scout`, `Evolve`, and your `Blood moon` mode. `Prev`/`Next` step through your thralls.
+- **Search box** at the bottom left of the roster: type part of a name, the creature name or a number. It works with Show and Sort.
+- **Tooltips** on every roster button. Heal, revive, auto-revive, auto-heal and Bring all here show what they cost on this server.
+- **Map markers:** your thralls show on the map and compass (green), and their daycare, guard post or patrol spot too (blue, 1.10.0). `Map: on/off`.
+- **HP strip:** small HP bars for your active thralls in the bottom-right corner, in place of the party list. `HP strip: on/off`.
+- **Compact party list:** name and bar on one line, so 10 or more thralls fit. `Compact: on/off`.
+- **Coloured rows:** a thrall you gave its own name colour gets a row tinted that colour.
+- **Themes:** `Theme: Dark/Light/High contrast` recolours the roster and thrall page, and the backing behind the party list and HP strip.
+- **Taming helper** (1.10.0): while you hold bait, the creature under your crosshair shows its meals needed (or how far you are), or why it can't be tamed: already a thrall, excluded on this server, your roster is full, or someone else is feeding it. `Tame help: on/off`.
+- Roster rows show guards and patrols. The party list marks them `[G]` and `[P]`.
+- The roster windows are 46 px taller for the new row. The 16-row one is 1022 tall.
