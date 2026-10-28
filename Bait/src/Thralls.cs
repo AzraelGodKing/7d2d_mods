@@ -381,6 +381,22 @@ public static partial class Thralls
         }
         if (baitAiDone.Count > 4000) baitAiDone.Clear();
     }
+    // The level a wild zombie of this class starts at today, without the luck. Zombie animals count as feral.
+    static int DayLevel(string cls)
+    {
+        int day = W != null ? GameUtils.WorldTimeToDays(W.worldTime) : 0;
+        int tier = IsAnimalClass(cls) ? (cls.StartsWith("animalZombie", StringComparison.OrdinalIgnoreCase) ? 1 : 0) : TierOf(cls);
+        int lvl = day / Math.Max(1, BaitConfig.DaysPerLevel) + tier * BaitConfig.TierLevelBonus;
+        return Math.Max(1, Math.Min(BaitConfig.MaxLevel, lvl));
+    }
+    // Wild animals have no level, so an animal thrall used to start at 0 against wild zombies that start at day/5 or more.
+    // Each time it comes into the world it is brought up to today's walker level (it keeps a higher one it earned).
+    static void KeepUpWithDay(ThrallRecord rec)
+    {
+        if (!BaitConfig.AnimalDayLevels || !BaitConfig.ZombieLevels) return;
+        int dl = DayLevel(rec.ClassName);
+        if (rec.Level < dl) { rec.Level = dl; dirty = true; }
+    }
     static void LevelUp(EntityAlive e)
     {
         int cur = LevelOf(e.entityId);
@@ -527,6 +543,7 @@ public static partial class Thralls
                                            Perks = rec.Perks ?? "", Guard = rec.Tether && (rec.Guard || rec.Patrol), GX = rec.TX, GY = rec.TY, GZ = rec.TZ, GR = rec.TR };
         liveByRecord[rec.Id] = z.entityId;
         if (rec.Level < 1 && z is EntityZombie) { rec.Level = 1; dirty = true; }   // a zombie thrall is never level 0 (older ones are brought up to 1 here)
+        if (IsAnimalClass(rec.ClassName)) KeepUpWithDay(rec);
         if (rec.Level > 0) levels[z.entityId] = rec.Level; else levels.Remove(z.entityId);
 
         z.distraction = null;

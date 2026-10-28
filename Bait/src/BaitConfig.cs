@@ -50,6 +50,10 @@ public static class BaitConfig
     public static int TierLevelBonus = 5;       // starting levels added per tier (feral 1, radiated 2, charged/infernal 3)
     public static float LevelDamagePct = 3f;   // extra damage dealt per level
     public static float LevelToughPct = 3f;    // damage reduction per level (1/(1+pct*level))
+    // animal thralls (1.11.0): wild animals never got the day/tier starting level wild zombies get, and animals can't evolve
+    public static bool AnimalDayLevels = true;  // an animal thrall is kept at least at the level a wild walker of today starts at (zombie animals as feral)
+    public static float AnimalDamagePct = 50f;  // animal thralls deal this much more damage
+    public static float AnimalToughPct = 50f;   // damage taken by animal thralls is divided by 1 + this percent
     // taming extras
     public static int MaxFeeds = 27;             // hard cap on meals needed for anything (0 = no cap)
     public static int FeedsPerLevelStep = 17;   // +1 meal per this many levels of the target (0 = off)

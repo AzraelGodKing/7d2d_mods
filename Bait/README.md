@@ -136,3 +136,8 @@ Set the meal counts with `RichBaitMeals` and `FeastBaitMeals`. `giveself azraelB
 - **Discord:** rare tames (radiated, charged, infernal, bosses), every 50th level (`WebhookLevelStep`) and evolutions are posted to Discord. Put the webhook URL in `webhook.txt` in this mod's folder (see `webhook.example.txt`). Without it, Bait uses the `Webhook=` line of Blood Moon Sound's `discord.txt`. `WebhookEvents=false` turns it off.
 - `/thrall list` shows guards, patrols and perks. Each thrall now also remembers its deaths and when it was tamed (thralls tamed before 1.10.0 have no date).
 - For Bait UI: the taming helper record (`L|`), perks, guard, patrol, deaths, tame date, perk slots, evolution target and tether position on `T|`, and your blood moon mode on `S|`. `TamingHelper=false` stops the taming helper.
+
+**1.11.0:** Stronger animal thralls. Wild animals never got the starting level wild zombies get (game day / 5, plus 5 per tier), so a tamed animal started at level 0 and fell further behind every day. Animals can't evolve either.
+- **Day level:** an animal thrall is brought up to the level a wild walker of today starts at (zombie dog, zombie bear, zombie boar and vultures count as feral, +5) every time it comes into the world, and keeps any higher level it earned. On day 60 that is level 12 (level 17 for zombie animals). Wild animals are unchanged. `AnimalDayLevels=false` turns it off (it also needs `ZombieLevels`).
+- **Animal bonus:** animal thralls deal 50% more damage (`AnimalDamagePct`) and take a third less (damage divided by 1.5, `AnimalToughPct`), on top of their level and perks. Set either to 0 to turn it off; admins can change all three in game with `/thrall config` or in Bait UI's admin window.
+- Server only; Bait UI needs no update.

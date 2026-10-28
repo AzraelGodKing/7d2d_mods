@@ -71,6 +71,11 @@ public static class ThrallDamagePatch
             if (ph > 0 && !(__instance is EntityPlayer)) _strength = (int)(_strength * (1f + BaitConfig.PerkHitPct * ph / 100f) + 0.5f);
             int pt = victimThrall ? Thralls.PerkCount(__instance.entityId, 'T') : 0;
             if (pt > 0) _strength = Math.Max(1, (int)(_strength / (1f + BaitConfig.PerkToughPct * pt / 100f) + 0.5f));
+            // animal thralls can't evolve, so they get a flat bonus on top of their level
+            if (attackerThrall && !(__instance is EntityPlayer) && BaitConfig.AnimalDamagePct > 0f && IsAnimal(attacker))
+                _strength = (int)(_strength * (1f + BaitConfig.AnimalDamagePct / 100f) + 0.5f);
+            if (victimThrall && BaitConfig.AnimalToughPct > 0f && IsAnimal(__instance))
+                _strength = Math.Max(1, (int)(_strength / (1f + BaitConfig.AnimalToughPct / 100f) + 0.5f));
         }
 
         if (victimThrall) Thralls.NoteHit(__instance, _damageSource, attacker, _strength);
@@ -81,6 +86,12 @@ public static class ThrallDamagePatch
             attacker.entityFlags &= ~EntityFlags.Zombie;
         }
         return true;
+    }
+
+    static bool IsAnimal(EntityAlive e)
+    {
+        var ec = e.EntityClass;
+        return ec != null && ec.entityClassName != null && ec.entityClassName.StartsWith("animal", StringComparison.OrdinalIgnoreCase);
     }
 
     static void Finalizer(object __state)
