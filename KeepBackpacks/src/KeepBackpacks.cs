@@ -18,6 +18,8 @@ public class AzraelKeepBackpacks : IModApi
         KbConfig.Load();
         KbConfig.WriteXml();
         ModEvents.GameStartDone.RegisterHandler(OnGameStart);
+        ModEvents.ChatMessage.RegisterHandler(KbChat.OnChat);
+        new HarmonyLib.Harmony("azrael.keepbackpacks").PatchAll(typeof(AzraelKeepBackpacks).Assembly);
         Log.Out($"{Tag} Loaded. Times come from settings.txt. Players do not install this mod.");
     }
 
@@ -47,6 +49,11 @@ public static class KbConfig
     public static int DroppedItems = 86400;
     public static int VehicleBag = 86400;
     public static int ZombieLoot = 86400;
+    // Death backpacks only open for their owner (and party/allies) for this many real seconds.
+    public static int OwnerOnly = 900;
+    public static bool OwnerOnlyParty = true;
+    public static bool OwnerOnlyAllies = true;
+    public static string BagCommand = "/mybag";
 
     static string SettingsPath => Path.Combine(ModPath, "settings.txt");
     static string PasswordPath => Path.Combine(ModPath, "password.txt");
@@ -58,6 +65,10 @@ public static class KbConfig
         DroppedItems = 86400;
         VehicleBag = 86400;
         ZombieLoot = 86400;
+        OwnerOnly = 900;
+        OwnerOnlyParty = true;
+        OwnerOnlyAllies = true;
+        BagCommand = "/mybag";
         try
         {
             if (!File.Exists(SettingsPath))
@@ -73,6 +84,20 @@ public static class KbConfig
                 if (eq <= 0) continue;
                 string key = line.Substring(0, eq).Trim();
                 string value = line.Substring(eq + 1).Trim();
+                if (key.Equals("OwnerOnlyParty", StringComparison.OrdinalIgnoreCase) || key.Equals("OwnerOnlyAllies", StringComparison.OrdinalIgnoreCase))
+                {
+                    bool on = value.Equals("on", StringComparison.OrdinalIgnoreCase) || value.Equals("true", StringComparison.OrdinalIgnoreCase) || value == "1";
+                    bool off = value.Equals("off", StringComparison.OrdinalIgnoreCase) || value.Equals("false", StringComparison.OrdinalIgnoreCase) || value == "0";
+                    if (!on && !off) { Log.Warning($"{AzraelKeepBackpacks.Tag} Ignoring {key}={value} in settings.txt (use on or off)."); continue; }
+                    if (key.Equals("OwnerOnlyParty", StringComparison.OrdinalIgnoreCase)) OwnerOnlyParty = on; else OwnerOnlyAllies = on;
+                    continue;
+                }
+                if (key.Equals("BagCommand", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (value.Length > 1 && value[0] == '/' && value.IndexOf(' ') < 0) BagCommand = value;
+                    else Log.Warning($"{AzraelKeepBackpacks.Tag} Ignoring BagCommand={value} (it must start with / and have no spaces).");
+                    continue;
+                }
                 if (!TryParseDuration(value, out int seconds, out bool clamped))
                 {
                     Log.Warning($"{AzraelKeepBackpacks.Tag} Ignoring {key}={value} in settings.txt.");
@@ -84,6 +109,7 @@ public static class KbConfig
                 else if (key.Equals("DroppedItems", StringComparison.OrdinalIgnoreCase)) DroppedItems = seconds;
                 else if (key.Equals("VehicleBag", StringComparison.OrdinalIgnoreCase)) VehicleBag = seconds;
                 else if (key.Equals("ZombieLoot", StringComparison.OrdinalIgnoreCase)) ZombieLoot = seconds;
+                else if (key.Equals("OwnerOnly", StringComparison.OrdinalIgnoreCase)) OwnerOnly = seconds;
                 else Log.Warning($"{AzraelKeepBackpacks.Tag} Unknown setting '{key}'.");
             }
         }
@@ -184,7 +210,8 @@ public static class KbConfig
     static void WriteSettings()
     {
         File.WriteAllText(SettingsPath,
-            "DeathBackpack=permanent\r\nDroppedItems=24h\r\nVehicleBag=24h\r\nZombieLoot=24h\r\n");
+            "DeathBackpack=permanent\r\nDroppedItems=24h\r\nVehicleBag=24h\r\nZombieLoot=24h\r\n" +
+            "OwnerOnly=15m\r\nOwnerOnlyParty=on\r\nOwnerOnlyAllies=on\r\nBagCommand=/mybag\r\n");
     }
 
     static void SetClass(string name, int seconds)
@@ -224,7 +251,10 @@ public static class KbConfig
 
     // Removes dropped-item bags and loose items in loaded areas.
     // Leaves death backpacks, zombie loot bags, and vehicle storage bags.
-    public static void ClearDroppedItems(out int bags, out int loose)
+    // With center and radius > 0, only within that many blocks of center. dryRun only counts.
+    public static void ClearDroppedItems(out int bags, out int loose) => ClearDroppedItems(out bags, out loose, null, 0, false);
+
+    public static void ClearDroppedItems(out int bags, out int loose, UnityEngine.Vector3? center, float radius, bool dryRun)
     {
         bags = 0;
         loose = 0;
@@ -238,18 +268,25 @@ public static class KbConfig
         for (int i = 0; i < copy.Count; i++)
         {
             var entity = copy[i];
+            if (center.HasValue && radius > 0 && (entity.position - center.Value).sqrMagnitude > radius * radius) continue;
             string name = EntityClass.GetEntityClassName(entity.entityClass);
             if (name == "DroppedLootContainer" && entity is EntityLootContainer container)
             {
-                container.bRemoved = true;
-                container.MarkToUnload();
+                if (!dryRun)
+                {
+                    container.bRemoved = true;
+                    container.MarkToUnload();
+                }
                 bags++;
             }
             else if (name == "item" && entity.GetType() == typeof(EntityItem))
             {
-                entity.lifetime = 0f;
-                entity.SetDead();
-                entity.MarkToUnload();
+                if (!dryRun)
+                {
+                    entity.lifetime = 0f;
+                    entity.SetDead();
+                    entity.MarkToUnload();
+                }
                 loose++;
             }
         }
@@ -301,7 +338,7 @@ public class ConsoleCmdKbags : ConsoleCmdAbstract
             bool reset = KbConfig.ReloadClasses();
             int bags = KbConfig.Apply();
             con.Output("Keep Backpacks reloaded" + (reset ? "" : " (entity class reload failed, applied in memory)") + $".");
-            con.Output($"Death backpack {KbConfig.Format(KbConfig.DeathBackpack)}, dropped items {KbConfig.Format(KbConfig.DroppedItems)}, vehicle bag {KbConfig.Format(KbConfig.VehicleBag)}, zombie loot {KbConfig.Format(KbConfig.ZombieLoot)}.");
+            con.Output($"Death backpack {KbConfig.Format(KbConfig.DeathBackpack)}, dropped items {KbConfig.Format(KbConfig.DroppedItems)}, vehicle bag {KbConfig.Format(KbConfig.VehicleBag)}, zombie loot {KbConfig.Format(KbConfig.ZombieLoot)}, owner-only {(KbConfig.OwnerOnly > 0 ? KbConfig.Format(KbConfig.OwnerOnly) : "off")}.");
             con.Output($"Updated {bags} loaded bags. Players already connected keep the old times until they rejoin. Unloaded areas pick this up when someone goes there.");
             return;
         }
@@ -326,6 +363,12 @@ public class ConsoleCmdKbags : ConsoleCmdAbstract
         con.Output($"Dropped items: {KbConfig.Format(KbConfig.DroppedItems)}");
         con.Output($"Vehicle bag: {KbConfig.Format(KbConfig.VehicleBag)}");
         con.Output($"Zombie loot: {KbConfig.Format(KbConfig.ZombieLoot)}");
+        con.Output(KbConfig.OwnerOnly > 0
+            ? $"Owner-only: death backpacks open only for their owner" +
+              (KbConfig.OwnerOnlyParty || KbConfig.OwnerOnlyAllies ? $" ({(KbConfig.OwnerOnlyParty ? "party" : "")}{(KbConfig.OwnerOnlyParty && KbConfig.OwnerOnlyAllies ? " and " : "")}{(KbConfig.OwnerOnlyAllies ? "allies" : "")} too)" : "") +
+              $" for the first {KbConfig.Format(KbConfig.OwnerOnly)} (real time)"
+            : "Owner-only: off");
+        con.Output($"Players find their bags with {KbConfig.BagCommand} in chat.");
         con.Output(KbConfig.HasPassword() ? "Clear password: set.  kbclear <password>" : "Clear password: not set.  kbags password <word>");
     }
 }
@@ -337,8 +380,10 @@ public class ConsoleCmdKbClear : ConsoleCmdAbstract
     public override string[] getCommands() => new[] { "kbclear" };
     public override string getDescription() => "Remove dropped items in loaded areas. Needs the password from kbags password.";
     public override string getHelp() =>
-        "kbclear <password>\n" +
+        "kbclear <password> [r=<blocks>] [count]\n" +
         "Removes dropped-item bags and loose items on the ground in loaded areas.\n" +
+        "r=50 only clears within 50 blocks of you (in game) or of the only player online (server console).\n" +
+        "count only counts what would be removed; nothing is removed.\n" +
         "Does not remove death backpacks, zombie loot bags, or vehicle storage bags.\n" +
         "Bags in unloaded areas stay until someone goes there.";
 
@@ -355,7 +400,21 @@ public class ConsoleCmdKbClear : ConsoleCmdAbstract
             con.Output("No clear password set. On the server console: kbags password <word>");
             return;
         }
-        string password = string.Join(" ", _params).Trim();
+        // Options come after the password: r=<blocks> and count.
+        var words = new List<string>(_params);
+        float radius = 0;
+        bool dryRun = false;
+        while (words.Count > 1)
+        {
+            string last = words[words.Count - 1].ToLowerInvariant();
+            if (last == "count" || last == "dryrun") { dryRun = true; words.RemoveAt(words.Count - 1); continue; }
+            int eqAt = last.IndexOf('=');
+            if (eqAt > 0 && (last.StartsWith("r=") || last.StartsWith("radius=")) &&
+                float.TryParse(last.Substring(eqAt + 1), NumberStyles.Float, CultureInfo.InvariantCulture, out float r) && r > 0)
+            { radius = r; words.RemoveAt(words.Count - 1); continue; }
+            break;
+        }
+        string password = string.Join(" ", words).Trim();
         if (!KbConfig.PasswordMatches(password))
         {
             con.Output("Wrong password.");
@@ -366,8 +425,167 @@ public class ConsoleCmdKbClear : ConsoleCmdAbstract
             con.Output("No world is running.");
             return;
         }
-        KbConfig.ClearDroppedItems(out int bags, out int loose);
-        con.Output($"Removed {bags} dropped-item bags and {loose} loose items in loaded areas. Death backpacks, zombie loot, and vehicle bags were left alone. Unloaded areas were not changed.");
-        Log.Out($"{AzraelKeepBackpacks.Tag} Cleared {bags} dropped-item bags and {loose} loose items.");
+        UnityEngine.Vector3? center = null;
+        string where = "in loaded areas";
+        if (radius > 0)
+        {
+            var world = GameManager.Instance.World;
+            EntityPlayer me = null;
+            if (_senderInfo.RemoteClientInfo != null) me = world.GetEntity(_senderInfo.RemoteClientInfo.entityId) as EntityPlayer;
+            else if (world.GetPrimaryPlayer() != null) me = world.GetPrimaryPlayer();
+            else if (world.Players.list.Count == 1) me = world.Players.list[0];
+            if (me == null)
+            {
+                con.Output("r= needs a position: run it in game, or from the server console with exactly one player online.");
+                return;
+            }
+            center = me.position;
+            where = $"within {radius:0} blocks of {me.EntityName}";
+        }
+        KbConfig.ClearDroppedItems(out int bags, out int loose, center, radius, dryRun);
+        if (dryRun)
+        {
+            con.Output($"Would remove {bags} dropped-item bags and {loose} loose items {where}. Nothing was removed. Run it again without 'count' to clear them.");
+            return;
+        }
+        con.Output($"Removed {bags} dropped-item bags and {loose} loose items {where}. Death backpacks, zombie loot, and vehicle bags were left alone. Unloaded areas were not changed.");
+        Log.Out($"{AzraelKeepBackpacks.Tag} Cleared {bags} dropped-item bags and {loose} loose items {where}.");
+    }
+}
+
+// /mybag: tells a player where their death backpacks are. The server keeps their positions in
+// the player's saved data, so this works for bags in unloaded areas too.
+public static class KbChat
+{
+    public static void Tell(int entityId, string msg)
+    {
+        try
+        {
+            GameManager.Instance.ChatMessageServer(null, EChatType.Whisper, -1, "[ffc860][Backpacks][-] " + msg,
+                new List<int> { entityId }, EMessageSender.None);
+        }
+        catch (Exception e) { Log.Warning($"{AzraelKeepBackpacks.Tag} chat: " + e.Message); }
+    }
+
+    public static ModEvents.EModEventResult OnChat(ref ModEvents.SChatMessageData data)
+    {
+        try
+        {
+            if (data.SenderEntityId == -1 || string.IsNullOrEmpty(data.Message)) return ModEvents.EModEventResult.Continue;
+            var msg = data.Message.Trim();
+            var first = msg.Split(' ')[0];
+            if (!first.Equals(KbConfig.BagCommand, StringComparison.OrdinalIgnoreCase)) return ModEvents.EModEventResult.Continue;
+            ShowBags(data.SenderEntityId);
+            return ModEvents.EModEventResult.StopHandlersAndVanilla;
+        }
+        catch (Exception e)
+        {
+            Log.Warning($"{AzraelKeepBackpacks.Tag} {KbConfig.BagCommand} failed: {e.Message}");
+            return ModEvents.EModEventResult.Continue;
+        }
+    }
+
+    static readonly string[] Compass = { "north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west" };
+
+    public static string Direction(UnityEngine.Vector3 from, UnityEngine.Vector3 to)
+    {
+        float dx = to.x - from.x, dz = to.z - from.z;
+        // 0 degrees is north (+z), clockwise.
+        double deg = (Math.Atan2(dx, dz) * 180.0 / Math.PI + 360.0) % 360.0;
+        return Compass[(int)Math.Round(deg / 45.0) % 8];
+    }
+
+    static void ShowBags(int entityId)
+    {
+        var gm = GameManager.Instance;
+        var world = gm.World;
+        var pd = gm.persistentPlayers?.GetPlayerDataFromEntityID(entityId);
+        var me = world?.GetEntity(entityId) as EntityPlayer;
+        if (pd == null || me == null) return;
+        var bags = new List<PersistentPlayerData.ProtectedBackpack>();
+        pd.ProcessBackpacks(b => bags.Add(b));
+        if (bags.Count == 0) { Tell(entityId, "You have no death backpacks out in the world."); return; }
+        bags.Sort((a, b) => b.Timestamp.CompareTo(a.Timestamp));
+        Tell(entityId, bags.Count == 1 ? "Your death backpack:" : $"Your {bags.Count} death backpacks, newest first:");
+        uint now = GameUtils.WorldTimeToTotalMinutes(world.worldTime);
+        int n = 0;
+        foreach (var b in bags)
+        {
+            var pos = b.Position.ToVector3();
+            int dist = (int)Math.Round(UnityEngine.Vector2.Distance(new UnityEngine.Vector2(me.position.x, me.position.z), new UnityEngine.Vector2(pos.x, pos.z)));
+            ulong t = GameUtils.TotalMinutesToWorldTime(b.Timestamp);
+            string when = $"day {GameUtils.WorldTimeToDays(t)} {GameUtils.WorldTimeToHours(t):00}:{GameUtils.WorldTimeToMinutes(t):00}";
+            string lockNote = "";
+            int left = KbOwnerOnly.SecondsLeft(b.Timestamp, now);
+            if (left > 0) lockNote = $", only you{(KbConfig.OwnerOnlyParty || KbConfig.OwnerOnlyAllies ? " and your friends" : "")} can open it for {Math.Max(1, (left + 59) / 60)} more min";
+            Tell(entityId, $"{++n}. {dist} m {Direction(me.position, pos)}, height {b.Position.y} (died {when}{lockNote})");
+            if (n >= 10) { if (bags.Count > 10) Tell(entityId, $"...and {bags.Count - 10} older ones."); break; }
+        }
+    }
+}
+
+// For a while after a death, the backpack only opens for its owner (and party/allies if allowed).
+// The game asks the server for a lock before opening any loot entity, so refusing it keeps the bag shut.
+public static class KbOwnerOnly
+{
+    // Real seconds of owner-only time left, from the bag's world-time timestamp (game minutes).
+    public static int SecondsLeft(uint timestamp, uint nowMinutes)
+    {
+        if (KbConfig.OwnerOnly <= 0) return 0;
+        if (nowMinutes < timestamp) return KbConfig.OwnerOnly;
+        // A game day lasts DayNightLength real minutes, so one game minute is that many real seconds / 24.
+        int dayLength = Math.Max(1, GamePrefs.GetInt(EnumGamePrefs.DayNightLength));
+        double realSecondsPerGameMinute = dayLength * 60.0 / 1440.0;
+        double elapsed = (nowMinutes - timestamp) * realSecondsPerGameMinute;
+        return (int)Math.Max(0, KbConfig.OwnerOnly - elapsed);
+    }
+
+    public static bool TryFind(int backpackEntityId, int ownerEntityId, out PersistentPlayerData owner, out uint timestamp)
+    {
+        timestamp = 0;
+        owner = GameManager.Instance.persistentPlayers?.GetPlayerDataFromEntityID(ownerEntityId);
+        if (owner == null) return false;
+        bool found = false;
+        uint ts = 0;
+        owner.ProcessBackpacks(b => { if (b.EntityID == backpackEntityId) { found = true; ts = b.Timestamp; } });
+        timestamp = ts;
+        return found;
+    }
+
+    public static bool Allowed(int lockingPlayerId, int ownerEntityId, PersistentPlayerData owner)
+    {
+        if (lockingPlayerId == ownerEntityId) return true;
+        var world = GameManager.Instance.World;
+        if (KbConfig.OwnerOnlyParty)
+        {
+            var locker = world.GetEntity(lockingPlayerId) as EntityPlayer;
+            if (locker?.Party != null && locker.Party.ContainsMember(ownerEntityId)) return true;
+        }
+        if (KbConfig.OwnerOnlyAllies)
+        {
+            var lockerData = GameManager.Instance.persistentPlayers.GetPlayerDataFromEntityID(lockingPlayerId);
+            if (lockerData != null && owner.IsAlly(lockerData)) return true;
+        }
+        return false;
+    }
+}
+
+[HarmonyLib.HarmonyPatch(typeof(Entity), nameof(Entity.OnLockRequestServer))]
+public static class KbOwnerOnlyPatch
+{
+    static void Postfix(Entity __instance, int _lockingPlayerID, ref bool __result)
+    {
+        try
+        {
+            if (!__result || KbConfig.OwnerOnly <= 0 || !(__instance is EntityBackpack bp) || bp.RefPlayerId == -1) return;
+            if (_lockingPlayerID == bp.RefPlayerId) return;
+            if (!KbOwnerOnly.TryFind(bp.entityId, bp.RefPlayerId, out var owner, out var ts)) return;
+            int left = KbOwnerOnly.SecondsLeft(ts, GameUtils.WorldTimeToTotalMinutes(GameManager.Instance.World.worldTime));
+            if (left <= 0 || KbOwnerOnly.Allowed(_lockingPlayerID, bp.RefPlayerId, owner)) return;
+            __result = false;
+            string name = owner.PlayerName?.DisplayName ?? "another player";
+            KbChat.Tell(_lockingPlayerID, $"This is {name}'s backpack. Only they{(KbConfig.OwnerOnlyParty || KbConfig.OwnerOnlyAllies ? " and their friends" : "")} can open it for {Math.Max(1, (left + 59) / 60)} more min.");
+        }
+        catch (Exception e) { Log.Warning($"{AzraelKeepBackpacks.Tag} owner-only check: " + e.Message); }
     }
 }
