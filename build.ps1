@@ -39,7 +39,7 @@ $mods = @(
     # Private = gitignored files (e.g. a copyrighted sound clip) kept OUT of the public zip.
     # If present, a second "-with-sound" zip is made and -Install uses that version.
     # Exclude = gitignored files kept out of EVERY zip (e.g. discord.txt holds a secret webhook URL).
-    @{ Dir = 'BloodMoonSound';     Name = 'AzraelBloodMoonSound';     Project = 'src/AzraelBloodMoonSound.csproj'; Private = @('bloodmoon.*', 'spawn.*', 'morning.*', 'night.*'); Exclude = @('discord.txt') }
+    @{ Dir = 'BloodMoonSound';     Name = 'AzraelBloodMoonSound';     Project = 'src/AzraelBloodMoonSound.csproj'; Private = @('bloodmoon*.ogg', 'bloodmoon*.wav', 'bloodmoon*.mp3', 'spawn*.ogg', 'spawn*.wav', 'spawn*.mp3', 'morning*.ogg', 'morning*.wav', 'morning*.mp3', 'night*.ogg', 'night*.wav', 'night*.mp3'); Exclude = @('discord.txt') }
 )
 if ($Only) { $mods = $mods | Where-Object { $Only -contains $_.Dir -or $Only -contains $_.Name } }
 
