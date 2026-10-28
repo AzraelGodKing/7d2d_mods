@@ -13,7 +13,7 @@ def btn(id, x, y, w, h, text, fs=22, extra=""):
             f'\t\t\t</rect>\n')
 
 def lbl(x, y, w, h, text, fs, extra=""):
-    return f'\t\t\t<label depth="3" pos="{x},{y}" width="{w}" height="{h}" font_size="{fs}" text="{text}"{extra} />\n'
+    return f'\t\t\t<label depth="3" pos="{x},{y}" width="{w}" height="{h}" font_size="{fs}" text="{text}" color="{{textcol}}"{extra} />\n'
 
 # per-row buttons: id, x, width
 ROW_BTNS = [("call", 362, 60), ("stay", 426, 62), ("mode", 492, 56), ("teth", 552, 78), ("heal", 634, 62), ("name", 700, 66),
@@ -27,10 +27,10 @@ def roster(name, rows, step, fs_text, fs_btn):
     B = rows_end - 6          # details / empty text
     B2 = B - 58               # status
     B3 = B2 - 38              # first button row
-    rowsA, rowsB, rowsC, rowsD, rowsE, rowsF = B3, B3 - 46, B3 - 92, B3 - 138, B3 - 184, B3 - 230
-    height = -(rowsF - 36) + 12
+    rowsA, rowsB, rowsC, rowsD, rowsE, rowsF, rowsG = B3, B3 - 46, B3 - 92, B3 - 138, B3 - 184, B3 - 230, B3 - 276
+    height = -(rowsG - 36) + 12
     s = (f'\t\t<window name="{name}" anchor="Center" pos="-{W // 2}, {height // 2}" width="{W}" height="{height}" depth="15" controller="AzraelBaitRoster, AzraelBaitUI" cursor_area="true">\n'
-         f'\t\t\t<sprite depth="1" name="background" sprite="menu_empty" color="[darkestGrey]" type="sliced" />\n'
+         f'\t\t\t<sprite depth="1" name="background" sprite="menu_empty" color="{{bgcol}}" type="sliced" />\n'
          f'\t\t\t<sprite depth="8" name="border" sprite="menu_empty3px" color="[black]" type="sliced" fillcenter="false" />\n')
     # title doubles as the drag handle (drag it to move the window; the spot is remembered)
     s += f'\t\t\t<button name="dragbar" depth="2" pos="0,0" width="{W}" height="46" sprite="menu_empty" defaultcolor="[darkestGrey]" hoversprite="menu_empty" hovercolor="[darkGrey]" type="sliced" hoverscale="1.0" on_drag="true" />\n'
@@ -38,9 +38,9 @@ def roster(name, rows, step, fs_text, fs_btn):
     for i in range(1, rows + 1):
         y = -52 - (i - 1) * step
         s += f'\t\t\t<rect name="row{i}" pos="0,{y}" width="{W}" height="{step}" depth="2" visible="{{r{i}vis}}">\n'
-        s += f'\t\t\t\t<sprite depth="1" sprite="menu_empty" color="[darkGrey]" type="sliced" width="{W - 12}" height="{h}" pos="6,0" />\n'
+        s += f'\t\t\t\t<sprite depth="1" sprite="menu_empty" color="{{r{i}col}}" type="sliced" width="{W - 12}" height="{h}" pos="6,0" />\n'
         s += f'\t\t\t\t<button name="r{i}sel" depth="2" pos="6,0" width="350" height="{h}" sprite="menu_empty" defaultcolor="[darkGrey]" hoversprite="ui_game_select_row" hovercolor="[mediumGrey]" type="sliced" hoverscale="1.0" />\n'
-        s += f'\t\t\t\t<label depth="3" pos="14,-2" width="340" height="{h - 2}" font_size="{fs_text}" text="{{r{i}text}}" />\n'
+        s += f'\t\t\t\t<label depth="3" pos="14,-2" width="340" height="{h - 2}" font_size="{fs_text}" text="{{r{i}text}}" color="{{textcol}}" />\n'
         for bid, x, w in ROW_BTNS:
             s += btn(f"r{i}{bid}", x, by, w, bh, f"{{r{i}{bid}txt}}", fs_btn)
         s += '\t\t\t</rect>\n'
@@ -91,6 +91,53 @@ def roster(name, rows, step, fs_text, fs_btn):
     s += btn("teamnew", 596, rowsF, 130, 36, "{teamnewtxt}")
     s += btn("tgldowned", 734, rowsF, 200, 36, "{downedtxt}")
     s += btn("pickwheel", 942, rowsF, 196, 36, "{wheeltxt}")
+    # search, thrall page, leaderboard, map markers, HP strip, compact list, theme, taming helper
+    s += f'\t\t\t<rect pos="12,{rowsG}" width="200" height="36" depth="3">\n'
+    s += '\t\t\t\t<sprite depth="2" sprite="menu_empty" color="[darkGrey]" type="sliced" />\n'
+    s += '\t\t\t\t<textfield name="search" depth="3" pos="6,-4" width="188" height="30" character_limit="24" clear_on_open="false" open_vk_on_open="false" focus_on_open="false" />\n'
+    s += '\t\t\t</rect>\n'
+    s += btn("thrallpage", 220, rowsG, 110, 36, "{pagebtntxt}")
+    s += btn("top", 338, rowsG, 80, 36, "{toptxt}")
+    s += btn("tglmap", 426, rowsG, 120, 36, "{maptxt}")
+    s += btn("tglstrip", 554, rowsG, 130, 36, "{striptxt}")
+    s += btn("tglcompact", 692, rowsG, 140, 36, "{compacttxt}")
+    s += btn("cycletheme", 840, rowsG, 140, 36, "{themetxt}", 20)
+    s += btn("tglhelp", 988, rowsG, 150, 36, "{helptxt}")
+    s += '\t\t</window>\n'
+    return s
+
+# The thrall page: one thrall's stats and the role buttons (perks, guard, patrol, scout, evolve).
+def stats():
+    w, h = 940, 672
+    s = (f'\t\t<window name="windowAzraelBaitStats" anchor="Center" pos="-{w // 2}, {h // 2}" width="{w}" height="{h}" depth="16" controller="AzraelBaitStats, AzraelBaitUI" cursor_area="true">\n'
+         f'\t\t\t<sprite depth="1" name="background" sprite="menu_empty" color="{{bgcol}}" type="sliced" />\n'
+         f'\t\t\t<sprite depth="8" name="border" sprite="menu_empty3px" color="[black]" type="sliced" fillcenter="false" />\n')
+    s += lbl(12, -8, w - 24, 34, "{stitle}", 26)
+    s += lbl(16, -50, w - 32, 300, "{sbody}", 21)
+    y = -392
+    s += lbl(12, y + 30, 400, 26, "Perks ({perkslots})", 20)
+    s += btn("ptough", 12, y, 140, 36, "Tough")
+    s += btn("phit", 160, y, 140, 36, "Hit")
+    s += btn("pregen", 308, y, 140, 36, "Regen")
+    s += btn("ptaunt", 456, y, 140, 36, "Taunt")
+    s += btn("preset", 604, y, 180, 36, "{resettxt}")
+    y -= 70
+    s += lbl(12, y + 30, 600, 26, "Post and patrol", 20)
+    s += btn("guard", 12, y, 170, 36, "{guardtxt}")
+    s += btn("padd", 190, y, 190, 36, "Add patrol point")
+    s += btn("pstart", 388, y, 160, 36, "{patroltxt}")
+    s += btn("pclear", 556, y, 150, 36, "Clear points")
+    s += btn("scout", 714, y, 120, 36, "Scout")
+    y -= 70
+    s += btn("evolve", 12, y, 320, 36, "{evolvetxt}")
+    s += btn("bloodmoon", 340, y, 300, 36, "{bmtxt}")
+    y -= 50
+    s += lbl(12, y + 4, w - 24, 30, "{status}", 20)
+    y -= 40
+    s += btn("prevthrall", 12, y, 110, 36, "Prev")
+    s += btn("nextthrall", 130, y, 110, 36, "Next")
+    s += btn("back", w - 236, y, 110, 36, "Roster")
+    s += btn("close", w - 118, y, 106, 36, "Close")
     s += '\t\t</window>\n'
     return s
 
@@ -102,7 +149,8 @@ start = text.index('\t\t<window name="windowAzraelBaitRoster"')
 end = text.index('\t\t<window name="windowAzraelBaitName"')
 gen = (roster("windowAzraelBaitRoster", 8, 46, 19, 22)
        + roster("windowAzraelBaitRoster12", 12, 40, 17, 20)
-       + roster("windowAzraelBaitRoster16", 16, 34, 15, 18))
+       + roster("windowAzraelBaitRoster16", 16, 34, 15, 18)
+       + stats())
 text = text[:start] + gen + text[end:]
 with open(path, "w", encoding="utf-8", newline="\n") as f:
     f.write(text)

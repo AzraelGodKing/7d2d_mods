@@ -8,23 +8,31 @@ public class BaitHud : MonoBehaviour
 {
     float nextHello;
     int helloTries;
-    GUIStyle label, small;
+    GUIStyle label, small, tiny;
     float styleScale;
     static float Sc { get { return UiSettings.Scale * Screen.height / 1080f; } }
 
     float nextNav;
 
     // Thralls are not hostile to their players: take the enemy marker (compass and map) off every thrall the server told us about.
+    // Our own thrall markers (MapMarks) stay.
     void ClearThrallMarks()
     {
         if (Time.time < nextNav || BaitData.All.Count == 0 || !NavObjectManager.HasInstance) return;
         nextNav = Time.time + 1f;
-        foreach (int id in BaitData.All)
+        List<NavObject> drop = null;
+        foreach (var n in NavObjectManager.Instance.NavObjectList)
         {
-            var e = BaitData.Live(id);
-            if (e == null || e.NavObject == null) continue;
-            NavObjectManager.Instance.UnRegisterNavObjectByEntityID(id);
-            e.NavObject = null;
+            if (n == null || MapMarks.IsOurs(n) || n.TrackedEntity == null || !BaitData.All.Contains(n.TrackedEntity.entityId)) continue;
+            if (drop == null) drop = new List<NavObject>();
+            drop.Add(n);
+        }
+        if (drop == null) return;
+        foreach (var n in drop)
+        {
+            var e = n.TrackedEntity as EntityAlive;
+            NavObjectManager.Instance.UnRegisterNavObject(n);
+            if (e != null && e.NavObject == n) e.NavObject = null;
         }
     }
 
@@ -35,11 +43,12 @@ public class BaitHud : MonoBehaviour
             var p = BaitData.Me;
             if (p == null)
             {
-                if (BaitData.HasData || helloTries > 0) { BaitData.Reset(); helloTries = 0; }
+                if (BaitData.HasData || helloTries > 0) { BaitData.Reset(); MapMarks.Clear(); helloTries = 0; }
                 return;
             }
 
             ClearThrallMarks();
+            MapMarks.Update();
 
             // Tell the server mod we are here (only on servers that run Bait, and only a few tries).
             if (!BaitData.HasData && BaitData.ServerHasBait())
@@ -132,18 +141,26 @@ public class BaitHud : MonoBehaviour
                 Event.current.Use();
                 return;
             }
-            if (Event.current.type != EventType.Repaint) { if (edit && UiSettings.Party) DragParty(); return; }
+            if (Event.current.type != EventType.Repaint) { if (edit && UiSettings.Party && !UiSettings.HpStrip) DragParty(); return; }
             if (!hud && !(edit && UiSettings.Party)) return;
             if (label == null || Mathf.Abs(styleScale - Sc) > 0.01f)
             {
                 styleScale = Sc;
                 label = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(13 * Sc), fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter, clipping = TextClipping.Overflow };
                 small = new GUIStyle(label) { fontSize = Mathf.RoundToInt(14 * Sc), alignment = TextAnchor.MiddleLeft };
+                tiny = new GUIStyle(label) { fontSize = Mathf.RoundToInt(11 * Sc), alignment = TextAnchor.MiddleLeft };
             }
 
-            if (UiSettings.Nameplates || UiSettings.Party)
+            bool partyList = UiSettings.Party && !UiSettings.HpStrip;   // the HP strip replaces the party list
+            if (hud && UiSettings.HpStrip) DrawStrip();
+            if (hud && UiSettings.TamingHelp) DrawTamingHelp();
+            if (UiSettings.Nameplates || partyList)
             {
                 int row = 0;
+                if (partyList && hud && !edit && UiSettings.Theme != 0)
+                {
+                    var old = GUI.color; GUI.color = UiSettings.HudBack; GUI.DrawTexture(PartyRect, Texture2D.whiteTexture); GUI.color = old;
+                }
                 foreach (var t in BaitData.Thralls)
                 {
                     var e = BaitData.LiveThrall(t);
@@ -163,9 +180,9 @@ public class BaitHud : MonoBehaviour
                         Plate(cam, p, e, title, hf, t.Mode == 3 ? InvColor : low && Mathf.Repeat(Time.time, 0.6f) < 0.3f ? Color.red : UiSettings.BarColorFor(t, HpColor(hf)), t.Mode == 3 ? (t.Stay ? "invulnerable, hold" : "invulnerable") : (t.Stay ? "hold" : null), 45f, nameCol);
                     }
                     else if (hud && UiSettings.Nameplates && UiSettings.DownedTags && t.DownLeft > 0) DownedTag(cam, p, t, tk);
-                    if (UiSettings.Party && t.Active)
+                    if (partyList && t.Active)
                     {
-                        float s = Sc, y = PartyRect.y + 22 * s + row * 36 * s;
+                        float s = Sc, y = PartyRect.y + 22 * s + row * RowH * s;
                         if (row == 0 && edit)
                         {
                             var pr = PartyRect;
@@ -176,8 +193,19 @@ public class BaitHud : MonoBehaviour
                             Shadow(new Rect(pr.x + 4, pr.y + 1, pr.width, 20 * s), "drag to move", small);
                         }
                         float f = e != null ? HpFrac(e) : 0f;
-                        Shadow(new Rect(PartyRect.x + 4, y, 320 * s, 20 * s), (t.Tether ? "[T] " : "") + (t.Mode == 3 ? "[Inv] " : "") + Title(t) + (e == null ? " (away)" : ""), small, UiSettings.NameColorFor(t));
-                        Bar(new Rect(PartyRect.x + 4, y + 21 * s, 220 * s, 7 * s), f, t.Mode == 3 ? InvColor : UiSettings.BarColorFor(t, HpColor(f)));
+                        string pn = (t.Patrol ? "[P] " : t.Guard ? "[G] " : t.Tether ? "[T] " : "") + (t.Mode == 3 ? "[Inv] " : "") + Title(t) + (e == null ? " (away)" : "");
+                        Color pc = t.Mode == 3 ? InvColor : UiSettings.BarColorFor(t, HpColor(f));
+                        if (UiSettings.CompactParty)
+                        {
+                            // one line: name, then the bar beside it
+                            Shadow(new Rect(PartyRect.x + 4, y, 200 * s, 18 * s), pn, tiny, UiSettings.NameColorFor(t));
+                            Bar(new Rect(PartyRect.x + 210 * s, y + 6 * s, 120 * s, 7 * s), f, pc);
+                        }
+                        else
+                        {
+                            Shadow(new Rect(PartyRect.x + 4, y, 320 * s, 20 * s), pn, small, UiSettings.NameColorFor(t));
+                            Bar(new Rect(PartyRect.x + 4, y + 21 * s, 220 * s, 7 * s), f, pc);
+                        }
                         row++;
                     }
                 }
@@ -225,8 +253,53 @@ public class BaitHud : MonoBehaviour
             int n = 0;
             foreach (var t in BaitData.Thralls) if (t.Active) n++;
             float s = Sc;
-            return new Rect(UiSettings.PartyX * Screen.width, UiSettings.PartyY * Screen.height, 340 * s, 22 * s + Mathf.Max(1, n) * 36 * s);
+            return new Rect(UiSettings.PartyX * Screen.width, UiSettings.PartyY * Screen.height, 340 * s, 22 * s + Mathf.Max(1, n) * RowH * s);
         }
+    }
+    static float RowH { get { return UiSettings.CompactParty ? 20f : 36f; } }
+
+    // HP strip: a small bar per active thrall in the bottom-right corner (instead of the party list).
+    void DrawStrip()
+    {
+        var list = new List<UiThrall>();
+        foreach (var t in BaitData.Thralls) if (t.Active) list.Add(t);
+        if (list.Count == 0) return;
+        float s = Sc, w = 230 * s, rh = 16 * s, x = Screen.width - w - 12 * s, y0 = Screen.height - 14 * s - list.Count * rh;
+        var old = GUI.color;
+        GUI.color = UiSettings.HudBack;
+        GUI.DrawTexture(new Rect(x - 4 * s, y0 - 4 * s, w + 8 * s, list.Count * rh + 8 * s), Texture2D.whiteTexture);
+        GUI.color = old;
+        for (int i = 0; i < list.Count; i++)
+        {
+            var t = list[i];
+            var e = BaitData.LiveThrall(t);
+            float f = e != null ? HpFrac(e) : 0f, y = y0 + i * rh;
+            string n = t.DownLeft > 0 ? t.Label + " " + Clock(t.DownLeft) : e == null ? t.Label + " (away)" : t.Label;
+            Shadow(new Rect(x, y, 150 * s, rh), n, tiny, t.DownLeft > 0 ? new Color(0.65f, 0.65f, 0.65f) : UiSettings.NameColorFor(t));
+            Bar(new Rect(x + 155 * s, y + 5 * s, 72 * s, 6 * s), f, t.Mode == 3 ? InvColor : UiSettings.BarColorFor(t, HpColor(f)));
+        }
+    }
+
+    // Taming helper: while you hold bait, what the creature under the crosshair needs (the server works it out).
+    void DrawTamingHelp()
+    {
+        var l = BaitData.Look;
+        if (l == null || Time.time - l.At > 3f) return;
+        var e = BaitData.Live(l.EntityId);
+        if (e == null) return;
+        string cn = Localization.Get(EntityClass.list[e.entityClass].entityClassName);
+        string what = cn + (l.Level > 0 ? " Lv" + l.Level : "");
+        string st; Color c;
+        switch (l.Status)
+        {
+            case "mine": st = "already a thrall"; c = new Color(0.5f, 1f, 0.5f); break;
+            case "excluded": st = "can't be tamed on this server"; c = new Color(1f, 0.45f, 0.45f); break;
+            case "full": st = "your roster is full: release one first"; c = new Color(1f, 0.45f, 0.45f); break;
+            case "other": st = "someone else is feeding it"; c = new Color(1f, 0.6f, 0.3f); break;
+            default: st = l.Cur > 0 ? "fed " + l.Cur + "/" + l.Need + " meals" : l.Need + " meals to tame"; c = new Color(1f, 0.85f, 0.35f); break;
+        }
+        float s = Sc, cx = Screen.width / 2f, y = Screen.height * 0.56f;
+        Shadow(new Rect(cx - 220 * s, y, 440 * s, 20 * s), what + ":  " + st, label, c);
     }
 
     bool dragging;

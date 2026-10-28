@@ -9,6 +9,9 @@
 		<window_group name="azraelBaitRoster16" defaultselected="close">
 			<window name="windowAzraelBaitRoster16" />
 		</window_group>
+		<window_group name="azraelBaitStats" defaultselected="close">
+			<window name="windowAzraelBaitStats" />
+		</window_group>
 		<window_group name="azraelBaitName" defaultselected="txtName">
 			<window name="windowAzraelBaitName" />
 		</window_group>
