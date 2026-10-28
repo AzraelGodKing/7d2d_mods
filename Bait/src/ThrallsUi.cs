@@ -9,7 +9,7 @@ using System.Text;
 public static partial class Thralls
 {
     const string UiTag = "\u200B\u200BBAIT|";
-    public const string ModVersion = "1.8.0";   // keep in step with mod.json; sent to Bait UI so it can warn about a server that is too old
+    public const string ModVersion = "1.9.0";   // keep in step with mod.json; sent to Bait UI so it can warn about a server that is too old
     static readonly HashSet<int> uiClients = new HashSet<int>();
     static readonly Dictionary<int, string> uiRoster = new Dictionary<int, string>();
     static readonly Dictionary<int, string> uiCfg = new Dictionary<int, string>();
@@ -50,7 +50,13 @@ public static partial class Thralls
     {
         var l = new List<string>();
         var list = RosterOf(key);
-        l.Add("S|" + list.Count + "|" + MaxOwnedFor(key) + "|" + MaxActiveFor(key) + "|" + ActiveCount(key) + "|" + (IsAdmin(me) ? 1 : 0) + "|" + PowerOf(key) + "|" + ModVersion);
+        int bb, bg;
+        var pl = W != null ? W.GetEntity(me) as EntityPlayer : null;
+        int plain = pl != null ? ItemCount(pl, BaitCheck.BaitItem, out bb, out bg) : 0;
+        int rich = pl != null ? ItemCount(pl, BaitCheck.RichItem, out bb, out bg) : 0;
+        int feast = pl != null ? ItemCount(pl, BaitCheck.FeastItem, out bb, out bg) : 0;
+        l.Add("S|" + list.Count + "|" + MaxOwnedFor(key) + "|" + MaxActiveFor(key) + "|" + ActiveCount(key) + "|" + (IsAdmin(me) ? 1 : 0) + "|" + PowerOf(key) + "|" + ModVersion
+              + "|" + plain + "|" + rich + "|" + feast);
         for (int i = 0; i < list.Count; i++)
         {
             var r = list[i];
@@ -58,8 +64,12 @@ public static partial class Thralls
             if (!liveByRecord.TryGetValue(r.Id, out eid)) eid = -1;
             long down = r.ReviveAt - NowSec();
             l.Add("T|" + (i + 1) + "|" + eid + "|" + Clean(r.ClassName) + "|" + (r.Active ? 1 : 0) + "|" + r.Level + "|" + r.Kills + "|" + (r.Tether ? 1 : 0) + "|" + F(r.TR) +
-                  "|" + r.Mode + "|" + (r.Stay ? 1 : 0) + "|" + (down > 0 ? down : 0) + "|" + Clean(r.Name) + "|" + (r.AutoRevive ? 1 : 0));
+                  "|" + r.Mode + "|" + (r.Stay ? 1 : 0) + "|" + (down > 0 ? down : 0) + "|" + Clean(r.Name) + "|" + (r.AutoRevive ? 1 : 0) + "|" + (r.AutoHeal ? 1 : 0));
         }
+        // teams: TM|<count>|name:size,name:size (older Bait UI ignores it)
+        var tl = new List<string>();
+        foreach (var tm in TeamsOf(key)) tl.Add(Clean(tm.Name).Replace(':', ' ').Replace(',', ' ') + ":" + list.FindAll(r => tm.Ids.Contains(r.Id)).Count);
+        l.Add("TM|" + tl.Count + "|" + string.Join(",", tl.ToArray()));
         return l;
     }
 
@@ -113,6 +123,16 @@ public static partial class Thralls
             if (p == null) { uiClients.Remove(id); uiRoster.Remove(id); uiCfg.Remove(id); uiAll.Remove(id); continue; }
             try { UiPushTo(id, p, false); } catch (Exception e) { Dbg("ui push: " + e.Message); }
         }
+    }
+
+    // kill feed for Bait UI: K|<roster number>|<victim>|<kills>|<1 = shared kill>
+    static void UiKill(int ownerId, ThrallRecord rec, EntityAlive victim, bool shared)
+    {
+        if (!uiClients.Contains(ownerId) || victim == null) return;
+        int n = RosterOf(rec.OwnerKey).IndexOf(rec) + 1;
+        string v = Pretty(ClassName(victim));
+        int lvl = LevelOf(victim.entityId);
+        UiSend(ownerId, new List<string> { "K|" + n + "|" + Clean(v + (lvl > 0 ? " Lv" + lvl : "")) + "|" + rec.Kills + "|" + (shared ? 1 : 0) });
     }
 
     static void UiFeed(int ownerId, int entityId, int cur, int need)

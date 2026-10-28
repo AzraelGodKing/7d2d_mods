@@ -55,3 +55,16 @@ The buttons send the normal `/thrall` chat commands (they are hidden from other 
 **1.6.5:** On/off settings in the admin window show as a tick box (`[X]` on, `[  ]` off; the Flip button toggles it). The new server setting `KatsSpecial` (Bait 1.7.9) shows as **Kats Special (27 thralls each)**: ticked, every player may hold 27 thralls.
 
 **1.6.6:** Each roster row has an `Auto` tick box (`[X] Auto` on, `[  ] Auto` off) that turns auto-revive on or off for that thrall (`/thrall autorevive <n>`): when it falls and you carry the base Zombie and Animal Bait, the server takes the bait and brings it straight back. The roster window is a little wider to fit it. Needs Bait 1.8.0 or newer on the server; with an older server the box stays blank.
+
+**1.7.0:** Needs Bait 1.9.0 on the server for the parts marked (1.9.0); with an older server those buttons stay blank.
+- Roster rows: `[X] Heal` auto-heal box (1.9.0) and `^`/`v` to move a thrall up or down the roster (1.9.0). Click a row's name to open a details line (level, kills to the next level, HP, where it is, mode, auto toggles); click it again to close.
+- Title shows the bait the server sees in your inventory (1.9.0).
+- `Show: All/Zombies/Animals` filter, `Sort: Number/Level/HP` (HP puts downed and hurt ones first) and `8/12/16 per page` (three roster windows; `tools/gen-roster.py` writes them).
+- Bottom rows: `Bring all here` and `Deaths` (listed in chat) (1.9.0), `Re-center`, team picker with `Call team`, `Save active` and `New team` (1.9.0).
+- Drag the window by its title bar; the spot is remembered (`Re-center` puts it back).
+- Group hotkeys: F6 follow all, F7 stay all, F8 bring all here (1.9.0). Click the `Keys:` button and press three keys in turn to change them (Del = none), or `baitui followkey|staykey|herekey <key>`.
+- Quick-actions wheel: hold the middle mouse button (`Wheel:` button or `baitui wheelkey <key>` to change), move the mouse, scroll or press 1-5 to pick Follow all, Stay all, Bring all here, Stow active or Call team, then let go. The camera still turns while you aim.
+- Name tags: a thrall under 25% HP flashes red with a short sound (`Low HP flash`, `Low HP sound`); a downed thrall keeps a grey `back in m:ss` tag where it fell (`Downed tags`); a level-up turns the tag gold with `Lv N!` for 4 s (`Level glow`).
+- Kill feed: your thralls' kills fade in at the right of the screen for 6 s (1.9.0) (`Kill feed`).
+- `tools/gen-windows.ps1` is gone: it no longer matched the windows file. The roster windows come from `tools/gen-roster.py`; the rename and admin windows are edited by hand.
+

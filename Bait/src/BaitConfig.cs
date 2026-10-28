@@ -60,6 +60,13 @@ public static class BaitConfig
     public static int ReviveCostFeast = 1;        // ...or this many Feast bait. Tried in that order; the first you can afford is taken.
     public static bool AutoRevive = true;       // players may turn on auto-revive for a thrall (/thrall autorevive <n>)
     public static int AutoReviveCost = 3;       // plain Zombie and Animal Bait an auto-revive takes from the owner's inventory
+    public static bool AutoHeal = true;         // players may turn on auto-heal for a thrall (/thrall autoheal <n>)
+    public static float AutoHealBelowPct = 30f; // auto-heal kicks in below this much health
+    public static float AutoHealCooldownSeconds = 20f; // at most one auto-heal per thrall this often
+    public static bool LowBaitWarning = true;   // toast when you carry too little plain bait for auto-revive/auto-heal
+    public static float HereCooldownSeconds = 30f; // /thrall here once every this many seconds (0 = no cooldown)
+    public static int MaxTeams = 8;
+    public static bool ReturnUneatenBait = true; // a thrown bait nothing ate goes back to the thrower when it stops calling             // teams one player may save
     public static int HealBaitCost = 1;         // bait for /thrall heal
     public static float NewThrallGraceSeconds = 8f; // a thrall that was just tamed or called can't be targeted or hurt for this long (0 = off)
     public static float HealPct = 40f;          // health restored by /thrall heal

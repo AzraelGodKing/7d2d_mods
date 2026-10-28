@@ -23,6 +23,7 @@ public class ThrallRecord
     public int Mode;         // 0 aggressive, 1 defensive, 2 passive
     public long ReviveAt;    // unix seconds; while in the future the thrall is downed
     public bool AutoRevive;  // when it is downed, pay plain bait from the owner's inventory and bring it straight back
+    public bool AutoHeal;    // when it is hurt, pay plain bait from the owner's inventory to heal it
 }
 public class LiveThrall { public int EntityId, OwnerEntityId; public string RecordId, OwnerKey; public bool Hold; public int Mode; }
 
@@ -222,6 +223,7 @@ public static partial class Thralls
         LoadLimits();
         LoadIds();
         LoadOwners();
+        LoadTeams();
         LoadLedger();
         SnapshotOnVersionChange();
         try
@@ -240,6 +242,7 @@ public static partial class Thralls
     {
         FlushIds();
         FlushOwners();
+        FlushTeams();
         FlushLedger();
         if (!dirty || !loaded || rosterBroken) return;
         try
@@ -251,7 +254,7 @@ public static partial class Thralls
                       .Append('\t').Append(r.Level).Append('\t').Append(r.Kills).Append('\t').Append(r.Tether ? "1" : "0")
                       .Append('\t').Append(F(r.TX)).Append('\t').Append(F(r.TY)).Append('\t').Append(F(r.TZ)).Append('\t').Append(F(r.TR))
                       .Append('\t').Append(r.Name ?? "").Append('\t').Append(r.Stay ? "1" : "0").Append('\t').Append(r.Mode).Append('\t').Append(r.ReviveAt)
-                      .Append('\t').Append(r.AutoRevive ? "1" : "0").Append('\n');
+                      .Append('\t').Append(r.AutoRevive ? "1" : "0").Append('\t').Append(r.AutoHeal ? "1" : "0").Append('\n');
             string text = sb.ToString();
             WriteSafe(FilePath, text);
             KeepCopy(text);
@@ -670,7 +673,7 @@ public static partial class Thralls
 
             LiveThrall klt;
             if (killer != null && Live.TryGetValue(killer.entityId, out klt) && !(victim is EntityPlayer) && !Live.ContainsKey(victim.entityId))
-                ThrallKilledSomething(klt, killer);
+                ThrallKilledSomething(klt, killer, victim, false);
             else if (killer is EntityPlayer && !(victim is EntityPlayer) && !Live.ContainsKey(victim.entityId))
                 ShareKill((EntityPlayer)killer, victim);
             else if (killer is EntityZombie && !Live.ContainsKey(killer.entityId) && BaitConfig.ZombieLevels
@@ -687,6 +690,7 @@ public static partial class Thralls
             if (rec != null)
             {
                 Log.Out("[Bait] thrall died: " + Label(rec) + " (#" + victim.entityId + ") " + why + " at " + victim.position);
+                LogDeath(rec, why);
                 var downedOwner = W != null ? W.GetEntity(lt.OwnerEntityId) as EntityPlayer : null;
                 if (downedOwner != null && TryAutoRevive(rec, downedOwner, why)) { Flush(); return; }
                 if (BaitConfig.ReviveSeconds > 0)
@@ -750,15 +754,16 @@ public static partial class Thralls
             var th = W.GetEntity(kv.Key) as EntityAlive;
             if (th == null || th.IsDead()) continue;
             if ((th.position - victim.position).sqrMagnitude > r * r && (th.position - owner.position).sqrMagnitude > r * r) continue;
-            ThrallKilledSomething(kv.Value, th);
+            ThrallKilledSomething(kv.Value, th, victim, true);
         }
     }
-    static void ThrallKilledSomething(LiveThrall lt, EntityAlive killer)
+    static void ThrallKilledSomething(LiveThrall lt, EntityAlive killer, EntityAlive victim, bool shared)
     {
         var rec = Find(lt.RecordId);
         if (rec == null) return;
         rec.Kills++;
         dirty = true;
+        UiKill(lt.OwnerEntityId, rec, victim, shared);
         int per = Math.Max(1, BaitConfig.KillsPerLevel);
         if (rec.Kills % per == 0 && rec.Level < BaitConfig.MaxLevel)
         {
