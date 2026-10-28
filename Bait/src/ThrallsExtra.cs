@@ -199,6 +199,28 @@ public static partial class Thralls
         return false;
     }
 
+    // ---- auto-revive (per thrall, /thrall autorevive <n>): a downed thrall comes straight back when its owner carries
+    // enough base bait. Only the plain Zombie and Animal Bait counts, never Rich or Feast.
+    static string AutoReviveCostText()
+    {
+        int n = Math.Max(1, BaitConfig.AutoReviveCost);
+        return n + " Zombie and Animal Bait";
+    }
+
+    // Pays for and brings back a downed thrall if auto-revive is on for it and the owner has the bait.
+    // why is the cause of death when called from the kill handler, null from the tick.
+    static bool TryAutoRevive(ThrallRecord rec, EntityPlayer owner, string why)
+    {
+        if (rec == null || owner == null || owner.IsDead() || !rec.AutoRevive || !BaitConfig.AutoRevive || !rec.Active) return false;
+        int cost = Math.Max(1, BaitConfig.AutoReviveCost), b, g;
+        if (ItemCount(owner, BaitCheck.BaitItem, out b, out g) < cost) return false;
+        if (!TakeItems(owner, BaitCheck.BaitItem, cost)) return false;
+        rec.ReviveAt = 0; dirty = true; nextSpawn.Remove(rec.Id); nextSlow = 0f;
+        Log.Out("[Bait] auto-revived " + Label(rec) + " for " + owner.EntityName + " (" + cost + " bait)");
+        Notify(owner.entityId, (why != null ? Label(rec) + " died: " + why + ". " : "") + "Auto-revive used " + AutoReviveCostText() + ": " + Label(rec) + " is back on its feet.");
+        return true;
+    }
+
     static string NeedReviveText(EntityPlayer p)
     {
         int b1, g1, b2, g2, b3, g3;

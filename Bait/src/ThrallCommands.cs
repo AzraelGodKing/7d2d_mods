@@ -26,7 +26,7 @@ public class ConsoleCmdThrall : ConsoleCmdAbstract
 
     public override string[] getCommands() { return new[] { "thrall", "thralls" }; }
     public override string getDescription() { return "Zombie and Animal Bait: manage your tamed creatures (same as /thrall in chat)"; }
-    public override string getHelp() { return "thrall list | hp | name <n> <name> | call <n> | stow [n|all] | stay/follow <n|all> | mode <n|all> aggressive|defensive|passive|invulnerable | heal <n> | revive <n> | tether <n|all> [radius] | untether <n|all> | release <n> | kill <n|all> | config [name value]"; }
+    public override string getHelp() { return "thrall list | hp | name <n> <name> | call <n> | stow [n|all] | stay/follow <n|all> | mode <n|all> aggressive|defensive|passive|invulnerable | heal <n> | revive <n> | autorevive <n|all> [on|off] | tether <n|all> [radius] | untether <n|all> | release <n> | kill <n|all> | config [name value]"; }
 
     public override void Execute(List<string> _params, CommandSenderInfo _senderInfo)
     {

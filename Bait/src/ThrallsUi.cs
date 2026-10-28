@@ -9,7 +9,7 @@ using System.Text;
 public static partial class Thralls
 {
     const string UiTag = "\u200B\u200BBAIT|";
-    public const string ModVersion = "1.7.9";   // keep in step with mod.json; sent to Bait UI so it can warn about a server that is too old
+    public const string ModVersion = "1.8.0";   // keep in step with mod.json; sent to Bait UI so it can warn about a server that is too old
     static readonly HashSet<int> uiClients = new HashSet<int>();
     static readonly Dictionary<int, string> uiRoster = new Dictionary<int, string>();
     static readonly Dictionary<int, string> uiCfg = new Dictionary<int, string>();
@@ -58,7 +58,7 @@ public static partial class Thralls
             if (!liveByRecord.TryGetValue(r.Id, out eid)) eid = -1;
             long down = r.ReviveAt - NowSec();
             l.Add("T|" + (i + 1) + "|" + eid + "|" + Clean(r.ClassName) + "|" + (r.Active ? 1 : 0) + "|" + r.Level + "|" + r.Kills + "|" + (r.Tether ? 1 : 0) + "|" + F(r.TR) +
-                  "|" + r.Mode + "|" + (r.Stay ? 1 : 0) + "|" + (down > 0 ? down : 0) + "|" + Clean(r.Name));
+                  "|" + r.Mode + "|" + (r.Stay ? 1 : 0) + "|" + (down > 0 ? down : 0) + "|" + Clean(r.Name) + "|" + (r.AutoRevive ? 1 : 0));
         }
         return l;
     }
