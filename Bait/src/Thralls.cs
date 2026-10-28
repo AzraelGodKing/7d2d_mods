@@ -24,8 +24,21 @@ public class ThrallRecord
     public long ReviveAt;    // unix seconds; while in the future the thrall is downed
     public bool AutoRevive;  // when it is downed, pay plain bait from the owner's inventory and bring it straight back
     public bool AutoHeal;    // when it is hurt, pay plain bait from the owner's inventory to heal it
+    public string Perks = "";   // one letter per perk slot: T tough, H hit, R regen, A taunt (see ThrallsRoles.cs)
+    public bool Guard;       // tethered as a guard post: attacks what comes in, tells the owner
+    public bool Patrol;      // tethered on a patrol route (PatrolPts)
+    public string PatrolPts = "";   // x,y,z;x,y,z...
+    public bool BmCalled;    // a tethered thrall called out for a blood moon; tethered again at dawn
+    public int BmPrevMode = -1;     // the mode it had before blood moon mode made it aggressive (-1 = none)
+    public int Deaths;
+    public long TamedAt;     // unix seconds (0 = tamed before 1.10.0)
 }
-public class LiveThrall { public int EntityId, OwnerEntityId; public string RecordId, OwnerKey; public bool Hold; public int Mode; }
+public class LiveThrall
+{
+    public int EntityId, OwnerEntityId; public string RecordId, OwnerKey; public bool Hold; public int Mode;
+    public string Perks = "";
+    public bool Guard; public float GX, GY, GZ, GR;   // guard post or patrol: the circle it defends
+}
 
 public static partial class Thralls
 {
@@ -224,6 +237,7 @@ public static partial class Thralls
         LoadIds();
         LoadOwners();
         LoadTeams();
+        LoadPlayers();
         LoadLedger();
         SnapshotOnVersionChange();
         try
@@ -243,6 +257,7 @@ public static partial class Thralls
         FlushIds();
         FlushOwners();
         FlushTeams();
+        FlushPlayers();
         FlushLedger();
         if (!dirty || !loaded || rosterBroken) return;
         try
@@ -254,7 +269,9 @@ public static partial class Thralls
                       .Append('\t').Append(r.Level).Append('\t').Append(r.Kills).Append('\t').Append(r.Tether ? "1" : "0")
                       .Append('\t').Append(F(r.TX)).Append('\t').Append(F(r.TY)).Append('\t').Append(F(r.TZ)).Append('\t').Append(F(r.TR))
                       .Append('\t').Append(r.Name ?? "").Append('\t').Append(r.Stay ? "1" : "0").Append('\t').Append(r.Mode).Append('\t').Append(r.ReviveAt)
-                      .Append('\t').Append(r.AutoRevive ? "1" : "0").Append('\t').Append(r.AutoHeal ? "1" : "0").Append('\n');
+                      .Append('\t').Append(r.AutoRevive ? "1" : "0").Append('\t').Append(r.AutoHeal ? "1" : "0")
+                      .Append('\t').Append(r.Perks ?? "").Append('\t').Append(r.Guard ? "1" : "0").Append('\t').Append(r.Patrol ? "1" : "0").Append('\t').Append(r.PatrolPts ?? "")
+                      .Append('\t').Append(r.BmCalled ? "1" : "0").Append('\t').Append(r.BmPrevMode).Append('\t').Append(r.Deaths).Append('\t').Append(r.TamedAt).Append('\n');
             string text = sb.ToString();
             WriteSafe(FilePath, text);
             KeepCopy(text);
@@ -415,7 +432,8 @@ public static partial class Thralls
             Notify(ownerId, "You already hold " + list.Count + " thralls (limit " + MaxOwnedFor(key) + "). Release one first: /thrall release <number>");
             return;
         }
-        var rec = new ThrallRecord { Id = NewId(), OwnerKey = key, ClassName = cls, Level = LevelOf(z.entityId), Active = ActiveCount(key) < MaxActiveFor(key) };
+        var rec = new ThrallRecord { Id = NewId(), OwnerKey = key, ClassName = cls, Level = LevelOf(z.entityId), Active = ActiveCount(key) < MaxActiveFor(key), TamedAt = NowSec() };
+        WebhookTamed(owner, rec);
         list.Add(rec);
         dirty = true;
         feeds.Remove(z.entityId);
@@ -505,7 +523,8 @@ public static partial class Thralls
         z.IsSleeper = false; z.IsSleeperPassive = false;
         StartGrace(z);
         if (pastIds.Add(z.entityId)) idsDirty = true;
-        Live[z.entityId] = new LiveThrall { EntityId = z.entityId, OwnerEntityId = owner != null ? owner.entityId : -1, RecordId = rec.Id, OwnerKey = rec.OwnerKey, Hold = rec.Stay, Mode = rec.Mode };
+        Live[z.entityId] = new LiveThrall { EntityId = z.entityId, OwnerEntityId = owner != null ? owner.entityId : -1, RecordId = rec.Id, OwnerKey = rec.OwnerKey, Hold = rec.Stay, Mode = rec.Mode,
+                                           Perks = rec.Perks ?? "", Guard = rec.Tether && (rec.Guard || rec.Patrol), GX = rec.TX, GY = rec.TY, GZ = rec.TZ, GR = rec.TR };
         liveByRecord[rec.Id] = z.entityId;
         if (rec.Level < 1 && z is EntityZombie) { rec.Level = 1; dirty = true; }   // a zombie thrall is never level 0 (older ones are brought up to 1 here)
         if (rec.Level > 0) levels[z.entityId] = rec.Level; else levels.Remove(z.entityId);
@@ -534,10 +553,15 @@ public static partial class Thralls
             }
         }
         EAIBase move;
-        if (rec.Tether) move = new EAITether(new Vector3(rec.TX, rec.TY, rec.TZ), rec.TR);
+        var pts = rec.Patrol ? PatrolPoints(rec) : null;
+        if (rec.Tether && pts != null && pts.Count >= 2) move = new EAIPatrol(pts);
+        else if (rec.Tether) move = new EAITether(new Vector3(rec.TX, rec.TY, rec.TZ), rec.TR);
         else move = new EAIFollowMaster();
         move.Init(z);
         ai.tasks.AddTask(6, move);
+        var scout = new EAIScout();
+        scout.Init(z);
+        ai.tasks.AddTask(5, scout);
 
         var attack = ai.GetTasks<EAIApproachAndAttackTarget>();
         if (attack != null) foreach (var t in attack) SetClasses(t, "targetClasses", new[] { typeof(EntityEnemy), typeof(EntityEnemyAnimal), typeof(EntityBandit) }, false);
@@ -650,6 +674,7 @@ public static partial class Thralls
             int cid = EntityClass.FromString(rec.ClassName);
             Vector3 pos;
             if (at.HasValue) pos = at.Value + new Vector3(0f, 0.3f, 0f);
+            else if (rec.Tether && rec.Patrol && PatrolPoints(rec).Count > 0) pos = PatrolPoints(rec)[0] + new Vector3(0f, 0.5f, 0f);
             else if (rec.Tether) pos = new Vector3(rec.TX, rec.TY + 0.5f, rec.TZ);
             else if (owner != null) pos = BehindOwner(owner);
             else return;
@@ -691,6 +716,7 @@ public static partial class Thralls
             {
                 Log.Out("[Bait] thrall died: " + Label(rec) + " (#" + victim.entityId + ") " + why + " at " + victim.position);
                 LogDeath(rec, why);
+                rec.Deaths++;
                 var downedOwner = W != null ? W.GetEntity(lt.OwnerEntityId) as EntityPlayer : null;
                 if (downedOwner != null && TryAutoRevive(rec, downedOwner, why)) { Flush(); return; }
                 if (BaitConfig.ReviveSeconds > 0)
@@ -769,7 +795,9 @@ public static partial class Thralls
         {
             rec.Level++;
             levels[killer.entityId] = rec.Level;
-            Notify(lt.OwnerEntityId, Pretty(rec.ClassName) + " reached level " + rec.Level + ".");
+            Notify(lt.OwnerEntityId, Pretty(rec.ClassName) + " reached level " + rec.Level + "."
+                + (PerkSlots(rec.Level) > PerkSlots(rec.Level - 1) ? " A perk slot opened: /thrall perk " + (RosterOf(rec.OwnerKey).IndexOf(rec) + 1) + " tough|hit|regen|taunt" : ""));
+            WebhookLevel(rec);
         }
     }
 }

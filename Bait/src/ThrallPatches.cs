@@ -66,6 +66,11 @@ public static class ThrallDamagePatch
                 _strength = (int)(_strength * (1f + BaitConfig.LevelDamagePct * la / 100f) + 0.5f);
             if (lv > 0)
                 _strength = Math.Max(1, (int)(_strength / (1f + BaitConfig.LevelToughPct * lv / 100f) + 0.5f));
+            // perks: hit (more damage dealt to creatures) and tough (less taken)
+            int ph = attackerThrall ? Thralls.PerkCount(attacker.entityId, 'H') : 0;
+            if (ph > 0 && !(__instance is EntityPlayer)) _strength = (int)(_strength * (1f + BaitConfig.PerkHitPct * ph / 100f) + 0.5f);
+            int pt = victimThrall ? Thralls.PerkCount(__instance.entityId, 'T') : 0;
+            if (pt > 0) _strength = Math.Max(1, (int)(_strength / (1f + BaitConfig.PerkToughPct * pt / 100f) + 0.5f));
         }
 
         if (victimThrall) Thralls.NoteHit(__instance, _damageSource, attacker, _strength);

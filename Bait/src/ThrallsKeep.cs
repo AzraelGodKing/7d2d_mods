@@ -74,6 +74,12 @@ public static partial class Thralls
                 if (p.Length >= 15) { r.Name = p[11].Length > 0 ? p[11] : null; r.Stay = p[12] == "1"; r.Mode = PI(p[13]); long ra; if (long.TryParse(p[14], out ra)) r.ReviveAt = ra; }
                 if (p.Length >= 16) r.AutoRevive = p[15] == "1";
                 if (p.Length >= 17) r.AutoHeal = p[16] == "1";
+                if (p.Length >= 25)
+                {
+                    r.Perks = p[17]; r.Guard = p[18] == "1"; r.Patrol = p[19] == "1"; r.PatrolPts = p[20]; r.BmCalled = p[21] == "1";
+                    int bm; r.BmPrevMode = int.TryParse(p[22], out bm) ? bm : -1;
+                    r.Deaths = PI(p[23]); long ta; if (long.TryParse(p[24], out ta)) r.TamedAt = ta;
+                }
                 into.Add(r);
             }
             catch (Exception e) { Log.Warning("[Bait] skipped a bad roster line in " + path + ": " + e.Message); }

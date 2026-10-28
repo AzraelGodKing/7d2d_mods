@@ -308,10 +308,12 @@ public static partial class Thralls
 
     static void Regen(EntityAlive e)
     {
-        if (BaitConfig.RegenPctPerTick <= 0f || e.IsDead() || e.GetAttackTarget() != null) return;
+        int perk = PerkCount(e.entityId, 'R');
+        if (BaitConfig.RegenPctPerTick <= 0f || e.IsDead() || (e.GetAttackTarget() != null && perk == 0)) return;   // the regen perk also heals mid-fight
         float max = e.GetMaxHealth(), v = e.Stats.Health.Value;
         if (v >= max) return;
-        e.Stats.Health.Value = Mathf.Min(max, v + max * BaitConfig.RegenPctPerTick / 100f);
+        float mult = perk > 0 ? Mathf.Max(1f, BaitConfig.PerkRegenMult) * perk : 1f;
+        e.Stats.Health.Value = Mathf.Min(max, v + max * BaitConfig.RegenPctPerTick * mult / 100f);
     }
 
     // Defend mode: a target counts only when it is close to the thrall or to its owner.
@@ -319,6 +321,7 @@ public static partial class Thralls
     {
         float r = BaitConfig.DefendRange;
         if ((target.position - self.position).magnitude <= r) return true;
+        if (lt.Guard && Flat(target.position - new Vector3(lt.GX, lt.GY, lt.GZ)) <= lt.GR) return true;   // a guard defends its whole post
         var o = W != null ? W.GetEntity(lt.OwnerEntityId) : null;
         return o != null && (target.position - o.position).magnitude <= r;
     }
@@ -444,7 +447,7 @@ public static partial class Thralls
             var c = new Carried { RecId = rec.Id, PlayerId = playerId, ClassName = rec.ClassName, WasTether = rec.Tether, Radius = rec.TR, MaxId = maxId, At = Time.time };
             carried.RemoveAll(x => x.RecId == rec.Id);
             carried.Add(c);
-            rec.Active = false; rec.Tether = false; dirty = true;
+            rec.Active = false; rec.Tether = false; ClearPost(rec); dirty = true;
             if (lt.OwnerEntityId >= 0) Notify(lt.OwnerEntityId, Label(rec) + " is in your inventory. Place it down to bring it back" + (c.WasTether ? " (tethered there)." : "."));
         }
         catch (Exception ex) { Dbg("grab: " + ex.Message); }
