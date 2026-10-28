@@ -7,3 +7,9 @@ azraelBaitFeast,items,Resource,,,Feast Bait
 azraelBaitFeastDesc,items,Resource,,,"A whole feast for the creature that reaches it. One throw counts as 4 meals toward taming. Eats for a long time before it is gone."
 azraelBaitLure,items,Resource,,,Lure Bait
 azraelBaitLureDesc,items,Resource,,,"A cheap scrap of rot that pulls zombies within 40 blocks to where it lands for about 45 seconds. Animals ignore it, and it does nothing toward taming. Throw it to clear a doorway or to get away."
+azraelThrallWhistle,items,Tool,,,Thrall Whistle
+azraelThrallWhistleDesc,items,Tool,,,"Blow it and every thrall out with you comes running, same as /thrall here. It is never used up."
+azraelBaitFeeder,blocks,Block,,,Bait Feeder
+azraelBaitFeederDesc,blocks,Block,,,"Fill it with Zombie and Animal Bait. Wild animals nearby are drawn to it and fed one bait at a time, and when one has eaten enough it becomes your thrall, even while you are away. It stays tethered at the feeder."
+azraelThrallKennel,blocks,Block,,,Thrall Kennel
+azraelThrallKennelDesc,blocks,Block,,,"A home for your thralls. Thralls inside its yard heal faster. Send one home with /thrall kennel <number>, and it walks back and stays there."

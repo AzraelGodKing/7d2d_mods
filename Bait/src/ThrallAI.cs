@@ -56,7 +56,10 @@ public class EAIFollowMaster : EAIBase
         {
             lastGoal = o.position;
             nextRepath = Time.time + 1.5f;
-            theEntity.FindPath(o.position, theEntity.GetMoveSpeedPanic(), false, this);
+            // sneak follow: while the owner crouches it walks instead of running
+            var op = o as EntityPlayer;
+            bool sneak = BaitConfig.SneakFollow && op != null && op.IsCrouching;
+            theEntity.FindPath(o.position, sneak ? theEntity.GetMoveSpeed() : theEntity.GetMoveSpeedPanic(), false, this);
         }
     }
 

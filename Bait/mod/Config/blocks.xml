@@ -1,0 +1,67 @@
+<configs>
+	<!--
+		Bait Feeder and Thrall Kennel (1.12.0). Both are storage blocks; the server finds them by name.
+		Bait Feeder: put bait in it. Every FeederSeconds it feeds one wild animal within FeederRadius one bait,
+		toward taming it for whoever placed the feeder, even while they are away. A tamed animal stays tethered
+		at the feeder. Animals within 40 blocks are drawn to it.
+		Thrall Kennel: thralls inside its circle (KennelRadius) heal faster. /thrall kennel <n> walks a thrall home to it.
+	-->
+	<append xpath="/blocks">
+		<block name="azraelBaitFeeder">
+			<property name="CreativeMode" value="Player"/>
+			<property name="Class" value="CompositeTileEntity"/>
+			<property class="CompositeFeatures">
+				<property class="TEFeatureStorage">
+					<property name="LootList" value="playerWoodWritableStorage"/>
+				</property>
+			</property>
+			<property name="DescriptionKey" value="azraelBaitFeederDesc"/>
+			<property name="CustomIcon" value="cntTroughPigFull"/>
+			<property name="Material" value="Mmetal_thin"/>
+			<property name="Shape" value="ModelEntity"/>
+			<property name="Model" value="@:Entities/LootContainers/troughPig_FullPrefab.prefab"/>
+			<property name="MultiBlockDim" value="2,1,1"/>
+			<property name="WaterFlow" value="permitted"/>
+			<property name="Collide" value="movement,melee,bullet,arrow,rocket"/>
+			<property name="Path" value="solid"/>
+			<property name="Place" value="TowardsPlacerInverted"/>
+			<property name="StabilitySupport" value="false"/>
+			<property name="CanPickup" value="true"/>
+			<property name="MaxDamage" value="400"/>
+			<property name="EconomicValue" value="60"/>
+			<property class="RepairItems">
+				<property name="resourceScrapIron" value="10"/>
+			</property>
+			<drop event="Destroy" name="resourceScrapIron" count="1,3"/>
+			<property name="Group" value="Basics,Building"/>
+			<property name="FilterTags" value="MC_playerBlocks,SC_decor"/>
+		</block>
+		<block name="azraelThrallKennel">
+			<property name="CreativeMode" value="Player"/>
+			<property name="Class" value="CompositeTileEntity"/>
+			<property class="CompositeFeatures">
+				<property class="TEFeatureStorage">
+					<property name="LootList" value="playerWoodWritableStorage"/>
+				</property>
+			</property>
+			<property name="DescriptionKey" value="azraelThrallKennelDesc"/>
+			<property name="CustomIcon" value="decoClassicDogHouse"/>
+			<property name="Material" value="MwoodReinforced"/>
+			<property name="Shape" value="ModelEntity"/>
+			<property name="Model" value="@:Entities/OutdoorDecor/classicDogHousePrefab.prefab"/>
+			<property name="WaterFlow" value="permitted"/>
+			<property name="Path" value="solid"/>
+			<property name="Place" value="TowardsPlacerInverted"/>
+			<property name="CanPickup" value="true"/>
+			<property name="MaxDamage" value="500"/>
+			<property name="FuelValue" value="300"/>
+			<property name="EconomicValue" value="40"/>
+			<property class="RepairItems">
+				<property name="resourceWood" value="10"/>
+			</property>
+			<drop event="Destroy" name="resourceWood" count="1,3"/>
+			<property name="Group" value="Basics,Building"/>
+			<property name="FilterTags" value="MC_playerBlocks,SC_decor"/>
+		</block>
+	</append>
+</configs>
