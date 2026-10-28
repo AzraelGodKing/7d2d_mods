@@ -10,16 +10,16 @@ $sb = New-Object System.Text.StringBuilder
 [void]$sb.AppendLine('<configs>')
 [void]$sb.AppendLine("`t<append xpath=`"/windows`">")
 # roster
-[void]$sb.AppendLine("`t`t<window name=`"windowAzraelBaitRoster`" anchor=`"Center`" pos=`"-440, 295`" width=`"880`" height=`"590`" depth=`"15`" controller=`"AzraelBaitRoster, AzraelBaitUI`" cursor_area=`"true`">")
+[void]$sb.AppendLine("`t`t<window name=`"windowAzraelBaitRoster`" anchor=`"Center`" pos=`"-480, 295`" width=`"960`" height=`"590`" depth=`"15`" controller=`"AzraelBaitRoster, AzraelBaitUI`" cursor_area=`"true`">")
 [void]$sb.AppendLine("`t`t`t<sprite depth=`"1`" name=`"background`" sprite=`"menu_empty`" color=`"[darkestGrey]`" type=`"sliced`" />")
 [void]$sb.AppendLine("`t`t`t<sprite depth=`"8`" name=`"border`" sprite=`"menu_empty3px`" color=`"[black]`" type=`"sliced`" fillcenter=`"false`" />")
 [void]$sb.AppendLine((Lbl 12 -8 856 34 '{title}' 28))
 for($i=1;$i -le 8;$i++){
   $y = -52 - ($i-1)*46
-  [void]$sb.AppendLine("`t`t`t<rect name=`"row$i`" pos=`"0,$y`" width=`"880`" height=`"44`" depth=`"2`" visible=`"{r${i}vis}`">")
-  [void]$sb.AppendLine("`t`t`t`t<sprite depth=`"1`" sprite=`"menu_empty`" color=`"[darkGrey]`" type=`"sliced`" width=`"868`" height=`"42`" pos=`"6,0`" />")
+  [void]$sb.AppendLine("`t`t`t<rect name=`"row$i`" pos=`"0,$y`" width=`"960`" height=`"44`" depth=`"2`" visible=`"{r${i}vis}`">")
+  [void]$sb.AppendLine("`t`t`t`t<sprite depth=`"1`" sprite=`"menu_empty`" color=`"[darkGrey]`" type=`"sliced`" width=`"948`" height=`"42`" pos=`"6,0`" />")
   [void]$sb.AppendLine("`t`t`t`t<label depth=`"3`" pos=`"14,-3`" width=`"340`" height=`"40`" font_size=`"19`" text=`"{r${i}text}`" />")
-  $bx = @(@('call',362,60),@('stay',426,62),@('mode',492,56),@('teth',552,78),@('heal',634,62),@('name',700,66),@('rel',770,70))
+  $bx = @(@('call',362,60),@('stay',426,62),@('mode',492,56),@('teth',552,78),@('heal',634,62),@('name',700,66),@('rel',770,70),@('auto',846,100))
   foreach($b in $bx){ [void]$sb.AppendLine((Btn "r$i$($b[0])" $b[1] -4 $b[2] 36 "{r$i$($b[0])txt}")) }
   [void]$sb.AppendLine("`t`t`t</rect>")
 }

@@ -22,6 +22,7 @@ public class ThrallRecord
     public bool Stay;        // hold position instead of following
     public int Mode;         // 0 aggressive, 1 defensive, 2 passive
     public long ReviveAt;    // unix seconds; while in the future the thrall is downed
+    public bool AutoRevive;  // when it is downed, pay plain bait from the owner's inventory and bring it straight back
 }
 public class LiveThrall { public int EntityId, OwnerEntityId; public string RecordId, OwnerKey; public bool Hold; public int Mode; }
 
@@ -249,7 +250,8 @@ public static partial class Thralls
                     sb.Append(r.Id).Append('\t').Append(r.OwnerKey).Append('\t').Append(r.ClassName).Append('\t').Append(r.Active ? "1" : "0")
                       .Append('\t').Append(r.Level).Append('\t').Append(r.Kills).Append('\t').Append(r.Tether ? "1" : "0")
                       .Append('\t').Append(F(r.TX)).Append('\t').Append(F(r.TY)).Append('\t').Append(F(r.TZ)).Append('\t').Append(F(r.TR))
-                      .Append('\t').Append(r.Name ?? "").Append('\t').Append(r.Stay ? "1" : "0").Append('\t').Append(r.Mode).Append('\t').Append(r.ReviveAt).Append('\n');
+                      .Append('\t').Append(r.Name ?? "").Append('\t').Append(r.Stay ? "1" : "0").Append('\t').Append(r.Mode).Append('\t').Append(r.ReviveAt)
+                      .Append('\t').Append(r.AutoRevive ? "1" : "0").Append('\n');
             string text = sb.ToString();
             WriteSafe(FilePath, text);
             KeepCopy(text);
@@ -685,12 +687,15 @@ public static partial class Thralls
             if (rec != null)
             {
                 Log.Out("[Bait] thrall died: " + Label(rec) + " (#" + victim.entityId + ") " + why + " at " + victim.position);
+                var downedOwner = W != null ? W.GetEntity(lt.OwnerEntityId) as EntityPlayer : null;
+                if (downedOwner != null && TryAutoRevive(rec, downedOwner, why)) { Flush(); return; }
                 if (BaitConfig.ReviveSeconds > 0)
                 {
                     rec.ReviveAt = NowSec() + BaitConfig.ReviveSeconds;
                     nextSpawn.Remove(rec.Id);
                     Notify(lt.OwnerEntityId, Label(rec) + " died: " + why + ". It rises again in " + BaitConfig.ReviveSeconds + "s, or /thrall revive "
-                        + (RosterOf(rec.OwnerKey).IndexOf(rec) + 1) + " (" + ReviveCostText() + ").");
+                        + (RosterOf(rec.OwnerKey).IndexOf(rec) + 1) + " (" + ReviveCostText() + ")."
+                        + (rec.AutoRevive && BaitConfig.AutoRevive ? " Auto-revive is on: it comes back as soon as you carry " + AutoReviveCostText() + "." : ""));
                 }
                 else
                 {

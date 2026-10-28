@@ -58,6 +58,8 @@ public static class BaitConfig
     public static int ReviveCostPlain = 3;        // /thrall revive costs this many Plain bait...
     public static int ReviveCostRich = 2;         // ...or this many Rich bait...
     public static int ReviveCostFeast = 1;        // ...or this many Feast bait. Tried in that order; the first you can afford is taken.
+    public static bool AutoRevive = true;       // players may turn on auto-revive for a thrall (/thrall autorevive <n>)
+    public static int AutoReviveCost = 3;       // plain Zombie and Animal Bait an auto-revive takes from the owner's inventory
     public static int HealBaitCost = 1;         // bait for /thrall heal
     public static float NewThrallGraceSeconds = 8f; // a thrall that was just tamed or called can't be targeted or hurt for this long (0 = off)
     public static float HealPct = 40f;          // health restored by /thrall heal

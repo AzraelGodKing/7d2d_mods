@@ -28,6 +28,7 @@ public class XUiC_AzraelBaitRoster : XUiController
             Hook("r" + i + "stay", () => { var t = At(row); if (t != null) BaitData.Cmd((t.Stay ? "/thrall follow " : "/thrall stay ") + t.Idx); });
             Hook("r" + i + "mode", () => { var t = At(row); if (t != null) BaitData.Cmd("/thrall mode " + t.Idx + " " + BaitData.ModeWord((t.Mode + 1) % 4)); });
             Hook("r" + i + "teth", () => { var t = At(row); if (t != null) BaitData.Cmd((t.Tether ? "/thrall untether " : "/thrall tether ") + t.Idx); });
+            Hook("r" + i + "auto", () => { var t = At(row); if (t != null && BaitData.ServerHasAutoRevive) BaitData.Cmd("/thrall autorevive " + t.Idx + (t.AutoRevive ? " off" : " on")); });
             Hook("r" + i + "heal", () => { var t = At(row); if (t != null) BaitData.Cmd((t.Down > 0 ? "/thrall revive " : "/thrall heal ") + t.Idx); });
             Hook("r" + i + "name", () =>
             {
@@ -152,6 +153,7 @@ public class XUiC_AzraelBaitRoster : XUiController
                 case "staytxt": value = t == null ? "" : t.Stay ? "Follow" : "Stay"; return true;
                 case "modetxt": value = t == null ? "" : BaitData.ModeName(t.Mode); return true;
                 case "tethtxt": value = t == null ? "" : t.Tether ? "Untether" : "Tether"; return true;
+                case "autotxt": value = t == null || !BaitData.ServerHasAutoRevive ? "" : (t.AutoRevive ? "[X]" : "[  ]") + " Auto"; return true;
                 case "healtxt": value = t == null ? "" : t.Down > 0 ? "Revive" : "Heal"; return true;
                 case "nametxt": value = t == null ? "" : "Rename"; return true;
                 case "reltxt": value = t == null ? "" : (relRow == row && Time.time - relAt < 4f) ? "Sure?" : "Release"; return true;
@@ -357,4 +359,4 @@ public class XUiC_AzraelBaitAdmin : XUiController
         }
         return base.GetBindingValueInternal(ref value, name);
     }
-}
+}

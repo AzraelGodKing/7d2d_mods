@@ -53,3 +53,5 @@ The buttons send the normal `/thrall` chat commands (they are hidden from other 
 **1.6.3:** Version check. The roster title shows the server's Bait version (Bait 1.7.6 or newer sends it) and warns when it is older than 1.3.0, the oldest this UI can talk to. The `Party members' bars` button says so when the server is older than 1.7.3. The UI asks the server for its roster 3 times (15 s apart) instead of 8, hides the `/thrall` command lines from your chat, and says when the server never answered.
 
 **1.6.5:** On/off settings in the admin window show as a tick box (`[X]` on, `[  ]` off; the Flip button toggles it). The new server setting `KatsSpecial` (Bait 1.7.9) shows as **Kats Special (27 thralls each)**: ticked, every player may hold 27 thralls.
+
+**1.6.6:** Each roster row has an `Auto` tick box (`[X] Auto` on, `[  ] Auto` off) that turns auto-revive on or off for that thrall (`/thrall autorevive <n>`): when it falls and you carry the base Zombie and Animal Bait, the server takes the bait and brings it straight back. The roster window is a little wider to fit it. Needs Bait 1.8.0 or newer on the server; with an older server the box stays blank.

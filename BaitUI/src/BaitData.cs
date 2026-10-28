@@ -33,7 +33,7 @@ public class UiThrall
     public int Idx, EntityId, Level, Kills, Mode;
     public long Down;
     public string Cls, Name;
-    public bool Active, Tether, Stay;
+    public bool Active, Tether, Stay, AutoRevive;
     public float Radius;
     public string Pretty { get { string l = Localization.Get(Cls); return string.IsNullOrEmpty(l) ? Cls : l; } }
     public string Label { get { return string.IsNullOrEmpty(Name) ? Pretty : Name; } }
@@ -108,7 +108,7 @@ public static class BaitData
                     pendT.Add(new UiThrall
                     {
                         Idx = I(At(f, 1)), EntityId = I(At(f, 2)), Cls = At(f, 3), Active = I(At(f, 4)) == 1, Level = I(At(f, 5)), Kills = I(At(f, 6)),
-                        Tether = I(At(f, 7)) == 1, Radius = Fl(At(f, 8)), Mode = I(At(f, 9)), Stay = I(At(f, 10)) == 1, Down = L(At(f, 11)), Name = At(f, 12)
+                        Tether = I(At(f, 7)) == 1, Radius = Fl(At(f, 8)), Mode = I(At(f, 9)), Stay = I(At(f, 10)) == 1, Down = L(At(f, 11)), Name = At(f, 12), AutoRevive = I(At(f, 13)) == 1
                     });
                     if (pendT.Count >= pendTn) CommitT();
                     break;
@@ -180,6 +180,7 @@ public static class BaitData
     public static bool ServerHasOwners;   // got the owner list (Bait 1.7.3+), which the party members' bars need
     public const string NeedsServer = "1.3.0";     // the oldest Bait this UI can talk to at all
     public const string PartyBarsNeed = "1.7.3";   // party members' bars
+    public const string AutoReviveNeed = "1.8.0";  // the Auto tick box on each roster row (/thrall autorevive)
 
     public static bool Older(string have, string need)
     {
@@ -187,6 +188,7 @@ public static class BaitData
         return System.Version.TryParse(have, out h) && System.Version.TryParse(need, out n) && h < n;
     }
     public static bool ServerTooOld { get { return !string.IsNullOrEmpty(ServerVersion) && Older(ServerVersion, NeedsServer); } }
+    public static bool ServerHasAutoRevive { get { return !string.IsNullOrEmpty(ServerVersion) && !Older(ServerVersion, AutoReviveNeed); } }
     public static bool ServerHasPartyBars { get { return ServerHasOwners || (!string.IsNullOrEmpty(ServerVersion) && !Older(ServerVersion, PartyBarsNeed)); } }
 
     public static bool HelloGaveUp;   // asked a few times and the server never answered
