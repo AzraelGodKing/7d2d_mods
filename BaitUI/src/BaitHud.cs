@@ -4,7 +4,7 @@ using HarmonyLib;
 using UnityEngine;
 
 // Draws the name tags, party list and fed-progress tags (IMGUI), handles the roster hotkey and the "hello" to the server.
-public class BaitHud : MonoBehaviour
+public partial class BaitHud : MonoBehaviour
 {
     float nextHello;
     int helloTries;
@@ -74,12 +74,16 @@ public class BaitHud : MonoBehaviour
             var ui = LocalPlayerUI.GetUIForPrimaryPlayer();
             if (ui == null || ui.windowManager == null) return;
             var wm = ui.windowManager;
+            Extras.Tick(ui);
+            TrackDamage(p);
             if (wm.IsInputActive()) { wheelOpen = false; return; }
             if (GameManager.Instance != null && GameManager.Instance.IsPaused()) return;
             if (p.IsDead()) { wheelOpen = false; return; }
             bool free = !wm.IsCursorWindowOpen() && !wm.IsModalWindowOpen();   // playing, no window up
-            if (free && BaitData.HasData && !UiSettings.CaptureKey && UiSettings.CaptureGroup == 0 && !UiSettings.CaptureWheel)
+            if (free && BaitData.HasData && !UiSettings.CaptureKey && UiSettings.CaptureGroup == 0 && !UiSettings.CaptureWheel && !UiSettings.CaptureGoto)
             {
+                ThrallKeys();
+                GotoKey(p);
                 // group hotkeys: follow all, stay all, bring all here
                 if (UiSettings.FollowKey != KeyCode.None && Input.GetKeyDown(UiSettings.FollowKey)) BaitData.Cmd("/thrall follow all");
                 if (UiSettings.StayKey != KeyCode.None && Input.GetKeyDown(UiSettings.StayKey)) BaitData.Cmd("/thrall stay all");
@@ -118,6 +122,14 @@ public class BaitHud : MonoBehaviour
                 if (ui != null && ui.windowManager != null && !ui.windowManager.IsFullHUDDisabled())
                     edit = ui.windowManager.IsCursorWindowOpen() || ui.windowManager.IsModalWindowOpen();
             }
+            if (UiSettings.CaptureGoto && Event.current.type == EventType.KeyDown && Event.current.keyCode != KeyCode.None)
+            {
+                var pressed = Event.current.keyCode;
+                UiSettings.CaptureGoto = false;
+                if (pressed != KeyCode.Escape) { UiSettings.GotoKey = pressed == KeyCode.Delete || pressed == KeyCode.Backspace ? KeyCode.None : pressed; UiSettings.Save(); BaitData.SetStatus("Key saved."); }
+                Event.current.Use();
+                return;
+            }
             if ((UiSettings.CaptureGroup > 0 || UiSettings.CaptureWheel) && Event.current.type == EventType.KeyDown && Event.current.keyCode != KeyCode.None)
             {
                 var pressed = Event.current.keyCode;
@@ -141,7 +153,12 @@ public class BaitHud : MonoBehaviour
                 Event.current.Use();
                 return;
             }
-            if (Event.current.type != EventType.Repaint) { if (edit && UiSettings.Party && !UiSettings.HpStrip) DragParty(); return; }
+            if (Event.current.type != EventType.Repaint)
+            {
+                if (edit && UiSettings.DownedPanel) DownedPanelClick();
+                if (edit && UiSettings.Party && !UiSettings.HpStrip) DragParty();
+                return;
+            }
             if (!hud && !(edit && UiSettings.Party)) return;
             if (label == null || Mathf.Abs(styleScale - Sc) > 0.01f)
             {
@@ -227,6 +244,8 @@ public class BaitHud : MonoBehaviour
                 }
             }
             if (hud && UiSettings.KillFeed) DrawKillFeed();
+            if (hud) DrawExtras(cam, p);
+            if ((hud || edit) && UiSettings.DownedPanel) DrawDownedPanel(edit);
             if (hud && wheelOpen) DrawWheel();
             if (hud && UiSettings.Feed)
             {
@@ -349,14 +368,15 @@ public class BaitHud : MonoBehaviour
     // The last few kills of your thralls, on the right, fading out after 6 s.
     void DrawKillFeed()
     {
-        var kf = BaitData.KillFeed;
-        kf.RemoveAll(k => Time.time - k.Value > 6f);
+        var kf = BaitData.Kills;
+        kf.RemoveAll(k => Time.time - k.At > 6f);
         float s = Sc, w = 420 * s, y0 = Screen.height * 0.32f;
         for (int i = 0; i < kf.Count; i++)
         {
-            float age = Time.time - kf[i].Value;
-            var c = new Color(1f, 0.85f, 0.55f, age < 5f ? 1f : 6f - age);
-            Shadow(new Rect(Screen.width - w - 12 * s, y0 + i * 20 * s, w, 20 * s), kf[i].Key, small, c);
+            float age = Time.time - kf[i].At;
+            var c = kf[i].Shared ? new Color(0.8f, 0.8f, 0.8f) : new Color(1f, 0.85f, 0.55f);
+            c.a = age < 5f ? 1f : 6f - age;
+            Shadow(new Rect(Screen.width - w - 12 * s, y0 + i * 20 * s, w, 20 * s), kf[i].Text, small, c);
         }
     }
 
@@ -422,10 +442,16 @@ public class BaitHud : MonoBehaviour
         Shadow(new Rect(cx - 90 * s, cy - 11 * s, 180 * s, 22 * s), wheelSel < 0 ? "move the mouse, scroll or 1-5" : "let go to run", label, new Color(0.8f, 0.8f, 0.8f));
     }
 
-    static string Title(UiThrall t) { return (t.Level > 0 ? "Lv" + t.Level + " " : "") + t.Label; }
+    static string Title(UiThrall t) { return (t.Level > 0 ? "Lv" + t.Level + " " : "") + (t.Alpha ? "[Alpha] " : "") + t.Label; }
     static float HpFrac(EntityAlive e) { float m = e.GetMaxHealth(); return m <= 0 ? 0f : Mathf.Clamp01(e.Stats.Health.Value / m); }
     static readonly Color InvColor = new Color(0.45f, 0.85f, 1f);
-    static Color HpColor(float f) { return f > 0.5f ? Color.Lerp(Color.yellow, Color.green, (f - 0.5f) * 2f) : Color.Lerp(Color.red, Color.yellow, f * 2f); }
+    static readonly Color CbFull = new Color(0.25f, 0.55f, 1f), CbMid = new Color(0.85f, 0.85f, 0.85f), CbEmpty = new Color(1f, 0.55f, 0.1f);
+    // colour-blind bars (U50) go blue to orange, which reads the same with red-green colour blindness
+    static Color HpColor(float f)
+    {
+        if (UiSettings.ColorBlind) return f > 0.5f ? Color.Lerp(CbMid, CbFull, (f - 0.5f) * 2f) : Color.Lerp(CbEmpty, CbMid, f * 2f);
+        return f > 0.5f ? Color.Lerp(Color.yellow, Color.green, (f - 0.5f) * 2f) : Color.Lerp(Color.red, Color.yellow, f * 2f);
+    }
 
     void Plate(Camera cam, EntityPlayerLocal p, EntityAlive e, string text, float frac, Color col, string extra, float maxDist) { Plate(cam, p, e, text, frac, col, extra, maxDist, UiSettings.NameColor); }
 
