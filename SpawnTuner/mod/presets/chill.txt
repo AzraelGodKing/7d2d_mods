@@ -1,0 +1,6 @@
+# Spawn Tuner preset 'chill'. Load it with: spawns load chill
+# Settings not listed here go back to the world's own value.
+NightDensity = 2
+NightRespawn = slow
+HordeFrequency = 50%
+HordeSize = 75%
