@@ -585,7 +585,7 @@ public class ConsoleCmdAzraelBloodMoonSound : ConsoleCmdAbstract
         }
         if (arg == "reload") { p.Reload(); con.Output("Reloading settings and sounds..."); return; }
         con.Output($"Blood Moon Sound: {(p.Clip != null ? p.BloodMoon.Describe() : "NO SOUND - " + p.LoadError)}");
-        con.Output($"Plays {BmsPlayer.Describe()}, volume {BmsSettings.Volume:0.##} x {BmsSettings.BloodMoonVolume:0.##}. Next blood moon: day {GameStats.GetInt(EnumGameStats.BloodMoonDay)}.");
+        con.Output($"Plays {BmsPlayer.Describe()}, volume {BmsSettings.Volume:0.##} x {BmsSettings.BloodMoonVolume:0.##}. Next blood moon: day {GameStats.GetInt(EnumGameStats.BloodMoonDay)}, {BmdNotifier.TimeLeftText(GameStats.GetInt(EnumGameStats.BloodMoonDay))}.");
         con.Output("Spawn " + SlotLine(BmsSettings.Spawn, p.Spawn) + ". Morning " + SlotLine(BmsSettings.Morning, p.Morning) + ". Night " + SlotLine(BmsSettings.Night, p.Night) + ".");
         con.Output("Morning and night follow this world's dawn and dusk.");
     }
