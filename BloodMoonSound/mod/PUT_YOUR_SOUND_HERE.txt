@@ -4,9 +4,11 @@ Put your sound file in this folder and name it:
     bloodmoon.wav
     bloodmoon.mp3
 
-Same for spawn, morning, and night (.ogg, .wav or .mp3).
+Same for spawn, morning, night and survived (.ogg, .wav or .mp3).
+survived plays at the dawn after a blood moon, instead of the morning bell that day.
 
 Want variety? Add more: bloodmoon2.ogg, bloodmoon-scary.wav, ... (any name that starts
-with bloodmoon, spawn, morning or night). One is picked at random each time.
+with bloodmoon, spawn, morning, night or survived). One is picked at random each time.
 
-Then start the game. In the F1 console, type  bmsound test  to hear it right away.
+Then start the game. In the F1 console, type  bmsound test  to hear it right away,
+or press Insert in game to open the settings window (volumes, on/off, Test buttons).
