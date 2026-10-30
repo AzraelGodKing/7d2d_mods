@@ -33,6 +33,9 @@ BloodMoonSound/mod/morning*.mp3
 BloodMoonSound/mod/night*.ogg
 BloodMoonSound/mod/night*.wav
 BloodMoonSound/mod/night*.mp3
+BloodMoonSound/mod/survived*.ogg
+BloodMoonSound/mod/survived*.wav
+BloodMoonSound/mod/survived*.mp3
 
 # Discord webhook URL (secret). The repo ships discord.example.txt instead.
 BloodMoonSound/mod/discord.txt

@@ -60,6 +60,22 @@ Keep Backpacks 1.3.0 (KB1-KB3), Blood Moon Sound 1.3.0 (BM1-BM5) and the README 
 - **CS1** More craftable blocks: other developer-only decor blocks (picture frames, posters) made
   craftable the same way.
 
+## Blood Moon Sound (both)
+
+The second Blood Moon Sound list (October 29, 2026) was built as 1.5.0: S01, S02, S05-S13 (server) and
+U01-U03, U05, U12 (player). Nothing from it is waiting.
+
+**Rejected** (never suggest these again unless asked):
+- **S03** Second webhook (send each message kind to its own channel).
+- **S04** A Discord thread per blood moon.
+- **U04** Horde music that loops until dawn.
+- **U06** Several warning times with their own clips.
+- **U07** Ducking the game's music while a clip plays.
+- **U08** Death and respawn clips.
+- **U09** Volume per file in the file name.
+- **U10** A clip folder per server or world.
+- **U11** A key that stops the clip that's playing.
+
 ## Housekeeping notes (October 2026)
 
 - `AzraelK9DeathSound/` is the built mod only: no `mod/` + `src/` layout, no `mod.json`, and its DLL

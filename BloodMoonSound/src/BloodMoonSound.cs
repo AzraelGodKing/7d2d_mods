@@ -33,6 +33,7 @@ public class AzraelBloodMoonSoundMod : IModApi
         var go = new GameObject("AzraelBloodMoonSound");
         UnityEngine.Object.DontDestroyOnLoad(go);
         BmsPlayer.Instance = go.AddComponent<BmsPlayer>();
+        go.AddComponent<BmsHud>();
         new HarmonyLib.Harmony("azrael.bloodmoonsound").PatchAll(typeof(AzraelBloodMoonSoundMod).Assembly);
     }
 }
@@ -79,14 +80,23 @@ public static class BmsConsolePatch
 public static class BmsHordeSoundPatch
 {
     public const string Marker = "AzraelBloodMoon/";
+    // Warning hour on blood moon day, and dawn after a blood moon (1.5.0).
+    public const string WarnMarker = "AzraelBloodMoonWarn/";
+    public const string DawnMarker = "AzraelBloodMoonDawn/";
 
     static bool Prefix(NetPackageAudioPlayInHead __instance, World _world)
     {
         try
         {
             var name = __instance.soundName;
-            if (name == null || !name.StartsWith(Marker, StringComparison.OrdinalIgnoreCase)) return true;
+            if (name == null) return true;
             var p = BmsPlayer.Instance;
+            // Players whose own clip plays at that moment hear only their clip.
+            if (name.StartsWith(WarnMarker, StringComparison.OrdinalIgnoreCase))
+                return !(p != null && p.BloodMoon.Ready && BmsSettings.PlayAt != BmsSettings.Trigger.Horde);
+            if (name.StartsWith(DawnMarker, StringComparison.OrdinalIgnoreCase))
+                return !(p != null && ((BmsSettings.Survived && p.Survived.Ready) || (BmsSettings.Morning && p.Morning.Ready)));
+            if (!name.StartsWith(Marker, StringComparison.OrdinalIgnoreCase)) return true;
             if (p == null || p.Clip == null || !BmsSettings.PlaysAtHorde || _world == null) return true;
             if (!p.InHordeWindow(_world.worldTime)) return true;
             Log.Out($"[BloodMoonSound] Server horde sound '{name.Substring(Marker.Length)}' replaced by your own clip.");
@@ -115,7 +125,7 @@ public static class BmsGameBellPatch
             {
                 case AudioObject.Trigger.Dawn:
                 case AudioObject.Trigger.Day8Dawn:
-                    mute = BmsSettings.Morning && p.Morning.Ready; break;
+                    mute = (BmsSettings.Morning && p.Morning.Ready) || p.SurvivedDueNow; break;
                 case AudioObject.Trigger.Dusk:
                 case AudioObject.Trigger.Day7Dusk:
                     mute = BmsSettings.Night && p.Night.Ready; break;
@@ -152,6 +162,19 @@ public static class BmsSettings
     public static bool HordeSound = true;
     public static string HordeSoundName = DefaultHordeSoundName;
 
+    // Server only (1.5.0): built-in sounds at the warning hour and at dawn after a blood moon.
+    public const string DefaultWarningSoundName = "horde_spawn_warning", DefaultDawnSoundName = "quest_master_complete";
+    public static bool WarningSound = true, DawnSound = true;
+    public static string WarningSoundName = DefaultWarningSoundName, DawnSoundName = DefaultDawnSoundName;
+
+    // Player side (1.5.0).
+    public static bool Survived = true;  public static float SurvivedVolume = 1f;   // survived clip at the dawn after
+    public static bool Hud = true;       public static int HudFromDays = 7;          // countdown line on screen
+    public static float HudX = 0.5f, HudY = 0.085f; public static int HudSize = 18;
+    public static bool Banner = true;                                                // big banner at warning / horde
+    public static bool Pulse = false;    public static float PulseStrength = 0.6f;   // red edge glow at horde start
+    public static string SettingsKey = "Insert";                                     // opens the settings window
+
     public static bool PlaysAtHorde => PlayAt == Trigger.Horde || PlayAt == Trigger.Both;
 
     static bool Vol(string v, out float vol)
@@ -168,6 +191,7 @@ public static class BmsSettings
             case "spawn": return SpawnVolume;
             case "morning": return MorningVolume;
             case "night": return NightVolume;
+            case "survived": return SurvivedVolume;
             default: return BloodMoonVolume;
         }
     }
@@ -180,6 +204,10 @@ public static class BmsSettings
         Spawn = true; Morning = true; Night = true;
         BloodMoonVolume = SpawnVolume = MorningVolume = NightVolume = 1f;
         HordeSound = true; HordeSoundName = DefaultHordeSoundName;
+        WarningSound = true; WarningSoundName = DefaultWarningSoundName; DawnSound = true; DawnSoundName = DefaultDawnSoundName;
+        Survived = true; SurvivedVolume = 1f;
+        Hud = true; HudFromDays = 7; HudX = 0.5f; HudY = 0.085f; HudSize = 18;
+        Banner = true; Pulse = false; PulseStrength = 0.6f; SettingsKey = "Insert";
         try
         {
             var path = Path.Combine(ModPath, "settings.txt");
@@ -203,9 +231,68 @@ public static class BmsSettings
                 else if (k == "night") Night = On(v);
                 else if (k == "hordesound") HordeSound = On(v);
                 else if (k == "hordesoundname" && v.Length > 0) HordeSoundName = Path.GetFileName(v);
+                else if (k == "warningsound") WarningSound = On(v);
+                else if (k == "warningsoundname" && v.Length > 0) WarningSoundName = Path.GetFileName(v);
+                else if (k == "dawnsound") DawnSound = On(v);
+                else if (k == "dawnsoundname" && v.Length > 0) DawnSoundName = Path.GetFileName(v);
+                else if (k == "survived") Survived = On(v);
+                else if (k == "survivedvolume" && Vol(v, out var suv)) SurvivedVolume = suv;
+                else if (k == "hud") Hud = On(v);
+                else if (k == "hudfromdays" && int.TryParse(v, out var hd)) HudFromDays = Mathf.Clamp(hd, 0, 365);
+                else if (k == "hudx" && Vol(v, out var hx)) HudX = hx;
+                else if (k == "hudy" && Vol(v, out var hy)) HudY = hy;
+                else if (k == "hudsize" && int.TryParse(v, out var hs)) HudSize = Mathf.Clamp(hs, 8, 64);
+                else if (k == "banner") Banner = On(v);
+                else if (k == "pulse") Pulse = On(v);
+                else if (k == "pulsestrength" && Vol(v, out var ps)) PulseStrength = ps;
+                else if (k == "settingskey") SettingsKey = kv[1].Trim();
             }
         }
         catch (Exception e) { Log.Warning("[BloodMoonSound] Could not read settings.txt: " + e.Message); }
+    }
+
+    static string F(float f) => f.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+    static string OnOff(bool b) => b ? "on" : "off";
+
+    // Writes the player settings back to settings.txt (the settings window's Save). Lines already in the
+    // file keep their place and comments; settings that weren't there are added at the end.
+    public static bool Save(out string error)
+    {
+        error = null;
+        var values = new List<(string key, string value)>
+        {
+            ("PlayAt", PlayAt.ToString().ToLowerInvariant()), ("WarningHour", WarningHour.ToString()),
+            ("Volume", F(Volume)), ("BloodMoonVolume", F(BloodMoonVolume)), ("SpawnVolume", F(SpawnVolume)),
+            ("MorningVolume", F(MorningVolume)), ("NightVolume", F(NightVolume)), ("SurvivedVolume", F(SurvivedVolume)),
+            ("Spawn", OnOff(Spawn)), ("Morning", OnOff(Morning)), ("Night", OnOff(Night)), ("Survived", OnOff(Survived)),
+            ("Hud", OnOff(Hud)), ("Banner", OnOff(Banner)), ("Pulse", OnOff(Pulse)),
+        };
+        try
+        {
+            var path = Path.Combine(ModPath, "settings.txt");
+            var lines = File.Exists(path) ? new List<string>(File.ReadAllLines(path)) : new List<string>();
+            var done = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            for (int i = 0; i < lines.Count; i++)
+            {
+                var line = lines[i].Trim();
+                if (line.Length == 0 || line.StartsWith("#")) continue;
+                int eq = line.IndexOf('=');
+                if (eq <= 0) continue;
+                var key = line.Substring(0, eq).Trim();
+                foreach (var (k, v) in values)
+                    if (k.Equals(key, StringComparison.OrdinalIgnoreCase) && !done.Contains(k)) { lines[i] = k + "=" + v; done.Add(k); break; }
+            }
+            bool header = false;
+            foreach (var (k, v) in values)
+            {
+                if (done.Contains(k)) continue;
+                if (!header) { lines.Add(""); lines.Add("# Saved from the in-game settings window"); header = true; }
+                lines.Add(k + "=" + v);
+            }
+            File.WriteAllLines(path, lines);
+            return true;
+        }
+        catch (Exception e) { error = e.Message; return false; }
     }
 }
 
@@ -256,6 +343,17 @@ public class BmsPlayer : MonoBehaviour
     public readonly LoadedClip Spawn = new LoadedClip("spawn");
     public readonly LoadedClip Morning = new LoadedClip("morning");
     public readonly LoadedClip Night = new LoadedClip("night");
+    public readonly LoadedClip Survived = new LoadedClip("survived");
+
+    // Blood moon day of the horde this PC saw, until its dawn has played (survived clip, U05).
+    int sawHordeFor = -1;
+    // True from the end of a horde until its dawn bell: the game's own dawn sound stays quiet then.
+    float survivedMuteUntil;
+    public bool SurvivedDueNow => BmsSettings.Survived && Survived.Ready && (sawHordeFor > 0 || Time.realtimeSinceStartup < survivedMuteUntil);
+
+    // For the on-screen banner and red pulse (BmsHud).
+    public static event Action<string, string> OnBanner;  // headline, detail
+    public static event Action OnHordeStart;
     public AudioClip Clip => BloodMoon.Clip;
     public string ClipFile => BloodMoon.File;
     public string LoadError => BloodMoon.Error;
@@ -326,9 +424,11 @@ public class BmsPlayer : MonoBehaviour
         yield return LoadOne("spawn", Spawn);
         yield return LoadOne("morning", Morning);
         yield return LoadOne("night", Night);
+        yield return LoadOne("survived", Survived);
         Log.Out("[BloodMoonSound] Bells: " + BellStatus(BmsSettings.Spawn, Spawn, "spawn")
             + ", " + BellStatus(BmsSettings.Morning, Morning, "morning")
-            + ", " + BellStatus(BmsSettings.Night, Night, "night") + ".");
+            + ", " + BellStatus(BmsSettings.Night, Night, "night")
+            + ", " + BellStatus(BmsSettings.Survived, Survived, "survived") + ".");
     }
 
     static string BellStatus(bool enabled, LoadedClip slot, string name)
@@ -457,6 +557,7 @@ public class BmsPlayer : MonoBehaviour
             spawnPlayed = false;
             lastMorningDay = -1;
             lastNightDay = -1;
+            sawHordeFor = -1;
             return;
         }
 
@@ -494,10 +595,13 @@ public class BmsPlayer : MonoBehaviour
         }
 
         var mode = BmsSettings.PlayAt;
+        if (bloodMoon) sawHordeFor = bmDay;
         if (bloodMoon && lastBloodMoon == false)
         {
             lastHordeEdgeAt = Time.realtimeSinceStartup;
             if (BmsSettings.PlaysAtHorde) TryPlayHorde(bmDay);
+            OnHordeStart?.Invoke();
+            OnBanner?.Invoke("THE BLOOD MOON HAS RISEN", $"Survive until dawn at {duskDawn.dawnHour:00}:00");
         }
 
         int warnHour = WarningHourFor(duskDawn.duskHour);
@@ -507,23 +611,31 @@ public class BmsPlayer : MonoBehaviour
             Log.Out($"[BloodMoonSound] WarningHour={BmsSettings.WarningHour} is at or after this world's dusk ({duskDawn.duskHour:00}:00). The warning plays at {warnHour:00}:00 instead.");
         }
 
-        if ((mode == BmsSettings.Trigger.Warning || mode == BmsSettings.Trigger.Both)
-            && day == bmDay && !bloodMoon && hour >= warnHour
+        if (day == bmDay && !bloodMoon && hour >= warnHour
             && !(lastDay == day && lastHour >= warnHour) && lastWarnDay != day)
         {
             lastWarnDay = day;
-            Play();
+            if (mode == BmsSettings.Trigger.Warning || mode == BmsSettings.Trigger.Both) Play();
+            ulong left = BmdTime.Until(BmdTime.HordeStart(bmDay), t);
+            OnBanner?.Invoke("BLOOD MOON IN " + BmdTime.Game(left).ToUpperInvariant(), $"The horde comes at {duskDawn.duskHour:00}:00. Get inside!");
         }
 
         // Morning and night follow this world's dawn and dusk, which move with day length.
         // AZR-361: latch per event day so a time rewind (or a second BmsPlayer) cannot overlap the same bell.
-        if (lastDay >= 0 && BmsSettings.Morning && Crossed(lastDay, lastHour, day, hour, duskDawn.dawnHour))
+        if (lastDay >= 0 && (BmsSettings.Morning || SurvivedDueNow) && Crossed(lastDay, lastHour, day, hour, duskDawn.dawnHour))
         {
             int eventDay = CrossingEventDay(lastDay, lastHour, day, hour, duskDawn.dawnHour);
             if (lastMorningDay != eventDay)
             {
                 lastMorningDay = eventDay;
-                PlayIfReady(Morning);
+                // The dawn after a blood moon gets the survived clip instead of the morning bell.
+                if (SurvivedDueNow && !bloodMoon)
+                {
+                    PlayIfReady(Survived);
+                    survivedMuteUntil = Time.realtimeSinceStartup + 60f; // the game's own dawn sound may check a moment later
+                }
+                else if (BmsSettings.Morning) PlayIfReady(Morning);
+                if (!bloodMoon) sawHordeFor = -1;
             }
         }
         if (lastDay >= 0 && BmsSettings.Night && Crossed(lastDay, lastHour, day, hour, duskDawn.duskHour))
@@ -566,7 +678,7 @@ public class ConsoleCmdAzraelBloodMoonSound : ConsoleCmdAbstract
     public override int DefaultPermissionLevel => 1000;
     public override string[] getCommands() => new[] { "bmsound" };
     public override string getDescription() => "Blood Moon Sound: status, test, reload";
-    public override string getHelp() => "bmsound                 - show status\nbmsound test            - play the blood moon clip now\nbmsound test spawn      - play the spawn clip\nbmsound test morning    - play the morning bell\nbmsound test night      - play the night bell\nbmsound reload          - re-read settings.txt and the sound files";
+    public override string getHelp() => "bmsound                 - show status\nbmsound test            - play the blood moon clip now\nbmsound test spawn      - play the spawn clip\nbmsound test morning    - play the morning bell\nbmsound test night      - play the night bell\nbmsound test survived   - play the survived clip\nbmsound test banner     - show the warning banner (and the red pulse if it's on)\nbmsound ui              - open the settings window\nbmsound reload          - re-read settings.txt and the sound files";
 
     public override void Execute(List<string> _params, CommandSenderInfo _senderInfo)
     {
@@ -577,16 +689,25 @@ public class ConsoleCmdAzraelBloodMoonSound : ConsoleCmdAbstract
         if (arg == "test")
         {
             string which = _params.Count > 1 ? _params[1].ToLowerInvariant() : "bloodmoon";
-            BmsPlayer.LoadedClip slot = which == "spawn" ? p.Spawn : which == "morning" ? p.Morning : which == "night" ? p.Night : p.BloodMoon;
-            string label = which == "spawn" || which == "morning" || which == "night" ? which : "blood moon";
+            if (which == "banner") { BmsHud.Instance?.TestBanner(); con.Output("Showing the banner" + (BmsSettings.Pulse ? " and the red pulse." : ". (Pulse=off, so no red pulse.)")); return; }
+            BmsPlayer.LoadedClip slot = which == "spawn" ? p.Spawn : which == "morning" ? p.Morning : which == "night" ? p.Night : which == "survived" ? p.Survived : p.BloodMoon;
+            string label = which == "spawn" || which == "morning" || which == "night" || which == "survived" ? which : "blood moon";
             p.Play(slot, label);
             con.Output(slot.Ready ? "Playing " + slot.File + (slot.Clips.Count > 1 ? $" (1 of {slot.Clips.Count}, picked at random)" : "") : "No " + label + " sound loaded: " + slot.Error);
             return;
         }
         if (arg == "reload") { p.Reload(); con.Output("Reloading settings and sounds..."); return; }
+        if (arg == "ui")
+        {
+            if (BmsHud.Instance == null) { con.Output("The settings window isn't available."); return; }
+            BmsHud.Instance.OpenSettingsSoon();
+            con.Output("Opening the Blood Moon Sound settings window" + (BmsSettings.SettingsKey.Equals("none", StringComparison.OrdinalIgnoreCase) ? "." : $" (you can also press {BmsSettings.SettingsKey})."));
+            return;
+        }
         con.Output($"Blood Moon Sound: {(p.Clip != null ? p.BloodMoon.Describe() : "NO SOUND - " + p.LoadError)}");
         con.Output($"Plays {BmsPlayer.Describe()}, volume {BmsSettings.Volume:0.##} x {BmsSettings.BloodMoonVolume:0.##}. Next blood moon: day {GameStats.GetInt(EnumGameStats.BloodMoonDay)}, {BmdNotifier.TimeLeftText(GameStats.GetInt(EnumGameStats.BloodMoonDay))}.");
-        con.Output("Spawn " + SlotLine(BmsSettings.Spawn, p.Spawn) + ". Morning " + SlotLine(BmsSettings.Morning, p.Morning) + ". Night " + SlotLine(BmsSettings.Night, p.Night) + ".");
+        con.Output("Spawn " + SlotLine(BmsSettings.Spawn, p.Spawn) + ". Morning " + SlotLine(BmsSettings.Morning, p.Morning) + ". Night " + SlotLine(BmsSettings.Night, p.Night) + ". Survived " + SlotLine(BmsSettings.Survived, p.Survived) + ".");
+        con.Output($"On screen: countdown {(BmsSettings.Hud ? (BmsSettings.HudFromDays > 0 ? $"on ({BmsSettings.HudFromDays} days out)" : "on (always)") : "off")}, banner {(BmsSettings.Banner ? "on" : "off")}, red pulse {(BmsSettings.Pulse ? "on" : "off")}. Settings window: bmsound ui" + (BmsSettings.SettingsKey.Equals("none", StringComparison.OrdinalIgnoreCase) ? "." : $" or {BmsSettings.SettingsKey}."));
         con.Output("Morning and night follow this world's dawn and dusk.");
     }
 
