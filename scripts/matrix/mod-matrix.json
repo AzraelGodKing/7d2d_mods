@@ -58,6 +58,57 @@
   {
     "modKey": "spawn-tuner",
     "modDir": "SpawnTuner",
-    "zipName": "AzraelSpawnTuner"
+    "zipName": "AzraelSpawnTuner",
+    "nexus_mod_id": "",
+    "nexus_file_id": ""
+  },
+  {
+    "modKey": "bait",
+    "modDir": "Bait",
+    "zipName": "AzraelBait",
+    "nexus_mod_id": "",
+    "nexus_file_id": ""
+  },
+  {
+    "modKey": "bait-ui",
+    "modDir": "BaitUI",
+    "zipName": "AzraelBaitUI",
+    "nexus_mod_id": "",
+    "nexus_file_id": ""
+  },
+  {
+    "modKey": "gyro-safe",
+    "modDir": "GyroSafe",
+    "zipName": "AzraelGyroSafe",
+    "nexus_mod_id": "",
+    "nexus_file_id": ""
+  },
+  {
+    "modKey": "drone-loot-filter",
+    "modDir": "DroneLootFilter",
+    "zipName": "AzraelDroneLootFilter",
+    "nexus_mod_id": "",
+    "nexus_file_id": ""
+  },
+  {
+    "modKey": "slot-lock-fix",
+    "modDir": "SlotLockFix",
+    "zipName": "AzraelSlotLockFix",
+    "nexus_mod_id": "",
+    "nexus_file_id": ""
+  },
+  {
+    "modKey": "craftable-signs",
+    "modDir": "CraftableSigns",
+    "zipName": "AzraelCraftableSigns",
+    "nexus_mod_id": "",
+    "nexus_file_id": ""
+  },
+  {
+    "modKey": "no-ding-sound",
+    "modDir": "NoDingSound",
+    "zipName": "AzraelNoDingSound",
+    "nexus_mod_id": "",
+    "nexus_file_id": ""
   }
 ]

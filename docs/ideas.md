@@ -80,6 +80,6 @@ U01-U03, U05, U12 (player). Nothing from it is waiting.
 
 - `AzraelK9DeathSound/` is the built mod only: no `mod/` + `src/` layout, no `mod.json`, and its DLL
   source isn't in the repo (DLLs are gitignored, so a fresh clone can't rebuild it). Not in `build.ps1`.
-- `scripts/matrix/mod-matrix.json` (the Release & Publish list) has no entry for Bait, Bait UI, Gyro Safe,
-  Drone Loot Filter, Slot Lock Fix, Craftable Signs, No Ding Sound or K9 Death Sound, so those can't be
-  released through the workflow yet. Spawn Tuner has no Nexus ids.
+- `scripts/matrix/mod-matrix.json` (the Release & Publish list) now has every mod `build.ps1` builds.
+  Spawn Tuner, Bait, Bait UI, Gyro Safe, Drone Loot Filter, Slot Lock Fix, Craftable Signs and No Ding
+  Sound have empty Nexus ids until their Nexus pages exist. K9 Death Sound stays out (see above).
