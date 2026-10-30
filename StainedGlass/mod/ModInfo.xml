@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xml>
+	<Name value="AzraelStainedGlass" />
+	<DisplayName value="Craftable Stained Glass" />
+	<Description value="Adds a Stained Glass entry to the forge so the church window panels from POIs are easy to craft, and stops them turning into wood when you hit them with a hammer: they upgrade to a bulletproof stained glass that keeps the look. Server-side: players install nothing." />
+	<Author value="Azrael" />
+	<Version value="1.0.0" />
+	<Website value="https://github.com/AzraelGodKing/7d2d_mods" />
+</xml>
