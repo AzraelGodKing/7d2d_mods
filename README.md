@@ -633,6 +633,8 @@ The default path is in `Directory.Build.props`. The Docker runner sets
 Nexus uploads use the secret `NEXUSMODS_API_KEY` and the file id from the mod's Files tab
 (Advanced), stored as `nexus_file_id` in `scripts/matrix/mod-matrix.json`. Remove Any Entity
 uploads to the old Remove Zombie Dogs page (12841) and file.
+Mods without a Nexus page yet have empty `nexus_mod_id` / `nexus_file_id`; they still get a
+GitHub Release, and the Nexus step is skipped with a warning until the ids are filled in.
 
 The same run publishes the zip to the mods website
 (`downloads.azraelsmods.com/7-days-to-die/<slug>/<version>/<slug>-<version>.zip`) and records
