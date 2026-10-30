@@ -106,7 +106,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # The runner's /usr/share/dotnet is root-owned, so a newer 8.0 SDK can't go there.
       - uses: actions/setup-dotnet@v4
+        env:
+          DOTNET_INSTALL_DIR: ${{ runner.tool_cache }}/dotnet
         with:
           dotnet-version: "8.0.x"
 
