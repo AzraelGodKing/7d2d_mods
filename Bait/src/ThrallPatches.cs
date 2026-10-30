@@ -50,6 +50,9 @@ public static class ThrallDamagePatch
         // a thrall that was just tamed or called is untouchable for a few seconds
         if (victimThrall && Thralls.InGrace(__instance.entityId) && _damageSource.damageType != EnumDamageTypes.Suicide) { __result = -1; return false; }
 
+        // traps and damage blocks (spikes, barbed wire, blade traps, electric fence shocks) leave thralls alone
+        if (victimThrall && BaitConfig.TrapsSpareThralls && IsTrapHit(_damageSource)) { __result = -1; return false; }
+
         // a thrall never hurts a player or another thrall (except a PvP foe, and the other thrall in a duel)
         if (attackerThrall && __instance is EntityPlayer && !Thralls.ThrallMayHitPlayer(attacker.entityId, (EntityPlayer)__instance)) { __result = -1; return false; }
         bool duel = attackerThrall && victimThrall && Thralls.InDuel(attacker.entityId, __instance.entityId);
@@ -89,6 +92,16 @@ public static class ThrallDamagePatch
             attacker.entityFlags &= ~EntityFlags.Zombie;
         }
         return true;
+    }
+
+    // A hit made by a block: damage blocks and blade traps name the block as the attacking item, and electric fences
+    // hurt through the shocked buff. Spikes and barbed wire are also stopped earlier, in DroneSpikePatch.
+    public static bool IsTrapHit(DamageSource ds)
+    {
+        if (ds == null) return false;
+        var ic = ds.AttackingItem != null && !ds.AttackingItem.IsEmpty() ? ds.AttackingItem.ItemClass : null;
+        if (ic != null && ic.IsBlock()) return true;
+        return ds.BuffClass != null && ds.BuffClass.Name == "buffShocked";
     }
 
     static bool IsAnimal(EntityAlive e)
@@ -300,13 +313,15 @@ public static class BaitMotionSensorIgnore
     }
 }
 
-// Spikes and the other damage blocks do not hurt drones.
+// Spikes and the other damage blocks do not hurt drones, or thralls (TrapsSpareThralls). Skipping the whole touch also
+// means the spikes don't wear down or break when a thrall walks over them, and don't slow it.
 [HarmonyPatch(typeof(BlockDamage), nameof(BlockDamage.OnEntityCollidedWithBlock))]
 public static class DroneSpikePatch
 {
     static bool Prefix(Entity _targetEntity, ref bool __result)
     {
         if (BaitConfig.DronesIgnoreSpikes && _targetEntity is EntityDrone) { __result = false; return false; }
+        if (BaitConfig.TrapsSpareThralls && _targetEntity != null && Thralls.IsThrall(_targetEntity.entityId)) { __result = false; return false; }
         return true;
     }
 }

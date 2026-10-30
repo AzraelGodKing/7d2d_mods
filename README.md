@@ -14,7 +14,7 @@ Small mods for 7 Days to Die. Every mod builds against **V3.4** (b6), and each o
 | [No Ding Sound](#no-ding-sound) | XML only | Server only | 1.0.0 |
 | [Keep Backpacks](#keep-backpacks) | Code (Harmony) | Server only | 1.3.0 |
 | [Blood Moon Sound](#blood-moon-sound) | Code (Harmony) | Players (own sound); server optional (sound for everyone, Discord and game chat posts) | 1.3.0 |
-| [Zombie and Animal Bait](#zombie-and-animal-bait) | Code (Harmony) + XML | Server only | 1.12.0 |
+| [Zombie and Animal Bait](#zombie-and-animal-bait) | Code (Harmony) + XML | Server only | 1.12.1 |
 | [Gyro Safe](#gyro-safe) | Code (Harmony) | Server and players who fly | 1.0.0 |
 | [Drone Loot Filter](#drone-loot-filter) | Code (Harmony), needs Drone Automation | Server only | 1.2.0 |
 | [Bait UI](#bait-ui) | Code + UI | Players only (optional, needs Bait on the server) | 1.9.0 |
@@ -404,6 +404,7 @@ Companion for tehAon's Drone Automation. Each player chooses items their Auto-Lo
 - **Limits:** turret bullets are credited to the turret's owner, so a stray bullet from the thrower's own turret can still hit a baited creature in its line of fire (the turret just won't aim at it). Hits from other players are not blocked (their client sends that damage to the server).
 - Tune the radius, time and eat ticks in `Config/items.xml`.
 - Taming, thralls and every `/thrall` command: see [Bait/README.md](Bait/README.md).
+- **1.12.1:** fix: spike traps, barbed wire, blade traps and electric fences no longer kill thralls (`TrapsSpareThralls`, on by default).
 - **1.12.0:** thralls guard your backpack when you die, rush to you at low HP, walk quietly while you crouch and make no heat; `/t` short commands and aliases; `/thrall scream`, `pvp`, `duel`, `secondchance`, `retire`, `kennel`, `goto`, `stats`; catch-up XP, owner XP share and quest kill credit; a named Alpha after every horde night (Feast bait only); new Thrall Whistle item, Bait Feeder and Thrall Kennel blocks; per-creature caps, taming resistance, `config preset casual|default|hardcore`, an admin audit log and a name filter. See [Bait/README.md](Bait/README.md#new-in-1120).
 - **1.11.0:** stronger animal thralls: they keep up with the day-based level wild zombies start at, and deal 50% more and take a third less damage (`AnimalDayLevels`, `AnimalDamagePct`, `AnimalToughPct`).
 - **1.10.0:** perks at levels 10/25/50, guard posts, patrol routes, blood moon mode, `/thrall top` leaderboard, `/thrall scout`, `/thrall evolve`, admin heal/revive/tp, and Discord posts for rare tames, level milestones and evolutions.
