@@ -56,5 +56,10 @@
 				<passive_effect name="GeneralDamageResist" operation="base_add" value="1"/>
 			</effect_group>
 		</buff>
+		<!-- Thrall Whistle: put on the player by the item, taken off by the server once it has called the thralls. -->
+		<buff name="azraelThrallWhistle" hidden="true" remove_on_death="true">
+			<duration value="3"/>
+			<stack_type value="ignore"/>
+		</buff>
 	</append>
 </configs>

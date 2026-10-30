@@ -80,6 +80,8 @@ public static partial class Thralls
                     int bm; r.BmPrevMode = int.TryParse(p[22], out bm) ? bm : -1;
                     r.Deaths = PI(p[23]); long ta; if (long.TryParse(p[24], out ta)) r.TamedAt = ta;
                 }
+                if (p.Length >= 28) { r.Xp = PI(p[25]); r.SecondChance = p[26] == "1"; r.Alpha = p[27] == "1"; }
+                else r.Xp = r.Kills % Math.Max(1, BaitConfig.KillsPerLevel);   // from before 1.12.0: carry on from where the kill count was
                 into.Add(r);
             }
             catch (Exception e) { Log.Warning("[Bait] skipped a bad roster line in " + path + ": " + e.Message); }

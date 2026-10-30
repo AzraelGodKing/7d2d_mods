@@ -1,4 +1,5 @@
 # Blood Moon Sound settings. Changes apply next time the game starts (or type: bmsound reload).
+# Most of these can also be changed in game: press Insert (or type  bmsound ui  in the F1 console).
 #
 # Your sound goes in this folder as  bloodmoon.ogg,  bloodmoon.wav  or  bloodmoon.mp3
 # (OGG or WAV are the safest).
@@ -20,18 +21,45 @@ BloodMoonVolume=1.0
 SpawnVolume=1.0
 MorningVolume=1.0
 NightVolume=1.0
+SurvivedVolume=1.0
 
 # More than one clip: name them bloodmoon.ogg, bloodmoon2.ogg, bloodmoon-scary.wav ...
 # (same for spawn, morning and night). Each time, one is picked at random.
 
-# Extra clips (on / off). Each needs its own file in this folder: spawn, morning or night
+# Extra clips (on / off). Each needs its own file in this folder: spawn, morning, night or survived
 # (.ogg, .wav or .mp3). A missing file means that one stays quiet.
 #   Spawn    = when you enter a world
 #   Morning  = at dawn. Replaces the game's own dawn sound while the file is loaded.
 #   Night    = at dusk. Replaces the game's own dusk sound while the file is loaded.
+#   Survived = at the dawn after a blood moon, instead of the morning bell that day.
 Spawn=on
 Morning=on
 Night=on
+Survived=on
+
+# ---- ON SCREEN ----
+# Hud: a "Blood Moon in 1d 6h" line on screen. Orange on blood moon day, red in the last hour,
+#      and "dawn in ..." while the horde is on. Hidden while a menu is open or the HUD is off.
+# HudFromDays: show it only this many days before (0 = always).
+# HudX / HudY: where its centre goes, as a share of the screen (0.5 = middle; HudY 0 = top).
+# HudSize: text size at 1080p (it scales with the screen).
+Hud=on
+HudFromDays=7
+HudX=0.5
+HudY=0.085
+HudSize=18
+
+# Banner: big red text across the screen at WarningHour on blood moon day and when the horde starts.
+Banner=on
+
+# Pulse: a red glow around the screen edge that pulses once when the horde starts.
+# PulseStrength: 0.0 - 1.0
+Pulse=off
+PulseStrength=0.6
+
+# Key that opens the settings window. Unity key names: Insert, F10, Keypad0, RightBracket ...
+# none = no key (bmsound ui still opens it).
+SettingsKey=Insert
 
 # ---- SERVER ONLY (players can ignore everything below) ----
 # When the horde starts, the server tells every player's game to play one built-in game sound,
@@ -41,3 +69,11 @@ Night=on
 # HordeSoundName:  any sound name from the game's Data\Config\sounds.xml
 HordeSound=on
 HordeSoundName=alarm1_oneshot
+
+# The same at WarningHour on blood moon day, and at dawn after a blood moon.
+# Players with this mod hear their own bloodmoon clip (PlayAt warning or both) or their own
+# survived / morning clip instead.
+WarningSound=on
+WarningSoundName=horde_spawn_warning
+DawnSound=on
+DawnSoundName=quest_master_complete

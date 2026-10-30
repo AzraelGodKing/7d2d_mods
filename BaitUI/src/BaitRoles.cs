@@ -4,7 +4,7 @@ using System.Globalization;
 using System.Xml.Linq;
 using UnityEngine;
 
-// Bait UI 1.8.0: hover tooltips, the thrall page (stats and role buttons) and map markers.
+// Bait UI 1.9.0: hover tooltips, the thrall page (stats and every per-thrall action) and map markers.
 
 // Tooltips for every roster button. Costs are read from the server's settings, so they stay right when an admin changes them.
 public static class Tips
@@ -17,12 +17,15 @@ public static class Tips
 
     static readonly Dictionary<string, string> Fixed = new Dictionary<string, string>
     {
-        { "dragbar", "Drag the title bar to move the window. Re-center puts it back." },
+        { "dragbar", "Drag the title bar to move the window. Re-center (Display tab) puts it back." },
+        { "tab0", "Your thralls, one row each" }, { "tab1", "Commands for the whole roster, teams, blood moon, PvP and kennels" },
+        { "tab2", "Name tags, party list, HUD extras, colours, sizes and the roster's columns" },
+        { "tab3", "Hotkeys" }, { "tab4", "Thrall page, bestiary, session summary, stats and crafting" },
         { "prev", "Previous page" }, { "next", "Next page" },
         { "filter", "Show all thralls, only zombies or only animals" },
         { "sort", "Sort by roster number, level or lowest HP first" },
         { "pagesize", "8, 12 or 16 rows per page" },
-        { "admin", "Server settings and the cannot-be-tamed list (admins)" },
+        { "admin", "Server settings, feed rates, the cannot-be-tamed list and every player's thralls (admins)" },
         { "close", "Close the window" },
         { "stowall", "Put every thrall away, tethered ones too" },
         { "stowactive", "Put away the ones following you" },
@@ -36,70 +39,87 @@ public static class Tips
         { "tglfed", "'Fed x/y' tags over creatures you are taming" },
         { "tglpbars", "Name tags over thralls that belong to your party members" },
         { "cyclecolor", "Colour of the name tag (for all thralls, or the one picked with 'Colors for')" },
-        { "cyclebar", "Colour of the HP bar (Auto goes green to red)" },
+        { "cyclebar", "Colour of the HP bar (Auto goes green to red, or blue to orange with colour-blind bars)" },
         { "cycletarget", "Pick which thrall the colour buttons change, or all of them" },
         { "sizedown", "Smaller name tags and party list" }, { "sizeup", "Bigger name tags and party list" },
+        { "wsizedown", "Smaller roster and thrall page windows" }, { "wsizeup", "Bigger roster and thrall page windows" },
         { "tglkills", "Your thralls' kills listed on the right of the screen" },
+        { "cyclekf", "Kill feed: every kill, only your thralls' own kills, or only special ones (feral, radiated, Alpha, level 20+)" },
         { "tglglow", "A gold name tag for a few seconds when a thrall levels up" },
         { "tgllowhp", "Flash a thrall's tag red under 25% HP" },
         { "tgllowsnd", "A short sound when a thrall drops under 25% HP" },
         { "tgldowned", "A grey 'back in m:ss' tag where a downed thrall fell" },
+        { "tglcb", "HP bars go blue (full) to orange (empty) instead of green to red" },
+        { "tglbanner", "A banner across the screen when you tame something" },
+        { "tgldmg", "Numbers float up over what your thralls hit" },
+        { "tgllines", "A faint line from each thrall to what it is fighting" },
+        { "tgldpanel", "A list of downed thralls in the corner, with Revive buttons while a window is open" },
+        { "tglsetup", "When you tame a new thrall, a small window to name it and pick its mode and auto boxes" },
         { "pickkey", "Click, then press the key that opens this window" },
         { "pickgroup", "Click, then press the keys for Follow all, Stay all and Bring all here in turn (Del = none)" },
         { "pickwheel", "Click, then press the key you hold for the quick-actions wheel" },
+        { "pickgoto", "Click, then press the key that sends a thrall to the spot you aim at" },
+        { "cyclemod", "The key you hold with 1-9 to call or stow thralls 1 to 9 (or off)" },
         { "teamcycle", "Pick a saved team" },
         { "teamcall", "Stow everyone else and bring out this team" },
         { "teamsave", "Save the thralls that are out now as this team" },
         { "teamnew", "Save the thralls that are out now as a new team" },
-        { "thrallpage", "Stats, perks, guard post, patrol, scout and evolve for the selected thrall (or the first one)" },
+        { "bloodmoon2", "Your blood moon mode. Call: daycare thralls come to you for the horde. Fight: thralls with you turn aggressive. Both. Back to normal at dawn" },
+        { "pvp", "Your thralls fight players who turned PvP on too. Never your party or allies. The server has to allow it" },
+        { "kennelall", "Every thrall walks to your nearest Thrall Kennel and stays there (they heal faster in it)" },
+        { "thrallpage", "Stats and every action for the selected thrall (or the first one)" },
+        { "bestiary", "Every creature you can tame, how many meals it needs and which ones you already have" },
+        { "summary", "Kills, level ups, deaths and bait used since you joined" },
         { "top", "The server's top 10 thralls by level (in chat)" },
+        { "statsme", "Your lifetime numbers: tamed, kills, deaths, bait fed (in chat)" },
+        { "statsserver", "The whole server's numbers (in chat)" },
+        { "craft", "Open crafting on the bait recipes" },
         { "tglmap", "Your thralls and their daycare, guard and patrol spots on the map and compass" },
         { "tglstrip", "Small HP bars in the bottom-right corner instead of the party list" },
         { "tglcompact", "Party list with the name and bar on one line, so more thralls fit" },
         { "cycletheme", "Window colours: dark, light or high contrast" },
         { "tglhelp", "While you hold bait: meals needed for what you aim at, and whether it can be tamed" },
         { "search", "Type part of a name (or a number) to find a thrall" },
+        { "cmd", "Any /thrall command without the /thrall: call 2, mode all defensive, team call night..." },
+        { "cmdgo", "Run the command (Enter does the same)" },
     };
 
     public static void Apply(XUiController w, int rows)
     {
         foreach (var kv in Fixed) Set(w, kv.Key, kv.Value);
-        Set(w, "allhere", "Bring every thrall that follows you to your side (once every " + Cfg("HereCooldownSeconds", "30") + "s)");
+        string here = "Bring every thrall that follows you to your side (once every " + Cfg("HereCooldownSeconds", "30") + "s)";
+        Set(w, "allhere", here); Set(w, "allhere2", here);
         string heal = "Heal: " + Cfg("HealBaitCost", "1") + " bait, restores " + Cfg("HealPct", "40") + "% HP.  Revive (when downed): "
                     + Cfg("ReviveCostPlain", "3") + " Plain, " + Cfg("ReviveCostRich", "2") + " Rich or " + Cfg("ReviveCostFeast", "1") + " Feast bait";
-        string auto = "Auto-revive: when it goes down, " + Cfg("AutoReviveCost", "3") + " plain bait from your inventory brings it straight back";
-        string hbox = "Auto-heal: under " + Cfg("AutoHealBelowPct", "30") + "% HP, " + Cfg("HealBaitCost", "1") + " plain bait heals it (at most every " + Cfg("AutoHealCooldownSeconds", "20") + "s)";
         for (int i = 1; i <= rows; i++)
         {
             string r = "r" + i;
-            Set(w, r + "sel", "Click for this thrall's details below (click again to hide)");
+            Set(w, r + "sel", "Click for this thrall's details below (click again to hide). The go-to key sends the picked one");
             Set(w, r + "call", "Call: bring it out (uses an active slot).  Stow: put it away");
             Set(w, r + "stay", "Stay: hold position.  Follow: follow you again");
             Set(w, r + "mode", "Aggr attacks hostiles it sees, Def only what comes close, Pass never fights, Inv can't be hurt and never attacks");
             Set(w, r + "teth", "Tether: it stays in a circle where you stand now (a daycare), even while you are away");
             Set(w, r + "heal", heal);
-            Set(w, r + "name", "Give it a nickname. A name works anywhere a number does");
-            Set(w, r + "rel", "Let it go for good (click twice)");
-            Set(w, r + "auto", auto);
-            Set(w, r + "hbox", hbox);
-            Set(w, r + "up", "Move it up the roster (its number changes)");
-            Set(w, r + "down", "Move it down the roster (its number changes)");
+            Set(w, r + "track", "A marker on the compass for this thrall at any distance");
+            Set(w, r + "more", "The thrall page: rename, auto boxes, perks, guard, patrol, evolve, release...");
         }
     }
 
-    static void Set(XUiController w, string id, string text)
+    public static void Set(XUiController w, string id, string text)
     {
         var c = w.GetChildById(id);
         if (c != null && c.ViewComponent != null && c.ViewComponent.ToolTip != text) c.ViewComponent.ToolTip = text;
     }
 }
 
-// The thrall page: one thrall's stats, and buttons for perks, guard post, patrol, scout, evolve and blood moon mode.
+// The thrall page: one thrall's stats and every action for it, in four sections (care, perks, post and patrol, more).
 // Referenced as controller="AzraelBaitStats, AzraelBaitUI". Needs Bait 1.10.0 on the server.
 public class XUiC_AzraelBaitStats : XUiController
 {
     int seen = -1;
     float nextRefresh;
+    string confirm;   // "retire" or "release" after the first click; a second click within 4 s does it
+    float confirmAt;
 
     static UiThrall T { get { return BaitData.Thralls.Find(t => t.Idx == BaitData.StatsIdx); } }
 
@@ -108,10 +128,18 @@ public class XUiC_AzraelBaitStats : XUiController
         var c = GetChildById(id);
         if (c == null) { Log.Warning("[BaitUI] thrall page: no button " + id); return; }
         if (tip != null && c.ViewComponent != null) c.ViewComponent.ToolTip = tip;
-        c.OnPress += (s, b) => { try { a(); } catch (Exception e) { Log.Warning("[BaitUI] click " + id + ": " + e.Message); } };
+        c.OnPress += (s, b) => { try { a(); seen = -1; } catch (Exception e) { Log.Warning("[BaitUI] click " + id + ": " + e.Message); } };
     }
 
     void On(string verb) { var t = T; if (t != null) BaitData.Cmd("/thrall " + verb.Replace("#", t.Idx.ToString())); }
+    void B3(string verb) { if (BaitData.ServerHasBatch3) On(verb); else BaitData.SetStatus("That needs Bait " + BaitData.Batch3Need + " or newer on the server."); }
+
+    bool Confirm(string what)
+    {
+        if (confirm == what && Time.time - confirmAt < 4f) { confirm = null; return true; }
+        confirm = what; confirmAt = Time.time;
+        return false;
+    }
 
     static int Cfg(string key, int def)
     {
@@ -122,6 +150,19 @@ public class XUiC_AzraelBaitStats : XUiController
     public override void Init()
     {
         base.Init();
+        Hook("rename", () =>
+        {
+            var t = T; if (t == null) return;
+            BaitData.RenameIdx = t.Idx; BaitData.RenameFrom = t.Label;
+            var wm = xui.playerUI.windowManager; wm.Close("azraelBaitStats"); wm.Open("azraelBaitName", true);
+        }, "Give it a nickname. A name works anywhere a number does");
+        Hook("autorev", () => { var t = T; if (t != null) BaitData.Cmd("/thrall autorevive " + t.Idx + (t.AutoRevive ? " off" : " on")); },
+             "Auto-revive: when it goes down, plain bait from your inventory brings it straight back");
+        Hook("autoheal", () => { var t = T; if (t != null && BaitData.ServerHasQol) BaitData.Cmd("/thrall autoheal " + t.Idx + (t.AutoHeal ? " off" : " on")); },
+             "Auto-heal: under a set HP, plain bait heals it (with a cooldown)");
+        Hook("second", () => B3("secondchance #"), "Pay Feast bait now: it comes back once from its next death (servers with permadeath)");
+        Hook("kennel", () => B3("kennel #"), "It walks to your nearest Thrall Kennel and stays there. Thralls heal faster in a kennel");
+        Hook("track", () => { var t = T; if (t != null) Extras.ToggleTrack(t); }, "A marker on the compass for this thrall at any distance");
         Hook("ptough", () => On("perk # tough"), "Tough: takes less damage");
         Hook("phit", () => On("perk # hit"), "Hit: deals more damage");
         Hook("pregen", () => On("perk # regen"), "Regen: heals faster, even while fighting");
@@ -140,6 +181,13 @@ public class XUiC_AzraelBaitStats : XUiController
             int i = Array.IndexOf(modes, string.IsNullOrEmpty(BaitData.BmMode) ? "off" : BaitData.BmMode);
             BaitData.Cmd("/thrall bloodmoon " + modes[(i + 1) % modes.Length]);
         }, "Your blood moon mode. Call: daycare thralls come to you for the horde. Fight: thralls with you turn aggressive. Both. Back to normal at dawn");
+        Hook("scream", () => B3("scream #"), "A tamed screamer screams: wild zombies come to it (so your other thralls get kills)");
+        Hook("retire", () => { if (!BaitData.ServerHasBatch3) { B3(""); return; } if (Confirm("retire")) On("retire # yes"); },
+             "Retire it for good, for a reward of bait that grows with its level (click twice)");
+        Hook("release", () => { if (!Confirm("release")) return; var t = T; if (t == null) return; BaitData.Cmd("/thrall release " + t.Idx); Step(1); },
+             "Let it go for good (click twice)");
+        Hook("up", () => { var t = T; if (t != null && t.Idx > 1) { BaitData.Cmd("/thrall move " + t.Idx + " up"); BaitData.StatsIdx = t.Idx - 1; } }, "Move it up the roster (its number changes)");
+        Hook("down", () => { var t = T; if (t != null && t.Idx < BaitData.Thralls.Count) { BaitData.Cmd("/thrall move " + t.Idx + " down"); BaitData.StatsIdx = t.Idx + 1; } }, "Move it down the roster (its number changes)");
         Hook("prevthrall", () => Step(-1));
         Hook("nextthrall", () => Step(1));
         Hook("back", () => { var wm = xui.playerUI.windowManager; wm.Close("azraelBaitStats"); BaitData.TryOpenRoster(); });
@@ -152,14 +200,15 @@ public class XUiC_AzraelBaitStats : XUiController
         if (l.Count == 0) return;
         int i = l.FindIndex(t => t.Idx == BaitData.StatsIdx);
         i = ((i < 0 ? 0 : i + d) % l.Count + l.Count) % l.Count;
-        BaitData.StatsIdx = l[i].Idx; seen = -1;
+        BaitData.StatsIdx = l[i].Idx; seen = -1; confirm = null;
     }
 
-    public override void OnOpen() { base.OnOpen(); seen = -1; BaitData.Cmd("/thrall ui", false); RefreshBindings(); }
+    public override void OnOpen() { base.OnOpen(); seen = -1; confirm = null; Extras.ApplyScale(ViewComponent); BaitData.Cmd("/thrall ui", false); RefreshBindings(); }
 
     public override void Update(float _dt)
     {
         base.Update(_dt);
+        if (confirm != null && Time.time - confirmAt >= 4f) { confirm = null; seen = -1; }
         if (seen != BaitData.Version || Time.time > nextRefresh) { seen = BaitData.Version; nextRefresh = Time.time + 0.5f; RefreshBindings(); }
     }
 
@@ -174,10 +223,10 @@ public class XUiC_AzraelBaitStats : XUiController
     string Body(UiThrall t)
     {
         if (t == null) return BaitData.ServerHasRoles ? "That thrall is gone. Use Prev / Next." : "The thrall page needs Bait " + BaitData.RolesNeed + " or newer on the server.";
-        int per = Cfg("KillsPerLevel", 8);
         var sb = new System.Text.StringBuilder();
-        sb.Append("Level ").Append(t.Level).Append("     kills ").Append(t.Kills);
-        if (per > 0) sb.Append(" (").Append(per - t.Kills % per).Append(" to the next level)");
+        sb.Append(L.T("Level")).Append(' ').Append(t.Level).Append("     ").Append(L.T("Kills")).Append(' ').Append(t.Kills);
+        int k = XUiC_AzraelBaitRoster.KillsToNext(t);
+        if (k > 0) sb.Append(" (").Append(k).Append(" to the next level)");
         sb.Append("     deaths ").Append(t.Deaths).Append('\n');
         if (t.TamedAt > 0)
         {
@@ -199,6 +248,8 @@ public class XUiC_AzraelBaitStats : XUiController
         var e = BaitData.LiveThrall(t);
         if (e != null) sb.Append("HP ").Append(Mathf.CeilToInt(e.Stats.Health.Value)).Append('/').Append(e.GetMaxHealth()).Append("     ");
         sb.Append("mode ").Append(BaitData.ModeWord(t.Mode)).Append("     auto-revive ").Append(t.AutoRevive ? "on" : "off").Append("     auto-heal ").Append(t.AutoHeal ? "on" : "off").Append('\n');
+        if (t.Alpha || t.SecondChance)
+            sb.Append(t.Alpha ? "Alpha: tamed from a roaming Alpha, it started with bonus levels.   " : "").Append(t.SecondChance ? "Second chance: it comes back once from its next death." : "").Append('\n');
         int l1 = Cfg("PerkLevel1", 10), l2 = Cfg("PerkLevel2", 25), l3 = Cfg("PerkLevel3", 50);
         sb.Append("Perks: ").Append(PerkWords(t.Perks)).Append("   (").Append(t.Perks.Length).Append(" of ").Append(t.PerkSlots).Append(" slots used");
         int nextSlot = t.Level < l1 ? l1 : t.Level < l2 ? l2 : t.Level < l3 ? l3 : 0;
@@ -215,21 +266,47 @@ public class XUiC_AzraelBaitStats : XUiController
         return sb.ToString();
     }
 
+    static string Box(bool b) { return b ? "[X] " : "[  ] "; }
+
     public override bool GetBindingValueInternal(ref string value, string name)
     {
         var t = T;
+        bool b3 = BaitData.ServerHasBatch3;
         switch (name)
         {
             case "bgcol": value = UiSettings.BgCol; return true;
             case "textcol": value = UiSettings.TextCol; return true;
-            case "stitle": value = t == null ? "Thrall page" : t.Idx + ". " + t.Label + (string.IsNullOrEmpty(t.Name) ? "" : " (" + t.Pretty + ")") + "   Lv " + t.Level; return true;
+            case "stitle": value = t == null ? L.T("Thrall page") : t.Idx + ". " + (t.Alpha ? "[Alpha] " : "") + t.Label + (string.IsNullOrEmpty(t.Name) ? "" : " (" + t.Pretty + ")") + "   Lv " + t.Level; return true;
             case "sbody": value = Body(t); return true;
-            case "perkslots": value = t == null ? "" : t.Perks.Length + "/" + t.PerkSlots; return true;
-            case "resettxt": value = t != null && t.Perks.Length > 0 ? "Reset perks" : ""; return true;
-            case "guardtxt": value = t == null ? "" : t.Guard ? "Stop guarding" : t.Patrol ? "Stop (untether)" : "Guard here"; return true;
-            case "patroltxt": value = t == null ? "" : t.Patrol ? "Stop patrol" : t.PatrolPts >= 2 ? "Start patrol" : "Start (" + t.PatrolPts + "/2 pts)"; return true;
-            case "evolvetxt": value = t == null || string.IsNullOrEmpty(t.EvolveTo) ? "Evolve (not available)" : "Evolve"; return true;
-            case "bmtxt": value = "Blood moon: " + (string.IsNullOrEmpty(BaitData.BmMode) ? "off" : BaitData.BmMode); return true;
+            case "carehdr": value = L.T("Care"); return true;
+            case "perkhdr": value = L.T("Perks") + (t == null ? "" : "  (" + t.Perks.Length + "/" + t.PerkSlots + ")"); return true;
+            case "posthdr": value = L.T("Post and patrol"); return true;
+            case "morehdr": value = L.T("More"); return true;
+            case "renametxt": value = L.T("Rename"); return true;
+            case "autorevtxt": value = t == null ? "" : Box(t.AutoRevive) + L.T("Auto-revive"); return true;
+            case "autohealtxt": value = t == null || !BaitData.ServerHasQol ? "" : Box(t.AutoHeal) + L.T("Auto-heal"); return true;
+            case "secondtxt": value = !b3 || t == null ? "" : t.SecondChance ? L.T("Second chance") + " (on)" : L.T("Second chance"); return true;
+            case "kenneltxt": value = b3 ? L.T("Kennel") : ""; return true;
+            case "tracktxt": value = t == null ? "" : L.T(Extras.TrackIdx == t.Idx ? "Untrack" : "Track"); return true;
+            case "ptoughtxt": value = L.T("Tough"); return true;
+            case "phittxt": value = L.T("Hit"); return true;
+            case "pregentxt": value = L.T("Regen"); return true;
+            case "ptaunttxt": value = L.T("Taunt"); return true;
+            case "resettxt": value = t != null && t.Perks.Length > 0 ? L.T("Reset perks") : ""; return true;
+            case "guardtxt": value = t == null ? "" : t.Guard ? L.T("Stop guarding") : t.Patrol ? "Stop (untether)" : L.T("Guard here"); return true;
+            case "paddtxt": value = L.T("Add patrol point"); return true;
+            case "patroltxt": value = t == null ? "" : t.Patrol ? L.T("Stop patrol") : t.PatrolPts >= 2 ? L.T("Start patrol") : "Start (" + t.PatrolPts + "/2)"; return true;
+            case "pcleartxt": value = L.T("Clear route"); return true;
+            case "scouttxt": value = L.T("Scout"); return true;
+            case "evolvetxt": value = t == null || string.IsNullOrEmpty(t.EvolveTo) ? "Evolve (n/a)" : L.T("Evolve"); return true;
+            case "bmtxt": value = L.T("Blood moon") + ": " + (string.IsNullOrEmpty(BaitData.BmMode) ? "off" : BaitData.BmMode); return true;
+            case "screamtxt": value = b3 && t != null && t.Cls != null && t.Cls.IndexOf("Screamer", StringComparison.OrdinalIgnoreCase) >= 0 ? L.T("Scream") : ""; return true;
+            case "retiretxt": value = !b3 ? "" : confirm == "retire" ? L.T("Sure?") : L.T("Retire"); return true;
+            case "releasetxt": value = confirm == "release" ? L.T("Sure?") : L.T("Release"); return true;
+            case "prevtxt": value = "< " + L.T("Prev"); return true;
+            case "nexttxt": value = L.T("Next") + " >"; return true;
+            case "rostertxt": value = L.T("Roster"); return true;
+            case "closetxt": value = L.T("Close"); return true;
             case "status": value = BaitData.StatusText; return true;
         }
         return base.GetBindingValueInternal(ref value, name);
@@ -241,16 +318,16 @@ public class XUiC_AzraelBaitStats : XUiController
 // file to every client and a client-only mod's patch would be lost.
 public static class MapMarks
 {
-    const string ThrallClass = "azrael_thrall", PostClass = "azrael_thrall_post";
+    const string ThrallClass = "azrael_thrall", PostClass = "azrael_thrall_post", TrackClass = "azrael_thrall_track";
     static readonly Dictionary<string, NavObject> marks = new Dictionary<string, NavObject>();
     static float next;
 
-    static void EnsureClass(string name, string sprite, string color)
+    static void EnsureClass(string name, string sprite, string color, int maxDistance = 150)
     {
         if (NavObjectClass.GetNavObjectClass(name) != null) return;
         var x = XElement.Parse("<nav_object_class name='" + name + "'>"
             + "<map_settings><property name='sprite_name' value='" + sprite + "'/><property name='color' value='" + color + "'/><property name='layer' value='5'/><property name='icon_scale' value='0.8'/></map_settings>"
-            + "<compass_settings><property name='sprite_name' value='" + sprite + "'/><property name='color' value='" + color + "'/><property name='max_distance' value='150'/>"
+            + "<compass_settings><property name='sprite_name' value='" + sprite + "'/><property name='color' value='" + color + "'/><property name='max_distance' value='" + maxDistance + "'/>"
             + "<property name='min_icon_scale' value='0.35'/><property name='max_icon_scale' value='0.6'/><property name='max_scale_distance' value='60'/></compass_settings>"
             + "</nav_object_class>");
         NavObjectClassesFromXml.ParseNavObjectClass(x);
@@ -268,23 +345,26 @@ public static class MapMarks
     {
         if (Time.time < next || !NavObjectManager.HasInstance) return;
         next = Time.time + 1f;
-        if (!UiSettings.MapMarkers || !BaitData.HasData) { if (marks.Count > 0) Clear(); return; }
+        if ((!UiSettings.MapMarkers && Extras.TrackIdx < 0) || !BaitData.HasData) { if (marks.Count > 0) Clear(); return; }
         try
         {
             EnsureClass(ThrallClass, "ui_game_symbol_allies", "120,230,120,255");
             EnsureClass(PostClass, "ui_game_symbol_map_campsite", "110,190,255,255");
+            EnsureClass(TrackClass, "ui_game_symbol_challenge", "255,210,60,255", 5000);
         }
         catch (Exception e) { Log.Warning("[BaitUI] map markers: " + e.Message); UiSettings.MapMarkers = false; return; }
         var want = new HashSet<string>();
         foreach (var t in BaitData.Thralls)
         {
+            if (!UiSettings.MapMarkers && Extras.TrackIdx != t.Idx) continue;   // markers off: only the tracked one
             var e = BaitData.LiveThrall(t);
             if (e != null)
             {
-                string k = "e" + e.entityId;
+                bool tracked = Extras.TrackIdx == t.Idx;   // a tracked thrall shows on the compass at any distance, in gold
+                string k = (tracked ? "t" : "e") + e.entityId;
                 want.Add(k);
                 NavObject n;
-                if (!marks.TryGetValue(k, out n) || !NavObjectManager.Instance.NavObjectList.Contains(n)) { n = NavObjectManager.Instance.RegisterNavObject(ThrallClass, e); marks[k] = n; }
+                if (!marks.TryGetValue(k, out n) || !NavObjectManager.Instance.NavObjectList.Contains(n)) { n = NavObjectManager.Instance.RegisterNavObject(tracked ? TrackClass : ThrallClass, e); marks[k] = n; }
                 if (n != null) n.name = t.Label;
             }
             if (t.HasPos && (t.Tether || t.Guard || t.Patrol))

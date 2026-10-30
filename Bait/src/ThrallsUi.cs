@@ -9,11 +9,12 @@ using System.Text;
 public static partial class Thralls
 {
     const string UiTag = "\u200B\u200BBAIT|";
-    public const string ModVersion = "1.10.0";   // keep in step with mod.json; sent to Bait UI so it can warn about a server that is too old
+    public const string ModVersion = "1.12.1";   // keep in step with mod.json; sent to Bait UI so it can warn about a server that is too old
     static readonly HashSet<int> uiClients = new HashSet<int>();
     static readonly Dictionary<int, string> uiRoster = new Dictionary<int, string>();
     static readonly Dictionary<int, string> uiCfg = new Dictionary<int, string>();
     static readonly Dictionary<int, string> uiAll = new Dictionary<int, string>();
+    static readonly Dictionary<int, string> uiTargets = new Dictionary<int, string>();
 
     static string Clean(string s)
     {
@@ -56,7 +57,9 @@ public static partial class Thralls
         int rich = pl != null ? ItemCount(pl, BaitCheck.RichItem, out bb, out bg) : 0;
         int feast = pl != null ? ItemCount(pl, BaitCheck.FeastItem, out bb, out bg) : 0;
         l.Add("S|" + list.Count + "|" + MaxOwnedFor(key) + "|" + MaxActiveFor(key) + "|" + ActiveCount(key) + "|" + (IsAdmin(me) ? 1 : 0) + "|" + PowerOf(key) + "|" + ModVersion
-              + "|" + plain + "|" + rich + "|" + feast + "|" + BmOf(key));
+              + "|" + plain + "|" + rich + "|" + feast + "|" + BmOf(key)
+              // 1.12.0: your PvP switch, whether the server allows PvP thralls, kennels you own
+              + "|" + (PvpOn(key) ? 1 : 0) + "|" + (BaitConfig.PvpThralls ? 1 : 0) + "|" + KennelsOf(key).Count);
         for (int i = 0; i < list.Count; i++)
         {
             var r = list[i];
@@ -69,7 +72,9 @@ public static partial class Thralls
                   + "|" + Clean(r.Perks) + "|" + (r.Guard ? 1 : 0) + "|" + (r.Patrol ? 1 : 0) + "|" + PatrolPoints(r).Count + "|" + r.Deaths + "|" + r.TamedAt
                   + "|" + PerkSlots(r.Level) + "|" + Clean(EvolveTarget(r))
                   // where its tether, guard post or patrol is (for Bait UI's map markers); blank when it follows
-                  + "|" + (r.Tether ? F(r.TX) + "|" + F(r.TY) + "|" + F(r.TZ) : "||"));
+                  + "|" + (r.Tether ? F(r.TX) + "|" + F(r.TY) + "|" + F(r.TZ) : "||")
+                  // 1.12.0: kills toward the next level, second chance, Alpha
+                  + "|" + r.Xp + "|" + (r.SecondChance ? 1 : 0) + "|" + (r.Alpha ? 1 : 0));
         }
         // teams: TM|<count>|name:size,name:size (older Bait UI ignores it)
         var tl = new List<string>();
@@ -86,6 +91,13 @@ public static partial class Thralls
         l.AddRange(cfg);
         l.Add("XS|" + BaitConfig.Exclude.Count);
         foreach (string x in BaitConfig.Exclude) l.Add("X|" + Clean(x));
+        // 1.12.0: animal feed rates and per-creature caps (Bait UI's bestiary and feed rate editor)
+        var fd = new List<string>();
+        foreach (var kv in BaitConfig.AnimalFeeds) fd.Add(Clean(kv.Key) + ":" + kv.Value);
+        l.Add("FD|" + string.Join(",", fd.ToArray()));
+        var cp = new List<string>();
+        foreach (var kv in BaitConfig.Caps) cp.Add(Clean(kv.Key) + ":" + kv.Value);
+        l.Add("CP|" + string.Join(",", cp.ToArray()));
         return l;
     }
 
@@ -114,8 +126,28 @@ public static partial class Thralls
             recs.Add(sbOwn.ToString());
         }
         if (ids.Count == 0) recs.Add("O|1|");
+        // 1.12.0: Alphas roaming (entity id:name), so Bait UI can tag them
+        var al = new List<string>();
+        foreach (var kv in alphas) al.Add(kv.Key + ":" + Clean(kv.Value).Replace(',', ' ').Replace(':', ' '));
+        recs.Add("AL|" + string.Join(",", al.ToArray()));
         sig = string.Join("~", recs.ToArray());
         if (force || !uiAll.TryGetValue(id, out old) || old != sig) { uiAll[id] = sig; UiSend(id, recs); }
+
+        // 1.12.0: what each of your thralls is fighting (thrall:target), for Bait UI's target lines
+        var sbG = new StringBuilder("G|");
+        bool firstG = true;
+        foreach (var lt in Live.Values)
+        {
+            if (lt.OwnerEntityId != id) continue;
+            var e = W.GetEntity(lt.EntityId) as EntityAlive;
+            var t = e != null ? e.GetAttackTarget() : null;
+            if (t == null || t.IsDead()) continue;
+            if (!firstG) sbG.Append(',');
+            firstG = false;
+            sbG.Append(lt.EntityId).Append(':').Append(t.entityId);
+        }
+        sig = sbG.ToString();
+        if (force || !uiTargets.TryGetValue(id, out old) || old != sig) { uiTargets[id] = sig; UiSend(id, new List<string> { sig }); }
     }
 
     // Called once a second.
@@ -125,7 +157,7 @@ public static partial class Thralls
         foreach (int id in new List<int>(uiClients))
         {
             var p = W.GetEntity(id) as EntityPlayer;
-            if (p == null) { uiClients.Remove(id); uiRoster.Remove(id); uiCfg.Remove(id); uiAll.Remove(id); continue; }
+            if (p == null) { uiClients.Remove(id); uiRoster.Remove(id); uiCfg.Remove(id); uiAll.Remove(id); uiTargets.Remove(id); continue; }
             try { UiPushTo(id, p, false); } catch (Exception e) { Dbg("ui push: " + e.Message); }
         }
     }

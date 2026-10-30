@@ -36,6 +36,7 @@ public static class BaitConfig
     public static bool OthersCanHurtThralls = false; // false: no player can hurt anyone else's thrall
     public static bool AutoStowInVehicle = true;
     public static bool DronesIgnoreSpikes = true;   // spikes and other damage blocks do not hurt drones
+    public static bool TrapsSpareThralls = true;    // spikes, barbed wire, blade traps and electric fence shocks do not hurt thralls (or wear the trap down)
     // (AutoStowInVehicle above: thralls go inactive while you ride a vehicle and come back when you get off)
     public static bool OwnerCanHurtThralls = false;
     // tether (daycare)
@@ -50,6 +51,10 @@ public static class BaitConfig
     public static int TierLevelBonus = 5;       // starting levels added per tier (feral 1, radiated 2, charged/infernal 3)
     public static float LevelDamagePct = 3f;   // extra damage dealt per level
     public static float LevelToughPct = 3f;    // damage reduction per level (1/(1+pct*level))
+    // animal thralls (1.11.0): wild animals never got the day/tier starting level wild zombies get, and animals can't evolve
+    public static bool AnimalDayLevels = true;  // an animal thrall is kept at least at the level a wild walker of today starts at (zombie animals as feral)
+    public static float AnimalDamagePct = 50f;  // animal thralls deal this much more damage
+    public static float AnimalToughPct = 50f;   // damage taken by animal thralls is divided by 1 + this percent
     // taming extras
     public static int MaxFeeds = 27;             // hard cap on meals needed for anything (0 = no cap)
     public static int FeedsPerLevelStep = 17;   // +1 meal per this many levels of the target (0 = off)
@@ -102,6 +107,41 @@ public static class BaitConfig
     public static bool HealthAlerts = true;     // whisper the owner when a thrall drops below 50%, 25%, 10%
     public static bool RestoreRosterFromBackup = true; // a save with no (or an empty or unreadable) thrall roster takes the kept copy from <UserDataFolder>/AzraelBait
     public static bool RestoreLostBait = true;  // give back bait a player held at logout but no longer has at their next login (see BaitLedger.cs)
+    // batch 3 (1.12.0)
+    public static float BackpackGuardSeconds = 120f; // when you die, the thralls with you guard your backpack this long (0 = off)
+    public static float BackpackGuardRadius = 10f;
+    public static bool BodyguardRush = true;    // below BodyguardHpPct health, thralls with you turn aggressive and pull attackers off you
+    public static float BodyguardHpPct = 30f;
+    public static float BodyguardSeconds = 10f;
+    public static float BodyguardCooldownSeconds = 60f;
+    public static bool SneakFollow = true;      // while you crouch, followers walk, start no fights and leave sleepers alone
+    public static float ScreamRadius = 60f;     // /thrall scream: a tamed screamer calls wild zombies from this far
+    public static float ScreamCooldownSeconds = 600f;
+    public static bool PvpThralls = false;      // players may turn on /thrall pvp (both players must have it on; never party or allies)
+    public static float DuelSeconds = 120f;     // /thrall duel: longest a duel lasts (it ends at 10% health)
+    public static float DuelLosePct = 10f;
+    public static int SecondChanceFeast = 1;    // permadeath servers (ReviveSeconds 0): Feast Bait for one saved life (0 = off)
+    public static int SecondChanceSeconds = 60; // how long a saved thrall stays downed
+    public static bool Whistle = true;          // the Thrall Whistle item does /thrall here
+    public static bool CatchUpXp = true;        // kills count double for a thrall more than CatchUpGap levels below your best
+    public static int CatchUpGap = 10;
+    public static int RetireLevel = 25;         // /thrall retire: lowest level
+    public static int RetireRich = 2;           // reward under RetireFeastLevel
+    public static int RetireFeastLevel = 50;    // at or above this level: one Feast Bait per this many levels (up to 5)
+    public static float OwnerXpSharePct = 25f;  // the owner gets this much of the game XP of a thrall's kill nearby (0 = off)
+    public static bool QuestKillCredit = true;  // thrall kills near you count for quests and challenges
+    public static float OwnerCreditRange = 30f; // range for the two above
+    public static int AlphaEveryDays = 7;       // a named Alpha appears near a player the day after every this many days (8, 15, 22...); only Feast Bait tames it (0 = off)
+    public static int AlphaLevelBonus = 10;
+    public static bool Feeders = true;          // the Bait Feeder block tames animals for its owner, even while away
+    public static float FeederSeconds = 30f;    // a feeder feeds one animal one bait this often
+    public static float FeederRadius = 12f;
+    public static float FeederTetherRadius = 8f;
+    public static float TamingResistPct = 0f;   // chance a radiated, charged or infernal creature breaks off a meal (0 = off)
+    public static float KennelRadius = 6f;      // the Thrall Kennel block: tether circle and healing area
+    public static float KennelHealPct = 5f;     // extra health every 5 s inside a kennel's circle
+    public static bool QuietThralls = true;     // thralls make no heat (noise from them is not sent to the AI director)
+    public static int NameMaxLength = 24;       // longest thrall name (banned words: /thrall admin banword)
     public static bool Debug = false;
 
     // Animal classes whose AI list is replaced by other mods and so needs the bait task added in code.
@@ -111,6 +151,57 @@ public static class BaitConfig
     {
         // empty: every creature can be tamed. Add class names with  Exclude=name1,name2  to protect some.
     };
+
+    // Per-creature limits an admin set with "/thrall config cap.<class> <n>" (0 removes it).
+    public static readonly Dictionary<string, int> Caps = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+    public static int CapFor(string cls) { int n; return cls != null && Caps.TryGetValue(cls, out n) ? n : 0; }
+    // Words a thrall name may not contain (any case).
+    public static readonly HashSet<string> BannedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+    public static string CapsSummary()
+    {
+        if (Caps.Count == 0) return "no per-creature caps";
+        var parts = new List<string>();
+        foreach (var kv in Caps) parts.Add(kv.Key + " " + kv.Value);
+        return string.Join(", ", parts.ToArray());
+    }
+
+    // ------------------------------------------------------------------ presets
+    static Dictionary<string, string> defaults;
+    static void Snapshot()
+    {
+        if (defaults != null) return;
+        defaults = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (FieldInfo f in Fields()) defaults[f.Name] = Convert.ToString(f.GetValue(null), CultureInfo.InvariantCulture);
+    }
+
+    static readonly Dictionary<string, string> Casual = new Dictionary<string, string>
+    {
+        {"FeedsToTame","2"}, {"FeralBonus","1"}, {"RadiatedBonus","2"}, {"ChargedBonus","3"}, {"AnimalFeedsToTame","2"}, {"MaxActive","6"},
+        {"ReviveSeconds","60"}, {"ReviveCostPlain","1"}, {"ReviveCostRich","1"}, {"ReviveCostFeast","1"}, {"KillsPerLevel","5"},
+        {"TamingResistPct","0"}, {"HereCooldownSeconds","10"}, {"RegenPctPerTick","2"},
+    };
+    static readonly Dictionary<string, string> Hardcore = new Dictionary<string, string>
+    {
+        {"FeedsToTame","6"}, {"FeralBonus","3"}, {"RadiatedBonus","6"}, {"ChargedBonus","9"}, {"AnimalFeedsToTame","4"}, {"MaxActive","3"},
+        {"ReviveSeconds","0"}, {"ReviveCostPlain","5"}, {"ReviveCostRich","3"}, {"ReviveCostFeast","2"}, {"KillsPerLevel","12"},
+        {"TamingResistPct","15"}, {"HereCooldownSeconds","60"}, {"RegenPctPerTick","0.5"},
+    };
+
+    // casual, default (the values before any config file) or hardcore. Returns false for an unknown name.
+    public static bool ApplyPreset(string name)
+    {
+        Snapshot();
+        Dictionary<string, string> set;
+        string n = (name ?? "").ToLowerInvariant();
+        if (n == "casual") set = Casual;
+        else if (n == "hardcore") set = Hardcore;
+        else if (n == "default") set = defaults;
+        else return false;
+        if (n != "default") foreach (var kv in Casual) { string d; if (defaults.TryGetValue(kv.Key, out d)) { string e; Set(kv.Key, d, out e); } }
+        foreach (var kv in set) { string e; Set(kv.Key, kv.Value, out e); }
+        return true;
+    }
 
     static string modPath;
     public static string ModPath { get { return modPath; } }
@@ -158,7 +249,7 @@ public static class BaitConfig
         return null;
     }
 
-    public static void Load(string path) { modPath = path; ReadFile(Path.Combine(path, FileName)); }
+    public static void Load(string path) { Snapshot(); modPath = path; ReadFile(Path.Combine(path, FileName)); }
     public static void LoadSaved() { savedPass = true; try { ReadFile(Path.Combine(GameIO.GetSaveGameDir(), SavedName)); } finally { savedPass = false; } }
 
     // Feed rates an admin set in game with "/thrall config feeds.<class> <n>"; only these are written to the save settings.
@@ -198,6 +289,17 @@ public static class BaitConfig
                     foreach (string n in v.Split(',')) if (n.Trim().Length > 0) Exclude.Add(n.Trim());
                     continue;
                 }
+                if (string.Equals(k, "BannedNames", StringComparison.OrdinalIgnoreCase))
+                {
+                    BannedNames.Clear();
+                    foreach (string n in v.Split(',')) if (n.Trim().Length > 0) BannedNames.Add(n.Trim());
+                    continue;
+                }
+                if (string.Equals(k, "Caps", StringComparison.OrdinalIgnoreCase))
+                {
+                    Caps.Clear(); ReadFeedList(Caps, v);
+                    continue;
+                }
                 if (string.Equals(k, "AnimalFeeds", StringComparison.OrdinalIgnoreCase))
                 {
                     ReadFeedList(AnimalFeeds, v);
@@ -215,6 +317,14 @@ public static class BaitConfig
     {
         error = null;
         string fcls;
+        if (key != null && key.StartsWith("cap.", StringComparison.OrdinalIgnoreCase) && key.Length > 4)
+        {
+            int c;
+            if (!int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out c) || c < 0) { error = "bad value for " + key + " (expected a whole number, 0 removes the cap)"; return false; }
+            string ccls = key.Substring(4);
+            if (c == 0) Caps.Remove(ccls); else Caps[ccls] = c;
+            return true;
+        }
         if (IsFeedKey(key, out fcls))
         {
             int n;
@@ -239,6 +349,8 @@ public static class BaitConfig
     {
         string fcls;
         if (string.Equals(key, "feeds", StringComparison.OrdinalIgnoreCase)) return FeedsSummary();
+        if (string.Equals(key, "caps", StringComparison.OrdinalIgnoreCase)) return CapsSummary();
+        if (key != null && key.StartsWith("cap.", StringComparison.OrdinalIgnoreCase)) return CapFor(key.Substring(4)).ToString();
         if (IsFeedKey(key, out fcls)) return AnimalFeeds.ContainsKey(fcls) ? AnimalFeeds[fcls].ToString() : null;
         FieldInfo f = Find(key);
         return f == null ? null : Convert.ToString(f.GetValue(null), CultureInfo.InvariantCulture);
@@ -248,6 +360,8 @@ public static class BaitConfig
     {
         string fcls;
         if (string.Equals(key, "feeds", StringComparison.OrdinalIgnoreCase)) return "feeds";
+        if (string.Equals(key, "caps", StringComparison.OrdinalIgnoreCase)) return "caps";
+        if (key != null && key.StartsWith("cap.", StringComparison.OrdinalIgnoreCase) && key.Length > 4) return "Cap." + key.Substring(4);
         if (IsFeedKey(key, out fcls)) return "Feeds." + fcls;
         FieldInfo f = Find(key); return f == null ? null : f.Name;
     }
@@ -280,6 +394,13 @@ public static class BaitConfig
                 foreach (var kv in feedOverrides) fp.Add(kv.Key + ":" + kv.Value);
                 sb.Append("AnimalFeeds=").Append(string.Join(",", fp.ToArray())).Append('\n');
             }
+            if (Caps.Count > 0)
+            {
+                var cp = new List<string>();
+                foreach (var kv in Caps) cp.Add(kv.Key + ":" + kv.Value);
+                sb.Append("Caps=").Append(string.Join(",", cp.ToArray())).Append('\n');
+            }
+            sb.Append("BannedNames=").Append(string.Join(",", new List<string>(BannedNames).ToArray())).Append('\n');
             sb.Append("Exclude=").Append(string.Join(",", new List<string>(Exclude).ToArray())).Append('\n');
             File.WriteAllText(Path.Combine(GameIO.GetSaveGameDir(), SavedName), sb.ToString());
         }

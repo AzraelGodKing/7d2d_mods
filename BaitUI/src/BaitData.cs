@@ -43,6 +43,9 @@ public class UiThrall
     public int PatrolPts, Deaths, PerkSlots;
     public long TamedAt;     // unix seconds, 0 = unknown (tamed before 1.10.0)
     public Vector3 Pos;      // its tether, guard post or patrol centre (HasPos)
+    // Bait 1.12.0+
+    public int Xp = -1;      // kills toward the next level (-1 = older server: work it out from Kills)
+    public bool SecondChance, Alpha;
     public string Pretty { get { string l = Localization.Get(Cls); return string.IsNullOrEmpty(l) ? Cls : l; } }
     public string Label { get { return string.IsNullOrEmpty(Name) ? Pretty : Name; } }
 }
@@ -63,6 +66,18 @@ public static class BaitData
     public static int Plain, Rich, Feast;   // bait the server sees in your inventory (Bait 1.9.0+)
     public static bool BaitCounts;
     public static string BmMode = "";   // this player's blood moon mode (Bait 1.10.0+): off, call, fight, both
+    // Bait 1.12.0+
+    public static bool PvpOn, PvpAllowed;
+    public static int Kennels;
+    public static readonly Dictionary<string, int> AnimalFeeds = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+    public static readonly Dictionary<string, int> Caps = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+    public static readonly Dictionary<int, string> Alphas = new Dictionary<int, string>();     // roaming Alpha entity id -> name
+    public static readonly Dictionary<int, int> Targets = new Dictionary<int, int>();          // your thrall entity id -> what it is fighting
+    public static readonly List<KeyValuePair<string, int>> AdminPlayers = new List<KeyValuePair<string, int>>();   // name, thralls (admin player browser)
+    public static readonly List<string[]> AdminRoster = new List<string[]>();                  // n, label, level, kills, state
+    public static string AdminWho = "";
+    public static int AdminOwned, AdminMaxOwned, AdminMaxActive;
+    public static int SelectedIdx = -1;   // the row picked in the roster (the go-to ping sends that one, or all)
     public static UiLook Look;          // taming helper: the creature under the crosshair while you hold bait (Bait 1.10.0+)
     public static string Search = "";   // roster name search (not saved)
     public static int StatsIdx = -1;    // the thrall the thrall page shows (server number)
@@ -81,7 +96,8 @@ public static class BaitData
 
     public static void Reset()
     {
-        Thralls.Clear(); Teams.Clear(); Look = null; BmMode = ""; KillFeed.Clear(); LevelUpAt.Clear(); BaitCounts = false; Config.Clear(); Exclude.Clear(); Feeds.Clear(); All.Clear(); Owner.Clear(); HelloGaveUp = false; ServerVersion = ""; ServerHasOwners = false;
+        Thralls.Clear(); Teams.Clear(); Look = null; BmMode = ""; Kills.Clear(); LevelUpAt.Clear(); BaitCounts = false; Config.Clear(); Exclude.Clear(); Feeds.Clear(); All.Clear(); Owner.Clear(); HelloGaveUp = false; ServerVersion = ""; ServerHasOwners = false;
+        AnimalFeeds.Clear(); Caps.Clear(); Alphas.Clear(); Targets.Clear(); AdminPlayers.Clear(); AdminRoster.Clear(); PvpOn = false; PvpAllowed = false; Kennels = 0; SelectedIdx = -1; Session.Clear(); seenRoster = false;
         HasData = false; Admin = false; Status = ""; Version++;
     }
 
@@ -119,6 +135,8 @@ public static class BaitData
                     pendT = new List<UiThrall>(); pendTn = I(At(f, 1));
                     MaxOwned = I(At(f, 2)); MaxActive = I(At(f, 3)); ActiveCount = I(At(f, 4)); Admin = I(At(f, 5)) == 1; Power = I(At(f, 6)); ServerVersion = At(f, 7);
                     BaitCounts = f.Length > 10; Plain = I(At(f, 8)); Rich = I(At(f, 9)); Feast = I(At(f, 10)); BmMode = At(f, 11);
+                    PvpOn = At(f, 12) == "1"; PvpAllowed = At(f, 13) == "1"; Kennels = I(At(f, 14));
+                    Session.Bait(Plain, Rich, Feast, BaitCounts);
                     if (pendTn == 0) CommitT();
                     break;
                 case "T":
@@ -128,7 +146,8 @@ public static class BaitData
                         Idx = I(At(f, 1)), EntityId = I(At(f, 2)), Cls = At(f, 3), Active = I(At(f, 4)) == 1, Level = I(At(f, 5)), Kills = I(At(f, 6)),
                         Tether = I(At(f, 7)) == 1, Radius = Fl(At(f, 8)), Mode = I(At(f, 9)), Stay = I(At(f, 10)) == 1, Down = L(At(f, 11)), Name = At(f, 12), AutoRevive = I(At(f, 13)) == 1, AutoHeal = I(At(f, 14)) == 1, At = Time.time,
                         Perks = At(f, 15), Guard = I(At(f, 16)) == 1, Patrol = I(At(f, 17)) == 1, PatrolPts = I(At(f, 18)), Deaths = I(At(f, 19)), TamedAt = L(At(f, 20)),
-                        PerkSlots = I(At(f, 21)), EvolveTo = At(f, 22), HasPos = At(f, 23).Length > 0, Pos = new Vector3(Fl(At(f, 23)), Fl(At(f, 24)), Fl(At(f, 25)))
+                        PerkSlots = I(At(f, 21)), EvolveTo = At(f, 22), HasPos = At(f, 23).Length > 0, Pos = new Vector3(Fl(At(f, 23)), Fl(At(f, 24)), Fl(At(f, 25))),
+                        Xp = f.Length > 26 ? I(At(f, 26)) : -1, SecondChance = At(f, 27) == "1", Alpha = At(f, 28) == "1"
                     });
                     if (pendT.Count >= pendTn) CommitT();
                     break;
@@ -158,10 +177,28 @@ public static class BaitData
                 {
                     var kt = Thralls.Find(t => t.Idx == I(At(f, 1)));
                     string who = kt != null ? kt.Label : "Thrall " + At(f, 1);
-                    KillFeed.Add(new KeyValuePair<string, float>(who + (At(f, 4) == "1" ? " shares a kill: " : " killed ") + At(f, 2) + "  (" + At(f, 3) + " kills)", Time.time));
-                    if (KillFeed.Count > 5) KillFeed.RemoveAt(0);
+                    bool shared = At(f, 4) == "1";
+                    Session.Kills++;
+                    AddKill(who, At(f, 2), shared);
                     break;
                 }
+                case "FD": ReadPairs(AnimalFeeds, At(f, 1)); Version++; break;
+                case "CP": ReadPairs(Caps, At(f, 1)); Version++; break;
+                case "AL":
+                    Alphas.Clear();
+                    foreach (string s in At(f, 1).Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)) { int c = s.IndexOf(':'); if (c > 0) Alphas[I(s.Substring(0, c))] = s.Substring(c + 1); }
+                    break;
+                case "G":
+                    Targets.Clear();
+                    foreach (string s in At(f, 1).Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)) { int c = s.IndexOf(':'); if (c > 0) Targets[I(s.Substring(0, c))] = I(s.Substring(c + 1)); }
+                    break;
+                case "AP":
+                    AdminPlayers.Clear();
+                    foreach (string s in At(f, 1).Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)) { int c = s.LastIndexOf(':'); if (c > 0) AdminPlayers.Add(new KeyValuePair<string, int>(s.Substring(0, c), I(s.Substring(c + 1)))); }
+                    Version++;
+                    break;
+                case "AH": AdminWho = At(f, 1); AdminOwned = I(At(f, 2)); AdminMaxOwned = I(At(f, 3)); AdminMaxActive = I(At(f, 4)); AdminRoster.Clear(); Version++; break;
+                case "AT": AdminRoster.Add(new[] { At(f, 1), At(f, 2), At(f, 3), At(f, 4), At(f, 5) }); Version++; break;
                 case "L":
                     Look = I(At(f, 1)) <= 0 ? null : new UiLook { EntityId = I(At(f, 1)), Cur = I(At(f, 2)), Need = I(At(f, 3)), Status = At(f, 4), Level = I(At(f, 5)), At = Time.time };
                     break;
@@ -179,12 +216,58 @@ public static class BaitData
         foreach (var n in pendT)
         {
             var old = Thralls.Find(t => t.Idx == n.Idx && t.Cls == n.Cls);
-            if (old != null && n.Level > old.Level) LevelUpAt[UiSettings.ThrallKey(n)] = Time.time;
+            if (old != null && n.Level > old.Level) { LevelUpAt[UiSettings.ThrallKey(n)] = Time.time; Session.LevelUps += n.Level - old.Level; }
+            if (old != null && n.Deaths > old.Deaths) Session.Deaths += n.Deaths - old.Deaths;
         }
+        // a thrall that is new since the last copy and was tamed just now: banner and the setup popup
+        if (seenRoster && pendT.Count > Thralls.Count)
+        {
+            long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            foreach (var n in pendT)
+            {
+                if (n.TamedAt <= 0 || now - n.TamedAt > 120 || Thralls.Exists(t => t.TamedAt == n.TamedAt && t.Cls == n.Cls)) continue;
+                Session.Tamed++;
+                Extras.OnTamed(n);
+            }
+        }
+        seenRoster = true;
         Thralls.Clear(); Thralls.AddRange(pendT); pendT = null; HasData = true; Version++;
     }
+    static bool seenRoster;
 
-    public static readonly List<KeyValuePair<string, float>> KillFeed = new List<KeyValuePair<string, float>>();   // line, when
+    static void ReadPairs(Dictionary<string, int> d, string v)
+    {
+        d.Clear();
+        foreach (string s in v.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)) { int c = s.LastIndexOf(':'); if (c > 0) d[s.Substring(0, c)] = I(s.Substring(c + 1)); }
+    }
+
+    // Kill feed (U51): repeats of the same thrall killing the same kind of thing fold into one line ("Rex killed Walker x5").
+    public class KillLine { public string Who, Victim; public bool Shared; public int Count = 1; public float At; public string Text { get { return Who + (Shared ? " shares a kill: " : " killed ") + Victim + (Count > 1 ? "  x" + Count : ""); } } }
+    public static readonly List<KillLine> Kills = new List<KillLine>();
+
+    static void AddKill(string who, string victim, bool shared)
+    {
+        if (UiSettings.KillFilter == 1 && shared) return;
+        if (UiSettings.KillFilter == 2 && !SpecialKill(victim)) return;
+        string kind = victim;
+        int lv = kind.IndexOf(" Lv", StringComparison.Ordinal);
+        if (lv > 0) kind = kind.Substring(0, lv);
+        var last = Kills.Count > 0 ? Kills[Kills.Count - 1] : null;
+        if (last != null && last.Who == who && last.Shared == shared && Time.time - last.At < 8f && last.Victim.StartsWith(kind, StringComparison.Ordinal)) { last.Count++; last.At = Time.time; last.Victim = kind; return; }
+        Kills.Add(new KillLine { Who = who, Victim = victim, Shared = shared, At = Time.time });
+        if (Kills.Count > 5) Kills.RemoveAt(0);
+    }
+
+    // a special kill: feral, radiated, charged or infernal, an Alpha, or level 20 and up
+    static bool SpecialKill(string v)
+    {
+        string l = v.ToLowerInvariant();
+        if (l.Contains("(feral") || l.Contains("(radiated") || l.Contains("(charged") || l.Contains("(infernal")) return true;
+        int i = v.LastIndexOf(" Lv", StringComparison.Ordinal);
+        int n;
+        return i >= 0 && int.TryParse(v.Substring(i + 3), out n) && n >= 20;
+    }
+
     public static readonly Dictionary<string, float> LevelUpAt = new Dictionary<string, float>();   // ThrallKey -> when it levelled up
 
     public static void SetStatus(string s) { Status = s; StatusAt = Time.time; Version++; }
@@ -243,6 +326,7 @@ public static class BaitData
     public const string AutoReviveNeed = "1.8.0";  // the Auto tick box on each roster row (/thrall autorevive)
     public const string QolNeed = "1.9.0";         // Heal box, move arrows, teams, Bring all here, deaths, bait counts
     public const string RolesNeed = "1.10.0";      // thrall page (perks, guard, patrol, scout, evolve), Top, blood moon mode, taming helper, map markers for posts
+    public const string Batch3Need = "1.12.0";     // PvP, kennel, second chance, retire, scream, stats, go-to ping, target lines, feed rates, player browser
 
     public static bool Older(string have, string need)
     {
@@ -253,6 +337,7 @@ public static class BaitData
     public static bool ServerHasAutoRevive { get { return !string.IsNullOrEmpty(ServerVersion) && !Older(ServerVersion, AutoReviveNeed); } }
     public static bool ServerHasQol { get { return !string.IsNullOrEmpty(ServerVersion) && !Older(ServerVersion, QolNeed); } }
     public static bool ServerHasRoles { get { return !string.IsNullOrEmpty(ServerVersion) && !Older(ServerVersion, RolesNeed); } }
+    public static bool ServerHasBatch3 { get { return !string.IsNullOrEmpty(ServerVersion) && !Older(ServerVersion, Batch3Need); } }
     public static bool ServerHasPartyBars { get { return ServerHasOwners || (!string.IsNullOrEmpty(ServerVersion) && !Older(ServerVersion, PartyBarsNeed)); } }
 
     public static bool HelloGaveUp;   // asked a few times and the server never answered
@@ -354,6 +439,23 @@ public static class UiSettings
     public static bool ColorRows = true;     // roster rows tinted with each thrall's own name colour
     public static bool TamingHelp = true;    // meals needed for the creature you aim at while holding bait
     public static int Theme;                 // 0 dark, 1 light, 2 high contrast
+    // 1.9.0
+    public static int Tab;                   // roster tab: 0 thralls, 1 groups, 2 display, 3 keys, 4 tools
+    public static bool ColorBlind;           // HP bars blue (full) to orange (empty) instead of green to red
+    public static bool TameBanner = true;    // a banner across the screen when a tame completes
+    public static bool DamageNumbers = true; // floating numbers over what your thralls hit
+    public static bool TargetLines = true;   // a faint line from each thrall to what it fights (Bait 1.12.0)
+    public static bool DownedPanel = true;   // a corner list of downed thralls with Revive buttons
+    public static int KillFilter;            // kill feed: 0 all, 1 own kills only, 2 special only
+    public static readonly string[] KillFilterNames = { "All", "Own kills", "Special" };
+    public static bool SetupPopup = true;    // the new thrall setup popup
+    public static float WinScale = 1f;       // size of the roster and thrall page windows
+    public static readonly bool[] Cols = { true, true, true, true, true, true };   // roster row columns: level, HP, status, kills, mode, auto boxes
+    public static readonly string[] ColNames = { "Level", "HP", "Status", "Kills", "Mode", "Auto" };
+    public static int ThrallMod;             // per-thrall hotkeys (number keys 1-9): 0 Alt, 1 Ctrl, 2 Shift, 3 off
+    public static readonly string[] ModNames = { "Alt", "Ctrl", "Shift", "Off" };
+    public static KeyCode GotoKey = KeyCode.Insert;   // go-to ping: the selected thrall (or all) walks to the spot you aim at
+    public static bool CaptureGoto;
     public static readonly string[] ThemeNames = { "Dark", "Light", "High contrast" };
     // XUi colours (r,g,b,a) per theme: window background, row background, text
     static readonly string[] ThemeBg = { "28,28,28,235", "200,200,195,240", "0,0,0,255" };
@@ -467,6 +569,18 @@ public static class UiSettings
                     }
                     case "barcolor": { int bi = Array.FindIndex(BarColorNames, n => n.Equals(v, StringComparison.OrdinalIgnoreCase)); if (bi >= 0) BarColorIdx = bi; break; }
                     case "namecolor": { int ci = Array.FindIndex(ColorNames, n => n.Equals(v, StringComparison.OrdinalIgnoreCase)); if (ci >= 0) NameColorIdx = ci; break; }
+                    case "colorblind": ColorBlind = on; break;
+                    case "tamebanner": TameBanner = on; break;
+                    case "damagenumbers": DamageNumbers = on; break;
+                    case "targetlines": TargetLines = on; break;
+                    case "downedpanel": DownedPanel = on; break;
+                    case "setuppopup": SetupPopup = on; break;
+                    case "killfilter": { int ki = Array.FindIndex(KillFilterNames, n => n.Equals(v, StringComparison.OrdinalIgnoreCase)); if (ki >= 0) KillFilter = ki; break; }
+                    case "thrallmod": { int mi = Array.FindIndex(ModNames, n => n.Equals(v, StringComparison.OrdinalIgnoreCase)); if (mi >= 0) ThrallMod = mi; break; }
+                    case "tab": { int tb; if (int.TryParse(v, out tb)) Tab = Mathf.Clamp(tb, 0, 4); break; }
+                    case "cols": for (int ci = 0; ci < Cols.Length && ci < v.Length; ci++) Cols[ci] = v[ci] == '1'; break;
+                    case "winscale": { float ws; if (float.TryParse(v, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out ws)) WinScale = Mathf.Clamp(ws, 0.6f, 1.4f); break; }
+                    case "gotokey": { KeyCode gk; if (v.Equals("none", StringComparison.OrdinalIgnoreCase)) GotoKey = KeyCode.None; else if (TryParseKey(v, out gk)) GotoKey = gk; break; }
                     case "partyx": float px; if (float.TryParse(v, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out px)) PartyX = Mathf.Clamp01(px); break;
                     case "partyy": float py; if (float.TryParse(v, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out py)) PartyY = Mathf.Clamp01(py); break;
                     case "scale": float sc; if (float.TryParse(v, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out sc)) Scale = Mathf.Clamp(sc, 0.5f, 4f); break;
@@ -476,6 +590,8 @@ public static class UiSettings
         catch (Exception e) { Log.Warning("[BaitUI] settings: " + e.Message); }
         if (!keyChosen && Key == KeyCode.Backslash) Key = KeyCode.Home;   // an older settings file only holds the old default: move it to the new one
     }
+
+    static string ColsText() { var c = new char[Cols.Length]; for (int i = 0; i < Cols.Length; i++) c[i] = Cols[i] ? '1' : '0'; return new string(c); }
 
     public static void Save()
     {
@@ -492,6 +608,10 @@ public static class UiSettings
                 "\nmapmarkers=" + (MapMarkers ? "on" : "off") + "\nhpstrip=" + (HpStrip ? "on" : "off") + "\ncompactparty=" + (CompactParty ? "on" : "off") +
                 "\ncolorrows=" + (ColorRows ? "on" : "off") + "\ntaminghelp=" + (TamingHelp ? "on" : "off") + "\ntheme=" + ThemeNames[Mathf.Clamp(Theme, 0, 2)] + "\nrosterdx=" + RosterDX + "\nrosterdy=" + RosterDY + "\nwheelkey=" + WheelKey +
                 "\nfollowkey=" + FollowKey + "\nstaykey=" + StayKey + "\nherekey=" + HereKey +
+                "\ncolorblind=" + (ColorBlind ? "on" : "off") + "\ntamebanner=" + (TameBanner ? "on" : "off") + "\ndamagenumbers=" + (DamageNumbers ? "on" : "off") +
+                "\ntargetlines=" + (TargetLines ? "on" : "off") + "\ndownedpanel=" + (DownedPanel ? "on" : "off") + "\nsetuppopup=" + (SetupPopup ? "on" : "off") +
+                "\nkillfilter=" + KillFilterNames[Mathf.Clamp(KillFilter, 0, 2)] + "\nthrallmod=" + ModNames[Mathf.Clamp(ThrallMod, 0, 3)] + "\ntab=" + Tab + "\ncols=" + ColsText() +
+                "\nwinscale=" + WinScale.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + "\ngotokey=" + GotoKey +
                 "\npartyx=" + PartyX.ToString("0.####", System.Globalization.CultureInfo.InvariantCulture) + "\npartyy=" + PartyY.ToString("0.####", System.Globalization.CultureInfo.InvariantCulture) + "\n");
         }
         catch (Exception e) { Log.Warning("[BaitUI] settings save: " + e.Message); }

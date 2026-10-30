@@ -50,8 +50,13 @@ public static class ThrallDamagePatch
         // a thrall that was just tamed or called is untouchable for a few seconds
         if (victimThrall && Thralls.InGrace(__instance.entityId) && _damageSource.damageType != EnumDamageTypes.Suicide) { __result = -1; return false; }
 
-        // a thrall never hurts a player or another thrall
-        if (attackerThrall && (__instance is EntityPlayer || victimThrall)) { __result = -1; return false; }
+        // traps and damage blocks (spikes, barbed wire, blade traps, electric fence shocks) leave thralls alone
+        if (victimThrall && BaitConfig.TrapsSpareThralls && IsTrapHit(_damageSource)) { __result = -1; return false; }
+
+        // a thrall never hurts a player or another thrall (except a PvP foe, and the other thrall in a duel)
+        if (attackerThrall && __instance is EntityPlayer && !Thralls.ThrallMayHitPlayer(attacker.entityId, (EntityPlayer)__instance)) { __result = -1; return false; }
+        bool duel = attackerThrall && victimThrall && Thralls.InDuel(attacker.entityId, __instance.entityId);
+        if (attackerThrall && victimThrall && !duel) { __result = -1; return false; }
         // players: the owner only with OwnerCanHurtThralls, anyone else only with OthersCanHurtThralls
         EntityPlayer actor = attacker as EntityPlayer ?? (world != null ? (world.GetEntity(_damageSource.ownerEntityId) as EntityPlayer ?? world.GetEntity(_damageSource.CreatorEntityId) as EntityPlayer) : null);
         if (victimThrall && actor != null && !Thralls.PlayerMayHurt(__instance.entityId, actor.entityId) && _damageSource.damageType != EnumDamageTypes.Suicide)
@@ -71,8 +76,14 @@ public static class ThrallDamagePatch
             if (ph > 0 && !(__instance is EntityPlayer)) _strength = (int)(_strength * (1f + BaitConfig.PerkHitPct * ph / 100f) + 0.5f);
             int pt = victimThrall ? Thralls.PerkCount(__instance.entityId, 'T') : 0;
             if (pt > 0) _strength = Math.Max(1, (int)(_strength / (1f + BaitConfig.PerkToughPct * pt / 100f) + 0.5f));
+            // animal thralls can't evolve, so they get a flat bonus on top of their level
+            if (attackerThrall && !(__instance is EntityPlayer) && BaitConfig.AnimalDamagePct > 0f && IsAnimal(attacker))
+                _strength = (int)(_strength * (1f + BaitConfig.AnimalDamagePct / 100f) + 0.5f);
+            if (victimThrall && BaitConfig.AnimalToughPct > 0f && IsAnimal(__instance))
+                _strength = Math.Max(1, (int)(_strength / (1f + BaitConfig.AnimalToughPct / 100f) + 0.5f));
         }
 
+        if (duel) Thralls.DuelHit(attacker, __instance, ref _strength);
         if (victimThrall) Thralls.NoteHit(__instance, _damageSource, attacker, _strength);
 
         if (Thralls.Live.Count > 0 && (attackerThrall || victimThrall) && attacker != null && (attacker.entityFlags & EntityFlags.Zombie) != 0)
@@ -81,6 +92,22 @@ public static class ThrallDamagePatch
             attacker.entityFlags &= ~EntityFlags.Zombie;
         }
         return true;
+    }
+
+    // A hit made by a block: damage blocks and blade traps name the block as the attacking item, and electric fences
+    // hurt through the shocked buff. Spikes and barbed wire are also stopped earlier, in DroneSpikePatch.
+    public static bool IsTrapHit(DamageSource ds)
+    {
+        if (ds == null) return false;
+        var ic = ds.AttackingItem != null && !ds.AttackingItem.IsEmpty() ? ds.AttackingItem.ItemClass : null;
+        if (ic != null && ic.IsBlock()) return true;
+        return ds.BuffClass != null && ds.BuffClass.Name == "buffShocked";
+    }
+
+    static bool IsAnimal(EntityAlive e)
+    {
+        var ec = e.EntityClass;
+        return ec != null && ec.entityClassName != null && ec.entityClassName.StartsWith("animal", StringComparison.OrdinalIgnoreCase);
     }
 
     static void Finalizer(object __state)
@@ -135,8 +162,10 @@ public static class ThrallTargetPatch
         LiveThrall lt;
         if (Thralls.Live.TryGetValue(__instance.entityId, out lt))
         {
-            if (_attackTarget is EntityPlayer || Thralls.IsThrall(_attackTarget.entityId)) return false;
+            if (_attackTarget is EntityPlayer) return lt.Mode < 2 && Thralls.ThrallMayHitPlayer(__instance.entityId, (EntityPlayer)_attackTarget);
+            if (Thralls.IsThrall(_attackTarget.entityId)) return Thralls.InDuel(__instance.entityId, _attackTarget.entityId);
             if (lt.Mode >= 2) return false;
+            if (Thralls.SneakBlocks(__instance, lt, _attackTarget)) return false;
             if (lt.Mode == 1 && !Thralls.DefendOk(__instance, lt, _attackTarget)) return false;
             return true;
         }
@@ -284,13 +313,15 @@ public static class BaitMotionSensorIgnore
     }
 }
 
-// Spikes and the other damage blocks do not hurt drones.
+// Spikes and the other damage blocks do not hurt drones, or thralls (TrapsSpareThralls). Skipping the whole touch also
+// means the spikes don't wear down or break when a thrall walks over them, and don't slow it.
 [HarmonyPatch(typeof(BlockDamage), nameof(BlockDamage.OnEntityCollidedWithBlock))]
 public static class DroneSpikePatch
 {
     static bool Prefix(Entity _targetEntity, ref bool __result)
     {
         if (BaitConfig.DronesIgnoreSpikes && _targetEntity is EntityDrone) { __result = false; return false; }
+        if (BaitConfig.TrapsSpareThralls && _targetEntity != null && Thralls.IsThrall(_targetEntity.entityId)) { __result = false; return false; }
         return true;
     }
 }
@@ -329,5 +360,14 @@ public static class ThrallKillTracePatch
             Log.Out(sb.ToString());
         }
         catch { }
+    }
+}
+// Quiet thralls: noise a thrall makes adds no heat and wakes no sleepers.
+[HarmonyPatch(typeof(AIDirector), nameof(AIDirector.NotifyNoise))]
+public static class ThrallQuietPatch
+{
+    static bool Prefix(Entity instigator)
+    {
+        try { return !(Thralls.IsServer && Thralls.Quiet(instigator)); } catch { return true; }
     }
 }

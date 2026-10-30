@@ -13,11 +13,11 @@ Small mods for 7 Days to Die. Every mod builds against **V3.4** (b6), and each o
 | [Upgrade Bench](#upgrade-bench) | Code + XML | Server **and** every player | 1.0.2 |
 | [No Ding Sound](#no-ding-sound) | XML only | Server only | 1.0.0 |
 | [Keep Backpacks](#keep-backpacks) | Code (Harmony) | Server only | 1.3.0 |
-| [Blood Moon Sound](#blood-moon-sound) | Code (Harmony) | Players (own sound); server optional (sound for everyone, Discord and game chat posts) | 1.3.0 |
-| [Zombie and Animal Bait](#zombie-and-animal-bait) | Code (Harmony) + XML | Server only | 1.10.0 |
+| [Blood Moon Sound](#blood-moon-sound) | Code (Harmony) | Players (own sound, on-screen countdown); server optional (sounds for everyone, Discord and game chat posts, records, `/bm`) | 1.5.0 |
+| [Zombie and Animal Bait](#zombie-and-animal-bait) | Code (Harmony) + XML | Server only | 1.12.1 |
 | [Gyro Safe](#gyro-safe) | Code (Harmony) | Server and players who fly | 1.0.0 |
 | [Drone Loot Filter](#drone-loot-filter) | Code (Harmony), needs Drone Automation | Server only | 1.2.0 |
-| [Bait UI](#bait-ui) | Code + UI | Players only (optional, needs Bait on the server) | 1.8.0 |
+| [Bait UI](#bait-ui) | Code + UI | Players only (optional, needs Bait on the server) | 1.9.0 |
 | [Spawn Tuner](#spawn-tuner) | Code (Harmony) | Server only | 1.1.0 |
 | [Slot Lock Fix](#slot-lock-fix) | Code (Harmony) | Players only | 1.0.0 |
 | [K9 Death Sound](#k9-death-sound) | XML (+ optional own clip) | Server; players optional | 1.1.0 |
@@ -264,36 +264,56 @@ the game log.
 ## Blood Moon Sound
 
 Plays a sound clip of your choice when the blood moon horde starts (or as a warning beforehand).
-It can also play a clip when you enter the world, a morning bell at dawn, and a night bell at dusk.
+It can also play a clip when you enter the world, a morning bell at dawn, a night bell at dusk, and a
+"survived" clip at the dawn after a blood moon (instead of the morning bell that day).
 Dawn and dusk follow this world's day length, so a short day still rings at sunrise and sunset.
 The mod ships **without** sounds: drop `bloodmoon.ogg`, `.wav` or `.mp3` into the mod folder, and the
-same for `spawn`, `morning`, and `night`. A missing bell file means that bell stays quiet.
+same for `spawn`, `morning`, `night` and `survived`. A missing bell file means that bell stays quiet.
 
 Several clips of one kind play at random, never the same one twice in a row: name them
 `bloodmoon.ogg`, `bloodmoon2.ogg`, `bloodmoon-scary.wav` and so on (any name that starts with
-`bloodmoon`, `spawn`, `morning` or `night`). `BloodMoonVolume`, `SpawnVolume`, `MorningVolume` and
-`NightVolume` in `settings.txt` set each kind's volume on top of `Volume`.
+`bloodmoon`, `spawn`, `morning`, `night` or `survived`). `BloodMoonVolume`, `SpawnVolume`, `MorningVolume`,
+`NightVolume` and `SurvivedVolume` in `settings.txt` set each kind's volume on top of `Volume`.
 
 | Command (F1 console) | What it does |
 |---|---|
-| `bmsound` | Show status (sound loaded, when it plays, next blood moon day) |
+| `bmsound` | Show status (sound loaded, when it plays, next blood moon day and how long until the horde) |
 | `bmsound test` | Play the blood moon clip now |
 | `bmsound test spawn` | Play the clip that runs when you enter the world |
 | `bmsound test morning` | Play the morning bell |
 | `bmsound test night` | Play the night bell |
+| `bmsound test survived` | Play the survived clip |
+| `bmsound test banner` | Show the warning banner (and the red pulse, if it's on) |
+| `bmsound ui` | Open the settings window (same as the `Insert` key) |
 | `bmsound reload` | Re-read `settings.txt` and the sound files |
 
 `settings.txt`: `PlayAt=horde|warning|both`, `WarningHour=21`, `Volume=1.0`,
-`Spawn=on|off`, `Morning=on|off`, `Night=on|off`.
+`Spawn=on|off`, `Morning=on|off`, `Night=on|off`, `Survived=on|off`.
 While a morning or night bell is on and loaded, the game's own dawn or dusk sound stays quiet so
 only the bell plays. A `WarningHour` at or after dusk plays one hour before dusk.
 The blood moon clip won't play if you join in the middle of a blood moon, only when one starts while
 you're in game. The spawn clip plays once each time you enter a world. Dying and respawning in the
 same session does not play it again.
 
+### On screen (players)
+
+- **Countdown** (`Hud=on`): a "Blood Moon in 1d 6h" line near the top of the screen, from `HudFromDays=7`
+  days out (`0` = always). Orange on blood moon day, red in the last in-game hour, and "dawn in ..." while
+  the horde is on. Hidden while a menu is open or the HUD is off. `HudX`, `HudY` (share of the screen) and
+  `HudSize` move and size it.
+- **Banner** (`Banner=on`): big red text across the screen at `WarningHour` on blood moon day
+  ("BLOOD MOON IN 1 HOUR") and when the horde starts.
+- **Red pulse** (`Pulse=off` by default, `PulseStrength=0.6`): a red glow around the screen edge that
+  pulses once when the horde starts.
+- **Settings window**: press `Insert` (`SettingsKey=` in `settings.txt`, `none` for no key) or type
+  `bmsound ui`. Volumes, which clips are on, `PlayAt`, `WarningHour`, the on-screen options and a Test
+  button for each clip. **Save** writes them to `settings.txt` and keeps its comments.
+
+All of it is drawn with Unity's own immediate-mode GUI, so there are no XUi files to clash with UI mods.
+
 **Only players need it for the sound; the server doesn't.** Players launch without EAC.
 
-Any `bloodmoon*`, `spawn*`, `morning*` or `night*` .ogg/.wav/.mp3 in `BloodMoonSound/mod/` is gitignored.
+Any `bloodmoon*`, `spawn*`, `morning*`, `night*` or `survived*` .ogg/.wav/.mp3 in `BloodMoonSound/mod/` is gitignored.
 `build.ps1` leaves them out of the public zip and makes a second `-with-sound` zip (private, for your
 own group) which `-Install` uses.
 
@@ -313,6 +333,10 @@ without the mod**.
   `HordeSoundName=<any name from Data\Config\sounds.xml>`.
 - `bmdiscord sound` plays it for everyone online right now (a test; it's outside the horde window,
   so modded players hear the game sound too).
+- The same happens at `WarningHour` on blood moon day (`WarningSound=on`, `horde_spawn_warning`) and at
+  dawn after a blood moon (`DawnSound=on`, `quest_master_complete`). Players with the mod and their own
+  clip for that moment (`PlayAt=warning|both`, or a `survived` / `morning` clip) hear only theirs.
+  `bmdiscord sound warning|dawn` tests them.
 
 ### Discord posts (server only, optional)
 
@@ -324,7 +348,7 @@ The whole schedule is set in `discord.txt`:
 | Setting | Default | What it does |
 |---|---|---|
 | `Reminder = <days before> <hour> \| <message>` | 1 day before at 12:00, and 18:00 on the day | Any number of reminders before the blood moon, one per line (`Reminder=none` for none) |
-| `Countdown` / `CountdownHour` / `CountdownFromDays` | off / 8 / 7 | A post every in-game day, "N days until the Blood Moon" |
+| `Countdown` / `CountdownHour` / `CountdownFromDays` | off / 8 / 7 | A post every in-game day, "Blood Moon in 3 days 14 hours" |
 | `Start` | on | When the horde starts |
 | `UpdateEveryHours` | 0 (off) | Extra posts every N in-game hours while the horde is on |
 | `End` | on | At dawn afterwards |
@@ -333,10 +357,35 @@ The whole schedule is set in `discord.txt`:
 | `PlayerJoin` / `PlayerLeave` | off / off | When a player joins or leaves (`{player}`) |
 | `Embeds` | on | Coloured Discord embeds: orange reminders, red horde, gold dawn. `off` = plain text |
 | `InGameChat` / `InGameChatFor` | on / reminder, countdown, start, end | Show those messages in game chat too (no emoji or bold there). Works without a webhook |
+| `LiveCountdown` / `LiveEveryHours` | on / 1 | One Discord message per blood moon for the reminders and countdown, edited instead of re-posted; the time left refreshes every N in-game hours. At horde start it changes to `MsgLiveDone` |
+| `DeathAlerts` | on | A post when a player dies during the horde (`{player}`, `{clock}`, `{kills}`, `{standing}`) |
+| `LastStanding` | on | Once per horde, when everyone online but one has died (needs 2+ online) |
+| `Awards` | on | MVP, First Blood, First to Fall, Untouchable and special zombies killed, in the recap |
+| `History` | on | "New server record" in the recap when a horde beats the most kills ever on this world |
+| `Streaks` | on | Blood moons in a row each player survived without dying, and streaks that ended |
+| `Leaderboard` / `LeaderboardDay` / `LeaderboardHour` | on / sunday / 18 | A weekly leaderboard (server PC's clock): most horde kills, most survived, longest streak |
+| `ScheduleAlerts` | on | When the blood moon day moves before it comes, or time is skipped past it (`MsgMoved`, `MsgSkipped`, `{oldday}`) |
+| `ChatCommand` | on | Players type `/bm` in game chat: blood moon day and time left, privately. `/bm me` their record, `/bm top` the leaderboard |
 | `MsgCountdown`, `MsgStart`, `MsgUpdate`, `MsgEnd` | see file | Message text |
 
-Placeholders: `{day}` blood moon day, `{days}` days left,
-`{players}` who's online, `{count}` how many, `{player}` who joined or left, `{recap}` the horde recap, `\n` new line.
+Placeholders: `{day}` blood moon day, `{timeleft}` time left in game time ("1 day 6 hours", "45 minutes"),
+`{realtime}` the same in real time ("1h 15m", from the server's day length), `{hours}` the same in whole in-game hours,
+`{days}` calendar days left, `{starts}` / `{dawn}` the horde's start and end time ("22:00", "04:00"),
+`{players}` who's online, `{count}` how many, `{player}` who joined or left, `{recap}` the horde recap, `\n` new line,
+`{when}` a Discord timestamp ("in 1 hour", counting down by itself in each reader's Discord), `{whenat}` the real clock
+time in each reader's own time zone, `{clock}` the in-game time now. `{when}`/`{whenat}` don't work in the headline line,
+and game chat shows them as "in 1h 15m".
+Before the horde, `{timeleft}` counts down to it; in the start and update messages it counts down to dawn.
+
+Every default message is a short headline and a detail line, for example:
+
+> **⚠️ Blood Moon tomorrow · Day 14**
+> Horde in **1 day 10 hours** at 22:00 (about 1h 25m real time). Get your base ready!
+
+The first line of a message is the embed title in Discord and the bright red line in game chat; the
+rest shows underneath (softer colour in game chat). Embeds also carry a timestamp in each reader's own
+time zone. A `discord.txt` that still has the 1.3.0 default messages word for word gets the new wording
+on load, so you don't have to edit it; messages you changed yourself are left alone.
 
 Reminders and the countdown follow the game's own "next blood moon day", so they work with any
 blood moon frequency (a 30-day server gets its reminders before day 30, 60, ...) and with a random range.
@@ -347,13 +396,16 @@ Setup: copy `discord.example.txt` to `discord.txt` **on the server**, paste the 
 
 | Server console | What it does |
 |---|---|
-| `bmdiscord` | Status: on/off, full schedule, next blood moon day, result of the last post |
+| `bmdiscord` | Status: on/off, full schedule, next blood moon day and time left, result of the last post |
 | `bmdiscord test` | Post a test message |
-| `bmdiscord test reminder <n>` | Post reminder number n now |
-| `bmdiscord test countdown\|start\|update\|end` | Post that message now (`end` includes the recap so far) |
+| `bmdiscord test reminder <n>` | Post reminder number n now, with the time left as it will be when it really goes out |
+| `bmdiscord test countdown\|start\|update\|end` | Post that message now, timed the same way (`end` includes the recap so far) |
 | `bmdiscord test serverstart\|serverstop\|join\|leave` | Post that message now |
+| `bmdiscord test death\|laststanding\|leaderboard\|moved\|skipped` | Post that message now |
 | `bmdiscord recap` | The horde recap so far, or from the last horde |
-| `bmdiscord sound` | Play the horde sound for everyone online now |
+| `bmdiscord history` | The last 10 blood moons on this world (kills, deaths) and the all-time best |
+| `bmdiscord leaderboard` | Show the leaderboard in the console |
+| `bmdiscord sound [warning\|dawn]` | Play the horde (or warning / dawn) sound for everyone online now |
 | `bmdiscord reload` | Re-read `discord.txt` and `settings.txt` |
 
 - Nothing is posted when the server starts in the middle of a blood moon.
@@ -363,10 +415,16 @@ Setup: copy `discord.example.txt` to `discord.txt` **on the server**, paste the 
 - The shutdown post is sent straight away (it waits up to 5 seconds), since the server stops right after.
 - Without a `discord.txt` nothing is posted, in Discord or game chat.
 - Posting is asynchronous, so a slow or unreachable Discord never lags the server.
+- Records, streaks and the live message's id are saved with the world, in
+  `Saves\<world>\<game>\AzraelBloodMoon\` (`history.txt`, `players.txt`, `state.txt`), so they carry on
+  after restarts and each world keeps its own.
+- `/bm` works without a webhook, and even without a `discord.txt`.
 - `discord.txt` holds a secret (anyone with the URL can post there): it's gitignored, and `build.ps1`
   leaves it out of **every** zip, including the private `-with-sound` one.
 
 **Changelog**
+- 1.5.0: players get an on-screen blood moon countdown, a warning banner, an optional red pulse at horde start, a `survived` clip at the dawn after a blood moon, and an in-game settings window (`Insert` or `bmsound ui`). Servers get a live countdown message that edits itself instead of re-posting, Discord timestamps in each reader's time zone (`{when}`, `{whenat}`), live death alerts, a "last one standing" post, recap awards (MVP, First Blood, First to Fall, Untouchable, special zombies), saved horde history with server records, survival streaks, a weekly leaderboard, `/bm` in game chat, built-in warning and dawn sounds for everyone, and an alert when the blood moon day moves or is skipped.
+- 1.4.0: cleaner blood moon messages that say how long is left in hours as well as days: "Blood Moon in 1 day 6 hours", with the horde's start time and the real-time wait. New placeholders `{timeleft}`, `{realtime}`, `{hours}`, `{starts}` and `{dawn}`. Start and update messages count down to dawn. Discord embeds get a title line and a timestamp; game chat shows a bright headline with the details under it. Old 1.3.0 default wording in `discord.txt` is upgraded on load. `bmdiscord`, `bmsound` and `bmdiscord test` show the time left too.
 - 1.3.0: players: several clips per kind (`bloodmoon2.ogg`, `bloodmoon-scary.wav`...) play one at random, and each kind has its own volume (`BloodMoonVolume`, `SpawnVolume`, `MorningVolume`, `NightVolume`). Server: horde recap in the dawn post (`Recap`), server start/stop and player join/leave posts, coloured embeds (`Embeds`), and the same messages in game chat (`InGameChat`, `InGameChatFor`). `bmdiscord recap`, and `bmdiscord test` covers the new messages.
 - 1.2.2: the morning and night bells replace the game's own dawn and dusk sounds instead of playing on top of them (only while that bell is on and its file is loaded). If `WarningHour` is at or after this world's dusk, the warning plays one hour before dusk instead of never, and the log and `bmsound` say so. `settings.txt` now lists `Spawn`, `Morning` and `Night`. `PUT_YOUR_SOUND_HERE.txt` names those clips too.
 - 1.2.1: morning and night no longer play together when a world finishes loading. The enter-world clip waits until the clock has settled. Dawn and dusk also play once per event day, and a second init keeps a single player or Discord object.
@@ -383,7 +441,7 @@ Setup: copy `discord.example.txt` to `discord.txt` **on the server**, paste the 
 
 Optional client add-on for Zombie and Animal Bait: roster window (Home key), name tags with HP bars, party list, fed tags and an admin window. Players only; needs Bait 1.3.0+ on the server. See [BaitUI/README.md](BaitUI/README.md).
 
-**1.8.0:** thrall page (stats, perks, guard, patrol, scout, evolve, blood moon mode), name search, tooltips on every button, map markers, HP strip, compact party list, coloured rows, Dark/Light/High contrast themes and a taming helper. Parts need Bait 1.10.0. **1.7.0:** filter, sort and 8/12/16 rows per page, row details, Heal box and move arrows, team buttons, Bring all here, draggable window, group hotkeys (F6/F7/F8), a quick-actions wheel (middle mouse), low HP flash and sound, downed countdown tags, level-up glow and a kill feed. Parts need Bait 1.9.0. **1.6.6:** Auto (auto-revive) tick box per row.
+**1.9.0:** cleaner, tabbed roster (Thralls, Groups, Display, Keys, Tools) with a command bar, choosable columns and a window size setting; every per-thrall action on the thrall page; a bestiary, a session summary, a new thrall setup popup and a tame banner; damage numbers, target lines, a downed panel with Revive buttons, colour-blind HP bars; track a thrall on the compass, Alt+1-9 to call or stow, a go-to key, a bait crafting shortcut; grouped kill feed with a filter; German, Spanish, French and Portuguese labels; admin tabs for feed rates, the exclude list and every player's thralls. Parts need Bait 1.12.0. **1.8.0:** thrall page (stats, perks, guard, patrol, scout, evolve, blood moon mode), name search, tooltips on every button, map markers, HP strip, compact party list, coloured rows, Dark/Light/High contrast themes and a taming helper. Parts need Bait 1.10.0. **1.7.0:** filter, sort and 8/12/16 rows per page, row details, Heal box and move arrows, team buttons, Bring all here, draggable window, group hotkeys (F6/F7/F8), a quick-actions wheel (middle mouse), low HP flash and sound, downed countdown tags, level-up glow and a kill feed. Parts need Bait 1.9.0. **1.6.6:** Auto (auto-revive) tick box per row.
 
 ## Gyro Safe
 
@@ -404,6 +462,9 @@ Companion for tehAon's Drone Automation. Each player chooses items their Auto-Lo
 - **Limits:** turret bullets are credited to the turret's owner, so a stray bullet from the thrower's own turret can still hit a baited creature in its line of fire (the turret just won't aim at it). Hits from other players are not blocked (their client sends that damage to the server).
 - Tune the radius, time and eat ticks in `Config/items.xml`.
 - Taming, thralls and every `/thrall` command: see [Bait/README.md](Bait/README.md).
+- **1.12.1:** fix: spike traps, barbed wire, blade traps and electric fences no longer kill thralls (`TrapsSpareThralls`, on by default).
+- **1.12.0:** thralls guard your backpack when you die, rush to you at low HP, walk quietly while you crouch and make no heat; `/t` short commands and aliases; `/thrall scream`, `pvp`, `duel`, `secondchance`, `retire`, `kennel`, `goto`, `stats`; catch-up XP, owner XP share and quest kill credit; a named Alpha after every horde night (Feast bait only); new Thrall Whistle item, Bait Feeder and Thrall Kennel blocks; per-creature caps, taming resistance, `config preset casual|default|hardcore`, an admin audit log and a name filter. See [Bait/README.md](Bait/README.md#new-in-1120).
+- **1.11.0:** stronger animal thralls: they keep up with the day-based level wild zombies start at, and deal 50% more and take a third less damage (`AnimalDayLevels`, `AnimalDamagePct`, `AnimalToughPct`).
 - **1.10.0:** perks at levels 10/25/50, guard posts, patrol routes, blood moon mode, `/thrall top` leaderboard, `/thrall scout`, `/thrall evolve`, admin heal/revive/tp, and Discord posts for rare tames, level milestones and evolutions.
 - **1.9.0:** thralls by name, `/thrall here`, `where`, `move`, `deaths`, teams, auto-heal, a low bait warning, uneaten bait comes back to the thrower, new Lure Bait (zombies only), bait stacks to 100. **1.8.0:** per-thrall auto-revive with plain bait (`/thrall autorevive <n>`).
 

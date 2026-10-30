@@ -34,6 +34,43 @@ The commands work from chat (/thrall ...) and from the console (F1, `thrall ...`
 
 **Look-at HP:** aim at one of your thralls, or any wild zombie or animal, and a toast shows its name, level and HP (up to 25 m, `LookHp`, `LookHpWild`, `LookHpRange`, `LookHpAngle`). Server side only, no client mod. It is a toast under the crosshair area, not a floating bar.
 
+## New in 1.12.1
+
+- Fix: a thrall (a dog, reported by Kats) died walking over its owner's spike traps. Spikes, barbed wire, blade traps and electric fence shocks no longer hurt thralls, and spikes no longer wear down or break when a thrall steps on them (`TrapsSpareThralls`, on by default). Set it to false to have traps hurt thralls again.
+
+## New in 1.12.0
+
+**Protection**
+- When you die, the thralls with you stay at your backpack and fight anything that comes near for 120 s (`BackpackGuardSeconds`, `BackpackGuardRadius`).
+- Under 30% HP, the thralls with you turn aggressive for 10 s and pull attackers off you (`BodyguardRush`, `BodyguardHpPct`, `BodyguardSeconds`, `BodyguardCooldownSeconds`).
+- While you crouch, followers walk, start no fights and leave sleepers alone (`SneakFollow`). Thralls make no heat for the AI director (`QuietThralls`).
+
+**Commands**
+- `/t` works as a short `/thrall`. `/thrall alias <name> <command>` saves your own shortcut, and `/thrall last` repeats your last command.
+- `/thrall scream <n>`: a tamed screamer calls wild zombies to it (60 m, every 10 min; `ScreamRadius`, `ScreamCooldownSeconds`).
+- `/thrall pvp on|off`: your thralls fight players who turned it on too, never your party or allies. Off server-wide until an admin sets `PvpThralls=true`.
+- `/thrall duel <player> <n>`, then `/thrall duel accept <n>` or `decline`: two thralls fight until one is at 10% health (`DuelSeconds`, `DuelLosePct`). Nobody dies.
+- `/thrall secondchance <n>`: on permadeath servers (`ReviveSeconds=0`), 1 Feast Bait saves the thrall from its next death once (`SecondChanceFeast`, `SecondChanceSeconds`).
+- `/thrall retire <n> yes`: a thrall of level 25 or more leaves for good and you get bait back: 2 Rich Bait, or from level 50 one Feast Bait per 50 levels, up to 5 (`RetireLevel`, `RetireRich`, `RetireFeastLevel`).
+- `/thrall kennel <n|all>` and `/thrall goto <n|all> x y z`: walk to your nearest kennel, or to a spot, and stay there.
+- `/thrall stats` and `/thrall stats server`: lifetime numbers (tamed, kills, deaths, bait fed).
+
+**Levels and rewards**
+- A thrall more than 10 levels below your best gets double XP per kill (`CatchUpXp`, `CatchUpGap`).
+- You get 25% of the game XP of a thrall's kill within 30 m, and those kills count for quests and challenges (`OwnerXpSharePct`, `QuestKillCredit`, `OwnerCreditRange`).
+- **Alphas:** the day after every horde night, one wild zombie or animal near a random online player becomes a named Alpha (+10 levels). Bait UI shows it with an Alpha tag. Only Feast Bait tames it, and it stays an Alpha on your roster (`AlphaEveryDays`, `AlphaLevelBonus`).
+
+**New items and blocks**
+- **Thrall Whistle** (5 brass + 1 forged iron): use it to bring every follower to you, like `/thrall here` (`Whistle`).
+- **Bait Feeder** (20 scrap iron, 4 nails, 2 bait): put bait in it and it draws wild animals from 40 m and feeds the nearest one a bait every 30 s, so animals get tamed for you while you are away. They stay tethered next to it (`Feeders`, `FeederSeconds`, `FeederRadius`, `FeederTetherRadius`).
+- **Thrall Kennel** (30 wood, 6 nails, 4 cloth): thralls tethered at a kennel heal an extra 5% every 5 s (`KennelRadius`, `KennelHealPct`).
+
+**Admin**
+- `/thrall config preset casual|default|hardcore` sets many settings at once.
+- `/thrall config cap.<class> <n>`: the most of one creature a player may hold (`cap.animalBear 2`). `TamingResistPct` gives radiated, charged and infernal creatures a chance to break off a meal.
+- `/thrall admin log [n]`: the last admin and settings changes (also in `AzraelBaitAudit.log`). `/thrall admin banword add|remove|list <word>` and `NameMaxLength` keep thrall names clean.
+- `/thrall admin ui [player]` sends the player list and one player's thralls to the Bait UI admin window.
+
 ## Baby animals
 
 Baby animals from other mods (such as CTK Animal Babies: fawns, cubs, pups, piglets, kittens) can be tamed like any other animal. /thrall list shows zombies and animals as separate lists. Bear cubs get the bait behaviour added in code, since that mod replaces their AI list.
@@ -66,7 +103,7 @@ Set the meal counts with `RichBaitMeals` and `FeastBaitMeals`. `giveself azraelB
 
 **No digging (1.4.0):** thralls never break blocks while following you or going home to a tether; only entities, depending on their mode.
 
-**Traps (1.4.0):** motion sensors (which set off dart traps and other powered traps) skip thralls the same way turrets do. Spikes and other damage blocks do not hurt drones (`DronesIgnoreSpikes`). Turrets and sensors also aim on every client, so the optional BaitUI mod stops that on screen too (the server sends it the thrall ids).
+**Traps (1.4.0):** motion sensors (which set off dart traps and other powered traps) skip thralls the same way turrets do. Spikes and other damage blocks do not hurt drones (`DronesIgnoreSpikes`). Since 1.12.1, spikes, barbed wire, blade traps and electric fence shocks do not hurt thralls either (`TrapsSpareThralls`). Turrets and sensors also aim on every client, so the optional BaitUI mod stops that on screen too (the server sends it the thrall ids).
 
 **Revive and heal costs (1.4.0):** pay with plain bait, Rich bait or Feast bait (they count as the meals they are worth). If you are short, the reply says how many the server sees in your toolbelt and bag.
 
@@ -136,3 +173,8 @@ Set the meal counts with `RichBaitMeals` and `FeastBaitMeals`. `giveself azraelB
 - **Discord:** rare tames (radiated, charged, infernal, bosses), every 50th level (`WebhookLevelStep`) and evolutions are posted to Discord. Put the webhook URL in `webhook.txt` in this mod's folder (see `webhook.example.txt`). Without it, Bait uses the `Webhook=` line of Blood Moon Sound's `discord.txt`. `WebhookEvents=false` turns it off.
 - `/thrall list` shows guards, patrols and perks. Each thrall now also remembers its deaths and when it was tamed (thralls tamed before 1.10.0 have no date).
 - For Bait UI: the taming helper record (`L|`), perks, guard, patrol, deaths, tame date, perk slots, evolution target and tether position on `T|`, and your blood moon mode on `S|`. `TamingHelper=false` stops the taming helper.
+
+**1.11.0:** Stronger animal thralls. Wild animals never got the starting level wild zombies get (game day / 5, plus 5 per tier), so a tamed animal started at level 0 and fell further behind every day. Animals can't evolve either.
+- **Day level:** an animal thrall is brought up to the level a wild walker of today starts at (zombie dog, zombie bear, zombie boar and vultures count as feral, +5) every time it comes into the world, and keeps any higher level it earned. On day 60 that is level 12 (level 17 for zombie animals). Wild animals are unchanged. `AnimalDayLevels=false` turns it off (it also needs `ZombieLevels`).
+- **Animal bonus:** animal thralls deal 50% more damage (`AnimalDamagePct`) and take a third less (damage divided by 1.5, `AnimalToughPct`), on top of their level and perks. Set either to 0 to turn it off; admins can change all three in game with `/thrall config` or in Bait UI's admin window.
+- Server only; Bait UI needs no update.

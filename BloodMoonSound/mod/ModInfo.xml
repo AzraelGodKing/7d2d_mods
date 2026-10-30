@@ -2,8 +2,8 @@
 <xml>
 	<Name value="AzraelBloodMoonSound" />
 	<DisplayName value="Blood Moon Sound" />
-	<Description value="Plays your own sound clips: blood moon horde (and/or a warning earlier that day), when you enter the world, and morning and night bells at this world's dawn and dusk. Drop bloodmoon / spawn / morning / night as .ogg, .wav, or .mp3 into this folder (several of a kind play at random). Players: the server does not need it. Server (optional): posts blood moon updates, a horde recap and server events to Discord and game chat (see discord.example.txt); players do not need it for that." />
+	<Description value="Plays your own sound clips: blood moon horde (and/or a warning earlier that day), when you enter the world, morning and night bells at this world's dawn and dusk, and a survived fanfare after the blood moon. Shows a blood moon countdown, a warning banner and an optional red pulse on screen, with an in-game settings window. Drop bloodmoon / spawn / morning / night / survived as .ogg, .wav, or .mp3 into this folder (several of a kind play at random). Players: the server does not need it. Server (optional): posts blood moon updates, live countdowns, death alerts, a horde recap with awards, records, streaks and a weekly leaderboard to Discord and game chat, answers /bm in chat (see discord.example.txt); players do not need it for that." />
 	<Author value="Azrael" />
-	<Version value="1.3.0" />
+	<Version value="1.5.0" />
 	<Website value="https://github.com/AzraelGodKing/7d2d_mods" />
 </xml>

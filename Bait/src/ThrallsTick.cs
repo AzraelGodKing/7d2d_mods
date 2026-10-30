@@ -9,7 +9,10 @@ public static partial class Thralls
 {
     public static void OnGameStart(ref ModEvents.SGameStartDoneData _d) { if (IsServer) Load(); }
     public static void OnShutdown(ref ModEvents.SGameShutdownData _d)
-    { Flush(); Live.Clear(); bodies.Clear(); liveByRecord.Clear(); levels.Clear(); scanned.Clear(); loaded = false; rosterBroken = false; }
+    {
+        Flush(); FlushStations(); Live.Clear(); bodies.Clear(); liveByRecord.Clear(); levels.Clear(); scanned.Clear(); loaded = false; rosterBroken = false;
+        stationsLoaded = false; alphas.Clear(); gotos.Clear(); duelOf.Clear(); challenges.Clear(); packGuards.Clear(); deadSeen.Clear(); rushUntil.Clear(); lastCmd.Clear();
+    }
 
     public static void OnUpdate(ref ModEvents.SGameUpdateData _d)
     {
@@ -19,8 +22,8 @@ public static partial class Thralls
         try
         {
             ClearBodies(world, now);
-            if (now >= nextTaunt) { nextTaunt = now + 1f; ChestScan(world); ChestTick(world); RemoveStaleCopies(world); Taunt(world, now); VehicleWatch(world); GuardTick(world, now); ScoutTick(world, now); WebTick(); UiPush(); }
-            if (now >= nextLook) { nextLook = now + 0.5f; Calm(); LookHp(world, now); TamingHelperTick(world); }
+            if (now >= nextTaunt) { nextTaunt = now + 1f; ChestScan(world); ChestTick(world); RemoveStaleCopies(world); Taunt(world, now); VehicleWatch(world); GuardTick(world, now); ScoutTick(world, now); Batch3Second(world, now); WebTick(); UiPush(); }
+            if (now >= nextLook) { nextLook = now + 0.5f; Calm(); LookHp(world, now); TamingHelperTick(world); WhistleTick(world); }
             if (now >= nextSlow) { nextSlow = now + 5f; Slow(world, now); }
         }
         catch (Exception e) { Log.Warning("[Bait] tick: " + e.Message); }
@@ -33,7 +36,7 @@ public static partial class Thralls
         {
             var th = world.GetEntity(lt.EntityId) as EntityAlive;
             int perk = string.IsNullOrEmpty(lt.Perks) ? 0 : PerkCount(lt.EntityId, 'A');   // the taunt perk: every zombie near it, animals too, wider
-            if (th == null || th.IsDead() || (th is EntityAnimal && perk == 0) || lt.Mode >= 2) continue;
+            if (th == null || th.IsDead() || (th is EntityAnimal && perk == 0) || lt.Mode >= 2 || Sneaking(lt)) continue;
             float r = BaitConfig.TauntRadius * (1f + 0.5f * perk);
             world.GetEntitiesInBounds(typeof(EntityEnemy), new Bounds(th.position, new Vector3(r * 2f, 8f, r * 2f)), tmp);
             foreach (var o in tmp)
@@ -55,6 +58,7 @@ public static partial class Thralls
 
     static void Slow(World world, float now)
     {
+        BackpackGuardSlow(world, now);
         var online = new Dictionary<string, EntityPlayer>();
         foreach (var p in world.GetPlayers())
         {
@@ -91,10 +95,12 @@ public static partial class Thralls
             }
             EntityPlayer owner;
             bool has = online.TryGetValue(lt.OwnerKey, out owner);
+            if (!has && rec != null && rec.Active && !rec.Tether && BackpackGuarding(lt)) { KeepSafe(e); continue; }   // guarding a dead owner's backpack
             if (rec == null || !rec.Active || (!has && !rec.Tether)) { ForgetLive(lt.EntityId); RemoveFromWorld(e); continue; }
             lt.OwnerEntityId = has ? owner.entityId : -1;
             KeepSafe(e);
             Regen(e);
+            KennelCare(e);
         }
 
         // bring back the active ones: with their owner online, or at their tether when that area is loaded
@@ -119,6 +125,7 @@ public static partial class Thralls
         AutoHealTick(world, online, now);
         BloodMoonTick(world, online, now);
         LowBaitTick(online);
+        Batch3Slow(world, online, now);
         foreach (var kv in online) { ApplyPerks(kv.Value, PowerOf(kv.Key)); ApplyPack(kv.Value, kv.Key); }
 
         if (tauntRoll.Count > 400 || feeds.Count > 200 || counted.Count > 400)
@@ -211,7 +218,7 @@ public static partial class Thralls
     }
 
     // ------------------------------------------------------------------ chat commands
-    static readonly string[] Prefixes = { "/thrall", "/thralls", "/tame" };
+    static readonly string[] Prefixes = { "/thrall", "/thralls", "/tame", "/t" };
 
     static bool IsAdmin(int entityId)
     {
@@ -257,6 +264,8 @@ public static partial class Thralls
         string arg2 = a.Length > 3 ? a[3] : null;
         var list = RosterOf(key);
         int me = senderEntityId;
+        if (ShortCommand(me, key, verb, a)) { Flush(); return true; }
+        NoteLast(key, verb, a);
 
         switch (verb)
         {
@@ -369,7 +378,8 @@ public static partial class Thralls
                 if (t.Count != 1) { Tell(me, "Usage: /thrall name <number> <name>   (\"clear\" removes it)"); break; }
                 string nm = a.Length > 3 ? string.Join(" ", a, 3, a.Length - 3) : "";
                 nm = nm.Replace('\t', ' ').Replace('\n', ' ').Trim();
-                if (nm.Length > 24) nm = nm.Substring(0, 24);
+                string bad = nm.ToLowerInvariant() == "clear" ? null : NameProblem(nm);
+                if (bad != null) { Tell(me, bad); break; }
                 t[0].Name = (nm.Length == 0 || nm.ToLowerInvariant() == "clear") ? null : nm;
                 dirty = true;
                 Tell(me, t[0].Name == null ? "Name cleared." : "Now called " + Label(t[0]) + ".");
@@ -450,12 +460,25 @@ public static partial class Thralls
             case "top": TopCommand(me, arg); break;
             case "scout": ScoutCommand(me, owner, arg, list); break;
             case "evolve": EvolveCommand(me, owner, arg, list); break;
+            case "scream": ScreamCommand(me, arg, list); break;
+            case "pvp": PvpCommand(me, key, arg); break;
+            case "duel": DuelCommand(me, owner, key, a, list); break;
+            case "secondchance":
+            case "second": SecondChanceCommand(me, owner, arg, list); break;
+            case "retire": RetireCommand(me, owner, key, arg, arg2, list); break;
+            case "alias": AliasCommand(me, key, a); break;
+            case "kennel": KennelCommand(me, owner, key, arg, list); break;
+            case "goto": GotoCommand(me, owner, a, list); break;
+            case "stats": StatsCommand(me, key, arg); break;
             case "admin":
             {
                 if (!IsAdmin(me)) { Tell(me, "Admins only."); break; }
                 string sub = arg ?? "who";
-                string usage = "/thrall admin who | list <player> | release <player> <n> | limit <player> <owned> <active> | give <from> <to> | heal|revive|tp <player> <n|all>";
-                if (AdminCare(me, sub, a)) break;
+                string usage = "/thrall admin who | list <player> | release <player> <n> | limit <player> <owned> <active> | give <from> <to> | heal|revive|tp <player> <n|all> | log [n] | banword list|add|remove <word> | ui [player]";
+                if (sub == "log") { AuditCommand(me, a); break; }
+                if (sub == "banword") { BanwordCommand(me, a); break; }
+                if (sub == "ui") { AdminUiCommand(me, a); break; }
+                if (AdminCare(me, sub, a)) { Audit(me, "admin " + string.Join(" ", a, 2, a.Length - 2)); break; }
                 if (sub == "who")
                 {
                     foreach (var kv in roster) Tell(me, OwnerLabel(kv.Key) + ": " + kv.Value.Count + " thralls");
@@ -468,6 +491,7 @@ public static partial class Thralls
                     string fk = a.Length > 3 ? KeyFromAnything(a[3]) : null, tk = a.Length > 4 ? KeyByName(a[4]) : null;
                     if (fk == null || tk == null) { Tell(me, "Usage: /thrall admin give <from: name or id from /thrall admin who> <to: player>"); break; }
                     int moved = MoveRoster(fk, tk);
+                    Audit(me, "moved " + moved + " thralls from " + OwnerLabel(fk) + " to " + NameOfKey(tk));
                     Tell(me, moved == 0 ? OwnerLabel(fk) + " has no thralls." : "Moved " + moved + " thralls from " + OwnerLabel(fk) + " to " + NameOfKey(tk) + ".");
                     Log.Out("[Bait] admin #" + me + " moved " + moved + " thralls from " + fk + " to " + tk);
                     break;
@@ -486,13 +510,14 @@ public static partial class Thralls
                     int n;
                     if (!Index(a.Length > 4 ? a[4] : null, tl.Count, out n)) { Tell(me, usage); break; }
                     var rr = tl[n]; DespawnLive(rr.Id); tl.RemoveAt(n); dirty = true;
+                    Audit(me, "released " + Label(rr) + " from " + NameOfKey(tkey));
                     Tell(me, "Released " + Label(rr) + " from " + NameOfKey(tkey) + ".");
                     break;
                 }
                 if (sub == "limit")
                 {
                     int lo, la;
-                    if (a.Length > 5 && int.TryParse(a[4], out lo) && int.TryParse(a[5], out la)) { SetLimits(tkey, lo, la); Tell(me, NameOfKey(tkey) + " now holds up to " + lo + ", " + la + " out (0 = server default)."); }
+                    if (a.Length > 5 && int.TryParse(a[4], out lo) && int.TryParse(a[5], out la)) { SetLimits(tkey, lo, la); Audit(me, "limit " + NameOfKey(tkey) + " " + lo + " " + la); Tell(me, NameOfKey(tkey) + " now holds up to " + lo + ", " + la + " out (0 = server default)."); }
                     else Tell(me, usage);
                     break;
                 }
@@ -508,7 +533,7 @@ public static partial class Thralls
                     break;
                 }
                 if (!IsAdmin(me)) { Tell(me, "Only admins can change the exclude list."); break; }
-                if (sub == "clear") { BaitConfig.Exclude.Clear(); BaitConfig.SaveRuntime(); Tell(me, "Exclude list cleared."); break; }
+                if (sub == "clear") { BaitConfig.Exclude.Clear(); BaitConfig.SaveRuntime(); Audit(me, "exclude clear"); Tell(me, "Exclude list cleared."); break; }
                 if (sub != "add" && sub != "remove" || a.Length < 4) { Tell(me, "Usage: /thrall exclude list | add <className> | remove <className> | clear   (e.g. animalDireWolf)"); break; }
                 string want = a[3], real = null;
                 foreach (var ec in EntityClass.list.Dict.Values)
@@ -517,6 +542,7 @@ public static partial class Thralls
                 if (sub == "add") { BaitConfig.Exclude.Add(real); Tell(me, real + " can no longer be tamed."); }
                 else { BaitConfig.Exclude.Remove(real); Tell(me, real + " can be tamed again."); }
                 BaitConfig.SaveRuntime();
+                Audit(me, "exclude " + sub + " " + real);
                 break;
             }
             case "config":
@@ -536,6 +562,16 @@ public static partial class Thralls
                     Tell(me, "Admins change one with: /thrall config <name> <value>");
                     break;
                 }
+                if (k.Equals("preset", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (arg2 == null) { Tell(me, "Usage: /thrall config preset casual|default|hardcore"); break; }
+                    if (!IsAdmin(me)) { Tell(me, "Only admins can change settings."); break; }
+                    if (!BaitConfig.ApplyPreset(arg2)) { Tell(me, "No preset called " + arg2 + ". Pick casual, default or hardcore."); break; }
+                    BaitConfig.SaveRuntime();
+                    Audit(me, "preset " + arg2.ToLowerInvariant());
+                    Tell(me, "Settings set to the " + arg2.ToLowerInvariant() + " preset.");
+                    break;
+                }
                 if (arg2 == null)
                 {
                     string cur = BaitConfig.Get(k);
@@ -544,12 +580,12 @@ public static partial class Thralls
                 }
                 if (!IsAdmin(me)) { Tell(me, "Only admins can change settings."); break; }
                 string err;
-                if (BaitConfig.Set(k, arg2, out err)) { BaitConfig.SaveRuntime(); Tell(me, BaitConfig.KeyName(k) + " is now " + BaitConfig.Get(k) + "."); }
+                if (BaitConfig.Set(k, arg2, out err)) { BaitConfig.SaveRuntime(); Audit(me, "config " + BaitConfig.KeyName(k) + " = " + BaitConfig.Get(k)); Tell(me, BaitConfig.KeyName(k) + " is now " + BaitConfig.Get(k) + "."); }
                 else Tell(me, err + ".");
                 break;
             }
             default:
-                Tell(me, "/thrall list | hp | name <n> <name> | call <n> | stow [n|all|active|tethered] | stay/follow <n|all> | mode <n|all> aggressive|defensive|passive|invulnerable | heal <n> | revive <n> | autorevive/autoheal <n|all> [on|off] | here [n] | where [n] | team list|save|call|delete | move <n> <pos|top|up|down> | deaths | perk <n> [perk] | guard <n|all> [radius] | patrol <n> add|start|stop|clear | bloodmoon off|call|fight|both | top [kills] | scout <n> | evolve <n> | tether <n|all> [radius] | untether <n|all> | release <n> | kill <n|all> | exclude list|add|remove <class> | config [name value] | admin ...");
+                Tell(me, "/thrall list | hp | name <n> <name> | call <n> | stow [n|all|active|tethered] | stay/follow <n|all> | mode <n|all> aggressive|defensive|passive|invulnerable | heal <n> | revive <n> | autorevive/autoheal <n|all> [on|off] | here [n] | where [n] | team list|save|call|delete | move <n> <pos|top|up|down> | deaths | perk <n> [perk] | guard <n|all> [radius] | patrol <n> add|start|stop|clear | bloodmoon off|call|fight|both | top [kills] | scout <n> | evolve <n> | tether <n|all> [radius] | untether <n|all> | release <n> | kill <n|all> | exclude list|add|remove <class> | config [name value] | config preset casual|default|hardcore | scream <n> | pvp on|off | duel <player> <n> | secondchance <n> | retire <n> | kennel <n|all> | goto <n> x y z | stats [server] | alias <name> <command> | last | admin ...   (/t works too)");
                 break;
         }
         Flush();

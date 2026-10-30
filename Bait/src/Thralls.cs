@@ -32,6 +32,9 @@ public class ThrallRecord
     public int BmPrevMode = -1;     // the mode it had before blood moon mode made it aggressive (-1 = none)
     public int Deaths;
     public long TamedAt;     // unix seconds (0 = tamed before 1.10.0)
+    public int Xp;           // 1.12.0: kills toward the next level (catch-up kills count double, see ThrallsBatch3.cs)
+    public bool SecondChance;   // 1.12.0: on a permadeath server, one saved life (bought with Feast Bait)
+    public bool Alpha;       // 1.12.0: tamed from a weekly Alpha creature
 }
 public class LiveThrall
 {
@@ -46,7 +49,7 @@ public static partial class Thralls
     static readonly Dictionary<string, int> liveByRecord = new Dictionary<string, int>();
     static readonly Dictionary<string, List<ThrallRecord>> roster = new Dictionary<string, List<ThrallRecord>>();
 
-    class Feed { public int Owner, Count; }
+    class Feed { public int Owner, Count; public string Key; }
     static readonly Dictionary<int, Feed> feeds = new Dictionary<int, Feed>();
     static readonly HashSet<long> counted = new HashSet<long>();
 
@@ -82,7 +85,7 @@ public static partial class Thralls
     // Player damage rules: the owner only with OwnerCanHurtThralls, anyone else only with OthersCanHurtThralls.
     public static bool PlayerMayHurt(int thrallEntityId, int playerEntityId)
     {
-        return OwnedBy(thrallEntityId, playerEntityId) ? BaitConfig.OwnerCanHurtThralls : BaitConfig.OthersCanHurtThralls;
+        return OwnedBy(thrallEntityId, playerEntityId) ? BaitConfig.OwnerCanHurtThralls : (BaitConfig.OthersCanHurtThralls || PvpFoe(thrallEntityId, playerEntityId));
     }
     public static int LevelOf(int entityId) { int l; return levels.TryGetValue(entityId, out l) ? l : 0; }
     static void Dbg(string m) { if (BaitConfig.Debug) Log.Out("[Bait] " + m); }
@@ -239,6 +242,8 @@ public static partial class Thralls
         LoadTeams();
         LoadPlayers();
         LoadLedger();
+        LoadAudit();
+        stationsLoaded = false;
         SnapshotOnVersionChange();
         try
         {
@@ -271,7 +276,8 @@ public static partial class Thralls
                       .Append('\t').Append(r.Name ?? "").Append('\t').Append(r.Stay ? "1" : "0").Append('\t').Append(r.Mode).Append('\t').Append(r.ReviveAt)
                       .Append('\t').Append(r.AutoRevive ? "1" : "0").Append('\t').Append(r.AutoHeal ? "1" : "0")
                       .Append('\t').Append(r.Perks ?? "").Append('\t').Append(r.Guard ? "1" : "0").Append('\t').Append(r.Patrol ? "1" : "0").Append('\t').Append(r.PatrolPts ?? "")
-                      .Append('\t').Append(r.BmCalled ? "1" : "0").Append('\t').Append(r.BmPrevMode).Append('\t').Append(r.Deaths).Append('\t').Append(r.TamedAt).Append('\n');
+                      .Append('\t').Append(r.BmCalled ? "1" : "0").Append('\t').Append(r.BmPrevMode).Append('\t').Append(r.Deaths).Append('\t').Append(r.TamedAt)
+                      .Append('\t').Append(r.Xp).Append('\t').Append(r.SecondChance ? "1" : "0").Append('\t').Append(r.Alpha ? "1" : "0").Append('\n');
             string text = sb.ToString();
             WriteSafe(FilePath, text);
             KeepCopy(text);
@@ -381,6 +387,22 @@ public static partial class Thralls
         }
         if (baitAiDone.Count > 4000) baitAiDone.Clear();
     }
+    // The level a wild zombie of this class starts at today, without the luck. Zombie animals count as feral.
+    static int DayLevel(string cls)
+    {
+        int day = W != null ? GameUtils.WorldTimeToDays(W.worldTime) : 0;
+        int tier = IsAnimalClass(cls) ? (cls.StartsWith("animalZombie", StringComparison.OrdinalIgnoreCase) ? 1 : 0) : TierOf(cls);
+        int lvl = day / Math.Max(1, BaitConfig.DaysPerLevel) + tier * BaitConfig.TierLevelBonus;
+        return Math.Max(1, Math.Min(BaitConfig.MaxLevel, lvl));
+    }
+    // Wild animals have no level, so an animal thrall used to start at 0 against wild zombies that start at day/5 or more.
+    // Each time it comes into the world it is brought up to today's walker level (it keeps a higher one it earned).
+    static void KeepUpWithDay(ThrallRecord rec)
+    {
+        if (!BaitConfig.AnimalDayLevels || !BaitConfig.ZombieLevels) return;
+        int dl = DayLevel(rec.ClassName);
+        if (rec.Level < dl) { rec.Level = dl; dirty = true; }
+    }
     static void LevelUp(EntityAlive e)
     {
         int cur = LevelOf(e.entityId);
@@ -407,24 +429,42 @@ public static partial class Thralls
         if (!z.IsEating || d.distractionEatTicks > 0) return;
         long key = ((long)d.entityId << 32) | (uint)z.entityId;
         if (!counted.Add(key)) return;
-        CountMeal(z, d.OwnerId, BaitCheck.Meals(d.itemClass.GetItemName()));
+        CountMeal(z, d.OwnerId, BaitCheck.Meals(d.itemClass.GetItemName()), d.itemClass.GetItemName());
     }
 
-    static void CountMeal(EntityAlive z, int ownerId, int meals)
+    static void CountMeal(EntityAlive z, int ownerId, int meals, string item)
     {
         var world = W;
         var owner = world != null ? world.GetEntity(ownerId) as EntityPlayer : null;
         if (owner == null || owner.IsDead() || !CanTame(z)) return;
+        string key = KeyOf(owner);
+        if (key == null) return;
+        CountMealFor(z, key, owner, meals, item, null);
+    }
+
+    // The owner may be offline (a feeder, see ThrallsBatch3.cs): then owner is null and the new thrall is tethered at feederAt.
+    static void CountMealFor(EntityAlive z, string key, EntityPlayer owner, int meals, string item, Vector3? feederAt)
+    {
+        int ownerId = owner != null ? owner.entityId : -1;
+        if (!CanTame(z)) return;
         string cls = ClassName(z);
+        string alpha;
+        bool isAlpha = alphas.TryGetValue(z.entityId, out alpha);
+        if (isAlpha && item != BaitCheck.FeastItem) { Notify(ownerId, "Only Feast Bait tames an Alpha. " + alpha + " ignores that meal."); return; }
         Feed f;
-        if (!feeds.TryGetValue(z.entityId, out f) || f.Owner != ownerId) { f = new Feed { Owner = ownerId }; feeds[z.entityId] = f; }
-        f.Count += Math.Max(1, meals);
+        if (!feeds.TryGetValue(z.entityId, out f) || f.Key != key) { f = new Feed { Owner = ownerId, Key = key }; feeds[z.entityId] = f; }
+        f.Owner = ownerId;
         int need = FeedsNeeded(cls, LevelOf(z.entityId));
+        if (Resists(z, cls, f))
+        {
+            UiFeed(ownerId, z.entityId, Math.Min(f.Count, need), need);
+            Notify(ownerId, Pretty(cls) + " fought the bait off and broke away (" + f.Count + "/" + need + ").");
+            return;
+        }
+        f.Count += Math.Max(1, meals);
         UiFeed(ownerId, z.entityId, Math.Min(f.Count, need), need);
         if (f.Count < need) { Notify(ownerId, Pretty(cls) + " fed " + f.Count + "/" + need + (meals > 1 ? " (+" + meals + ")" : "") + "."); return; }
 
-        string key = KeyOf(owner);
-        if (key == null) return;
         var list = RosterOf(key);
         if (list.Count >= MaxOwnedFor(key))
         {
@@ -432,14 +472,33 @@ public static partial class Thralls
             Notify(ownerId, "You already hold " + list.Count + " thralls (limit " + MaxOwnedFor(key) + "). Release one first: /thrall release <number>");
             return;
         }
+        int cap = BaitConfig.CapFor(cls);
+        if (cap > 0 && list.FindAll(x => string.Equals(x.ClassName, cls, StringComparison.OrdinalIgnoreCase)).Count >= cap)
+        {
+            f.Count = need - 1;
+            Notify(ownerId, "This server lets each player hold " + cap + " " + Pretty(cls) + ". Release one first.");
+            return;
+        }
         var rec = new ThrallRecord { Id = NewId(), OwnerKey = key, ClassName = cls, Level = LevelOf(z.entityId), Active = ActiveCount(key) < MaxActiveFor(key), TamedAt = NowSec() };
-        WebhookTamed(owner, rec);
+        if (isAlpha) MakeAlphaThrall(rec, alpha, z);
+        if (feederAt.HasValue)
+        {
+            var fp = feederAt.Value;
+            rec.Active = true; rec.Tether = true; rec.TX = fp.x; rec.TY = fp.y; rec.TZ = fp.z; rec.TR = BaitConfig.FeederTetherRadius;
+        }
+        if (owner != null) WebhookTamed(owner, rec);
         list.Add(rec);
         dirty = true;
         feeds.Remove(z.entityId);
+        CountStat(key, "tamed", 1);
         // A zombie from a POI sleeper volume or an infestation counts as dead for that volume once tamed.
         try { z.NotifySleeperDeath(); } catch (Exception ex) { Dbg("sleeper notify failed: " + ex.Message); }
-        if (rec.Active)
+        if (owner == null)
+        {
+            MakeLive(z, rec, null);
+            Log.Out("[Bait] a feeder tamed " + Label(rec) + " for " + NameOfKey(key) + " while they were away.");
+        }
+        else if (rec.Active)
         {
             if (z.IsSleeper)
             {
@@ -509,7 +568,9 @@ public static partial class Thralls
             var h = z as EntityHuman; if (h != null) h.timeToDie = ulong.MaxValue;
             var d = z as EntityZombieDog; if (d != null) d.timeToDie = ulong.MaxValue;
             if (z.Buffs == null || z.IsDead()) return;
-            bool want = !BaitConfig.OwnerCanHurtThralls && !BaitConfig.OthersCanHurtThralls;
+            LiveThrall klt;
+            bool pvp = BaitConfig.PvpThralls && Live.TryGetValue(z.entityId, out klt) && PvpOn(klt.OwnerKey);   // a PvP thrall can be hit back
+            bool want = !BaitConfig.OwnerCanHurtThralls && !BaitConfig.OthersCanHurtThralls && !pvp;
             bool has = z.Buffs.HasBuff(WardBuff);
             if (want && !has) z.Buffs.AddBuff(WardBuff);
             else if (!want && has) z.Buffs.RemoveBuff(WardBuff);
@@ -527,6 +588,7 @@ public static partial class Thralls
                                            Perks = rec.Perks ?? "", Guard = rec.Tether && (rec.Guard || rec.Patrol), GX = rec.TX, GY = rec.TY, GZ = rec.TZ, GR = rec.TR };
         liveByRecord[rec.Id] = z.entityId;
         if (rec.Level < 1 && z is EntityZombie) { rec.Level = 1; dirty = true; }   // a zombie thrall is never level 0 (older ones are brought up to 1 here)
+        if (IsAnimalClass(rec.ClassName)) KeepUpWithDay(rec);
         if (rec.Level > 0) levels[z.entityId] = rec.Level; else levels.Remove(z.entityId);
 
         z.distraction = null;
@@ -564,7 +626,8 @@ public static partial class Thralls
         ai.tasks.AddTask(5, scout);
 
         var attack = ai.GetTasks<EAIApproachAndAttackTarget>();
-        if (attack != null) foreach (var t in attack) SetClasses(t, "targetClasses", new[] { typeof(EntityEnemy), typeof(EntityEnemyAnimal), typeof(EntityBandit) }, false);
+        // any living thing: the target patch decides who it may go for (players only in PvP, thralls only in a duel)
+        if (attack != null) foreach (var t in attack) SetClasses(t, "targetClasses", new[] { typeof(EntityAlive) }, false);
         var seek = ai.GetTargetTasks<EAISetNearestEntityAsTarget>();
         if (seek != null) foreach (var t in seek)
             {
@@ -727,6 +790,13 @@ public static partial class Thralls
                         + (RosterOf(rec.OwnerKey).IndexOf(rec) + 1) + " (" + ReviveCostText() + ")."
                         + (rec.AutoRevive && BaitConfig.AutoRevive ? " Auto-revive is on: it comes back as soon as you carry " + AutoReviveCostText() + "." : ""));
                 }
+                else if (rec.SecondChance)
+                {
+                    rec.SecondChance = false;
+                    rec.ReviveAt = NowSec() + Math.Max(10, BaitConfig.SecondChanceSeconds);
+                    nextSpawn.Remove(rec.Id);
+                    Notify(lt.OwnerEntityId, Label(rec) + " died: " + why + ". Its second chance saved it: it rises again in " + Math.Max(10, BaitConfig.SecondChanceSeconds) + "s.");
+                }
                 else
                 {
                     RosterOf(rec.OwnerKey).Remove(rec);
@@ -790,11 +860,16 @@ public static partial class Thralls
         rec.Kills++;
         dirty = true;
         UiKill(lt.OwnerEntityId, rec, victim, shared);
+        if (!shared) OwnerCredit(lt, victim);
         int per = Math.Max(1, BaitConfig.KillsPerLevel);
-        if (rec.Kills % per == 0 && rec.Level < BaitConfig.MaxLevel)
+        rec.Xp += CatchUpCredit(rec);
+        if (rec.Xp >= per && rec.Level < BaitConfig.MaxLevel)
         {
-            rec.Level++;
+            int from = rec.Level;
+            while (rec.Xp >= per && rec.Level < BaitConfig.MaxLevel) { rec.Xp -= per; rec.Level++; }
+            if (rec.Level >= BaitConfig.MaxLevel) rec.Xp = 0;
             levels[killer.entityId] = rec.Level;
+            if (rec.Level - from > 1) Notify(lt.OwnerEntityId, "Catch-up: " + Pretty(rec.ClassName) + " gained " + (rec.Level - from) + " levels.");
             Notify(lt.OwnerEntityId, Pretty(rec.ClassName) + " reached level " + rec.Level + "."
                 + (PerkSlots(rec.Level) > PerkSlots(rec.Level - 1) ? " A perk slot opened: /thrall perk " + (RosterOf(rec.OwnerKey).IndexOf(rec) + 1) + " tough|hit|regen|taunt" : ""));
             WebhookLevel(rec);
