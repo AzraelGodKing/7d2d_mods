@@ -56,11 +56,6 @@ jobs:
           echo "zip_name=$(echo "$ROW" | jq -r '.zipName')" >> "$GITHUB_OUTPUT"
           echo "nexus_mod_id=$(echo "$ROW" | jq -r '.nexus_mod_id // empty')" >> "$GITHUB_OUTPUT"
           echo "nexus_file_id=$(echo "$ROW" | jq -r '.nexus_file_id // empty')" >> "$GITHUB_OUTPUT"
-          # The website keys downloads by the slug in the mod's mod.json, which can differ
-          # from the matrix key (bait -> zombie-and-animal-bait). mod.json may have a BOM.
-          MOD_DIR="$(echo "$ROW" | jq -r '.modDir')"
-          SITE_SLUG="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8-sig")).get("slug", ""))' "$MOD_DIR/mod.json" 2>/dev/null || true)"
-          echo "site_slug=${SITE_SLUG:-${{ inputs.mod }}}" >> "$GITHUB_OUTPUT"
 
       - name: Read ModInfo.xml version + changelog
         id: meta
@@ -99,7 +94,7 @@ jobs:
         run: |
           python3 scripts/publish_site_download.py \
             --game 7-days-to-die \
-            --slug "${{ steps.matrix.outputs.site_slug }}" \
+            --slug "${{ inputs.mod }}" \
             --version "${{ steps.meta.outputs.version }}" \
             --zip "${{ steps.package.outputs.zip_path }}"
 
