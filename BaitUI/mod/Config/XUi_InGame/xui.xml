@@ -18,5 +18,14 @@
 		<window_group name="azraelBaitAdmin" defaultselected="close">
 			<window name="windowAzraelBaitAdmin" />
 		</window_group>
+		<window_group name="azraelBaitSetup" defaultselected="suname">
+			<window name="windowAzraelBaitSetup" />
+		</window_group>
+		<window_group name="azraelBaitBestiary" defaultselected="close">
+			<window name="windowAzraelBaitBestiary" />
+		</window_group>
+		<window_group name="azraelBaitSummary" defaultselected="close">
+			<window name="windowAzraelBaitSummary" />
+		</window_group>
 	</append>
 </configs>

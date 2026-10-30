@@ -142,5 +142,31 @@
 			</effect_group>
 			<property name="Group" value="Resources"/>
 		</item>
+		<!-- Thrall Whistle (1.12.0): use it to call your thralls to you, like /thrall here. Never used up.
+		     Using it puts a short hidden buff on you; the server sees the buff and brings your thralls. -->
+		<item name="azraelThrallWhistle">
+			<property name="Tags" value="azrwhistle"/>
+			<property name="HoldType" value="31"/>
+			<property name="Meshfile" value="@:Other/Items/Food/parcelGenericPrefab.prefab"/>
+			<property name="DropMeshfile" value="@:Other/Items/Misc/sack_droppedPrefab.prefab"/>
+			<property name="Material" value="Mmetal"/>
+			<property name="CustomIcon" value="resourceScrapBrass"/>
+			<property name="CustomIconTint" value="FFD966"/>
+			<property name="DescriptionKey" value="azraelThrallWhistleDesc"/>
+			<property name="Weight" value="1"/>
+			<property name="Stacknumber" value="1"/>
+			<property name="EconomicValue" value="20"/>
+			<property name="SellableToTrader" value="false"/>
+			<property class="Action0">
+				<property name="Class" value="Eat"/>
+				<property name="Delay" value="2"/>
+				<property name="Consume" value="false"/>
+				<property name="UseAnimation" value="false"/>
+			</property>
+			<effect_group tiered="false">
+				<triggered_effect trigger="onSelfPrimaryActionStart" action="AddBuff" target="self" buff="azraelThrallWhistle"/>
+			</effect_group>
+			<property name="Group" value="Tools/Traps"/>
+		</item>
 	</append>
 </configs>

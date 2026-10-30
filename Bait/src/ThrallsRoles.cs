@@ -259,7 +259,7 @@ public static partial class Thralls
 
     static void LoadPlayers()
     {
-        bmMode.Clear(); playersDirty = false;
+        bmMode.Clear(); pdata.Clear(); playersDirty = false;
         try
         {
             if (!File.Exists(PlayersPath)) return;
@@ -268,7 +268,14 @@ public static partial class Thralls
                 string[] p = line.Split('\t');
                 if (p.Length < 2 || p[0].Length == 0) continue;
                 for (int i = 1; i < p.Length; i++)
-                    if (p[i].StartsWith("bm=")) bmMode[p[0]] = p[i].Substring(3);
+                {
+                    if (p[i].StartsWith("bm=")) { bmMode[p[0]] = p[i].Substring(3); continue; }
+                    int eq = p[i].IndexOf('=');
+                    if (eq <= 0) continue;
+                    Dictionary<string, string> d;
+                    if (!pdata.TryGetValue(p[0], out d)) { d = new Dictionary<string, string>(); pdata[p[0]] = d; }
+                    d[p[i].Substring(0, eq)] = p[i].Substring(eq + 1);
+                }
             }
         }
         catch (Exception e) { Log.Warning("[Bait] could not read player settings: " + e.Message); }
@@ -280,7 +287,17 @@ public static partial class Thralls
         try
         {
             var sb = new StringBuilder();
-            foreach (var kv in bmMode) if (kv.Value != "off") sb.Append(kv.Key).Append("\tbm=").Append(kv.Value).Append('\n');
+            var keys = new HashSet<string>(bmMode.Keys);
+            keys.UnionWith(pdata.Keys);
+            foreach (string k in keys)
+            {
+                var line = new StringBuilder(k);
+                string bm;
+                if (bmMode.TryGetValue(k, out bm) && bm != "off") line.Append("\tbm=").Append(bm);
+                Dictionary<string, string> d;
+                if (pdata.TryGetValue(k, out d)) foreach (var kv in d) line.Append('\t').Append(kv.Key).Append('=').Append(kv.Value);
+                if (line.Length > k.Length) sb.Append(line).Append('\n');
+            }
             WriteSafe(PlayersPath, sb.ToString());
             try { File.Copy(PlayersPath, Path.Combine(KeepDir, PlayersFile), true); } catch { }
             playersDirty = false;
@@ -372,6 +389,7 @@ public static partial class Thralls
     {
         Scout s;
         if (scouts.TryGetValue(entityId, out s)) { goal = s.Goal; return true; }
+        if (GotoGoal(entityId, out goal)) return true;
         goal = Vector3.zero; return false;
     }
 

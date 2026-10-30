@@ -5,11 +5,26 @@ It needs the Bait mod (1.3.0 or newer) on the server. Players without it lose no
 
 ## What you get
 
-- **Roster window (Home key):** every thrall as a row with buttons: Call/Stow, Stay/Follow, mode (Aggr, Def, Pass cycles), Tether/Untether (tethers where you stand), Heal/Revive, Rename (a small box to type the name, empty clears it), Release (asks twice). Stow all, Stow active (only the ones following you), Stow tethered, Follow all and Stay all along the bottom. Replies from the server show in a status line instead of chat.
-- **Name tags:** level, name and an HP bar over your active thralls (within 45 m).
-- **Party list:** your active thralls and their HP down the left side of the screen. Open any window with a cursor (the roster, your inventory) and drag the list with the left mouse button to move it; the spot is saved. `baitui reset` puts it back.
-- **Fed tags:** "Fed 2/4" and a bar over a creature you are taming, so you do not need the toast.
-- **Admin window:** the Admin button on the roster (only shown to server admins). Every setting with - / + buttons (Flip for on/off ones), and the "cannot be tamed" list with Remove buttons, "Exclude what I aim at" and "Clear excludes". The server still checks admin rights.
+- **Roster window (Home key)**, in tabs. Drag the title bar to move it; the spot is saved.
+  - **Thralls:** one row per thrall with Call/Stow, Stay/Follow, mode, Tether, Heal/Revive, Track and Page. Click a row for its details. Filter, sort, name search and 8/12/16 rows per page along the top.
+  - **Groups:** Stow all/active/tethered, Follow all, Stay all, Bring all here, last deaths, teams, blood moon mode, PvP and "All to kennel".
+  - **Display:** every HUD option, colours, tag size, window size, re-center, and which columns the rows show (level, HP, status, kills, mode, auto boxes).
+  - **Keys:** the roster key, the quick-actions wheel key, the follow/stay/here keys, the go-to key and the thrall keys (Alt+1-9 calls or stows thralls 1 to 9; Ctrl, Shift or off).
+  - **Tools:** thrall page, bestiary, session summary, leaderboard, your stats and the server's, and "Craft bait" (opens crafting on the bait recipes and shows how many you can make).
+  - **Command bar** under every tab: type any `/thrall` command without the `/thrall` (`call 2`, `mode all defensive`) and press Enter. A hint shows the commands and thralls that match what you typed.
+- **Thrall page:** one thrall's stats (level, kills to the next level, deaths, age, perks, evolution) and every action for it: rename, auto-revive, auto-heal, second chance, kennel, track, perks, guard post, patrol, scout, evolve, blood moon, scream, retire, release, move up and down.
+- **New thrall setup:** when you tame something, a small window to name it and pick its mode and auto boxes (turn it off there or on the Display tab). A banner and a sound mark the tame.
+- **Bestiary:** every zombie and animal, the meals it needs on this server, any cap, and which ones you have.
+- **Session summary:** kills, tames, level ups, deaths and bait used since you joined. Each session is added to `AzraelBaitUI-sessions.txt` when you leave.
+- **Name tags:** level, name and an HP bar over your active thralls (within 45 m), with a gold glow on level up, a red flash at low HP and a grey countdown where a downed one fell. Roaming Alphas get their own tag.
+- **HUD extras:** damage numbers over what your thralls hit, faint lines from each thrall to its target, a downed panel with Revive buttons (click them while any window is open), colour-blind HP bars (blue to orange), a kill feed that groups repeats (all, own kills or special kills only).
+- **Track:** a gold compass marker for one thrall at any distance. **Go-to key** (Insert): aim at the ground and the thrall picked in the roster (or every follower) walks there.
+- **Party list** and **HP strip:** your active thralls down the left side, or small bars in the bottom-right corner. Drag the party list while a window is open; `baitui reset` puts it back.
+- **Fed tags** and **taming helper:** "Fed 2/4" over a creature you are taming, and the meals needed for what you aim at while holding bait.
+- **Admin window** (admins only), in tabs: every setting with - / + (and casual/default/hardcore presets), feed rates and caps per animal, the cannot-be-tamed list with search and "Add aimed", and a player browser with heal, revive, bring and release per thrall. The server still checks admin rights.
+- **Languages:** the labels follow the game language for German, Spanish, French and Portuguese; everything else is English.
+
+Parts need a matching Bait version on the server: buttons for something the server does not have yet stay blank or say which version they need.
 
 ## Traps and turrets
 

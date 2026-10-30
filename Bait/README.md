@@ -34,6 +34,39 @@ The commands work from chat (/thrall ...) and from the console (F1, `thrall ...`
 
 **Look-at HP:** aim at one of your thralls, or any wild zombie or animal, and a toast shows its name, level and HP (up to 25 m, `LookHp`, `LookHpWild`, `LookHpRange`, `LookHpAngle`). Server side only, no client mod. It is a toast under the crosshair area, not a floating bar.
 
+## New in 1.12.0
+
+**Protection**
+- When you die, the thralls with you stay at your backpack and fight anything that comes near for 120 s (`BackpackGuardSeconds`, `BackpackGuardRadius`).
+- Under 30% HP, the thralls with you turn aggressive for 10 s and pull attackers off you (`BodyguardRush`, `BodyguardHpPct`, `BodyguardSeconds`, `BodyguardCooldownSeconds`).
+- While you crouch, followers walk, start no fights and leave sleepers alone (`SneakFollow`). Thralls make no heat for the AI director (`QuietThralls`).
+
+**Commands**
+- `/t` works as a short `/thrall`. `/thrall alias <name> <command>` saves your own shortcut, and `/thrall last` repeats your last command.
+- `/thrall scream <n>`: a tamed screamer calls wild zombies to it (60 m, every 10 min; `ScreamRadius`, `ScreamCooldownSeconds`).
+- `/thrall pvp on|off`: your thralls fight players who turned it on too, never your party or allies. Off server-wide until an admin sets `PvpThralls=true`.
+- `/thrall duel <player> <n>`, then `/thrall duel accept <n>` or `decline`: two thralls fight until one is at 10% health (`DuelSeconds`, `DuelLosePct`). Nobody dies.
+- `/thrall secondchance <n>`: on permadeath servers (`ReviveSeconds=0`), 1 Feast Bait saves the thrall from its next death once (`SecondChanceFeast`, `SecondChanceSeconds`).
+- `/thrall retire <n> yes`: a thrall of level 25 or more leaves for good and you get bait back: 2 Rich Bait, or from level 50 one Feast Bait per 50 levels, up to 5 (`RetireLevel`, `RetireRich`, `RetireFeastLevel`).
+- `/thrall kennel <n|all>` and `/thrall goto <n|all> x y z`: walk to your nearest kennel, or to a spot, and stay there.
+- `/thrall stats` and `/thrall stats server`: lifetime numbers (tamed, kills, deaths, bait fed).
+
+**Levels and rewards**
+- A thrall more than 10 levels below your best gets double XP per kill (`CatchUpXp`, `CatchUpGap`).
+- You get 25% of the game XP of a thrall's kill within 30 m, and those kills count for quests and challenges (`OwnerXpSharePct`, `QuestKillCredit`, `OwnerCreditRange`).
+- **Alphas:** the day after every horde night, one wild zombie or animal near a random online player becomes a named Alpha (+10 levels). Bait UI shows it with an Alpha tag. Only Feast Bait tames it, and it stays an Alpha on your roster (`AlphaEveryDays`, `AlphaLevelBonus`).
+
+**New items and blocks**
+- **Thrall Whistle** (5 brass + 1 forged iron): use it to bring every follower to you, like `/thrall here` (`Whistle`).
+- **Bait Feeder** (20 scrap iron, 4 nails, 2 bait): put bait in it and it draws wild animals from 40 m and feeds the nearest one a bait every 30 s, so animals get tamed for you while you are away. They stay tethered next to it (`Feeders`, `FeederSeconds`, `FeederRadius`, `FeederTetherRadius`).
+- **Thrall Kennel** (30 wood, 6 nails, 4 cloth): thralls tethered at a kennel heal an extra 5% every 5 s (`KennelRadius`, `KennelHealPct`).
+
+**Admin**
+- `/thrall config preset casual|default|hardcore` sets many settings at once.
+- `/thrall config cap.<class> <n>`: the most of one creature a player may hold (`cap.animalBear 2`). `TamingResistPct` gives radiated, charged and infernal creatures a chance to break off a meal.
+- `/thrall admin log [n]`: the last admin and settings changes (also in `AzraelBaitAudit.log`). `/thrall admin banword add|remove|list <word>` and `NameMaxLength` keep thrall names clean.
+- `/thrall admin ui [player]` sends the player list and one player's thralls to the Bait UI admin window.
+
 ## Baby animals
 
 Baby animals from other mods (such as CTK Animal Babies: fawns, cubs, pups, piglets, kittens) can be tamed like any other animal. /thrall list shows zombies and animals as separate lists. Bear cubs get the bait behaviour added in code, since that mod replaces their AI list.

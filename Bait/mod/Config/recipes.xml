@@ -17,5 +17,19 @@
 			<ingredient name="foodRawMeat" count="3"/>
 			<ingredient name="resourceAcid" count="1"/>
 		</recipe>
+		<recipe name="azraelThrallWhistle" count="1" craft_time="10" always_unlocked="true">
+			<ingredient name="resourceScrapBrass" count="5"/>
+			<ingredient name="resourceForgedIron" count="1"/>
+		</recipe>
+		<recipe name="azraelBaitFeeder" count="1" craft_time="30" always_unlocked="true">
+			<ingredient name="resourceScrapIron" count="20"/>
+			<ingredient name="resourceNail" count="4"/>
+			<ingredient name="azraelBait" count="2"/>
+		</recipe>
+		<recipe name="azraelThrallKennel" count="1" craft_time="30" always_unlocked="true">
+			<ingredient name="resourceWood" count="30"/>
+			<ingredient name="resourceNail" count="6"/>
+			<ingredient name="resourceCloth" count="4"/>
+		</recipe>
 	</append>
 </configs>
