@@ -13,7 +13,7 @@ Small mods for 7 Days to Die. Every mod builds against **V3.4** (b6), and each o
 | [Upgrade Bench](#upgrade-bench) | Code + XML | Server **and** every player | 1.0.2 |
 | [No Ding Sound](#no-ding-sound) | XML only | Server only | 1.0.0 |
 | [Keep Backpacks](#keep-backpacks) | Code (Harmony) | Server only | 1.3.0 |
-| [Blood Moon Sound](#blood-moon-sound) | Code (Harmony) | Players (own sound); server optional (sound for everyone, Discord and game chat posts) | 1.3.0 |
+| [Blood Moon Sound](#blood-moon-sound) | Code (Harmony) | Players (own sound); server optional (sound for everyone, Discord and game chat posts) | 1.4.0 |
 | [Zombie and Animal Bait](#zombie-and-animal-bait) | Code (Harmony) + XML | Server only | 1.12.1 |
 | [Gyro Safe](#gyro-safe) | Code (Harmony) | Server and players who fly | 1.0.0 |
 | [Drone Loot Filter](#drone-loot-filter) | Code (Harmony), needs Drone Automation | Server only | 1.2.0 |
@@ -276,7 +276,7 @@ Several clips of one kind play at random, never the same one twice in a row: nam
 
 | Command (F1 console) | What it does |
 |---|---|
-| `bmsound` | Show status (sound loaded, when it plays, next blood moon day) |
+| `bmsound` | Show status (sound loaded, when it plays, next blood moon day and how long until the horde) |
 | `bmsound test` | Play the blood moon clip now |
 | `bmsound test spawn` | Play the clip that runs when you enter the world |
 | `bmsound test morning` | Play the morning bell |
@@ -324,7 +324,7 @@ The whole schedule is set in `discord.txt`:
 | Setting | Default | What it does |
 |---|---|---|
 | `Reminder = <days before> <hour> \| <message>` | 1 day before at 12:00, and 18:00 on the day | Any number of reminders before the blood moon, one per line (`Reminder=none` for none) |
-| `Countdown` / `CountdownHour` / `CountdownFromDays` | off / 8 / 7 | A post every in-game day, "N days until the Blood Moon" |
+| `Countdown` / `CountdownHour` / `CountdownFromDays` | off / 8 / 7 | A post every in-game day, "Blood Moon in 3 days 14 hours" |
 | `Start` | on | When the horde starts |
 | `UpdateEveryHours` | 0 (off) | Extra posts every N in-game hours while the horde is on |
 | `End` | on | At dawn afterwards |
@@ -335,8 +335,21 @@ The whole schedule is set in `discord.txt`:
 | `InGameChat` / `InGameChatFor` | on / reminder, countdown, start, end | Show those messages in game chat too (no emoji or bold there). Works without a webhook |
 | `MsgCountdown`, `MsgStart`, `MsgUpdate`, `MsgEnd` | see file | Message text |
 
-Placeholders: `{day}` blood moon day, `{days}` days left,
+Placeholders: `{day}` blood moon day, `{timeleft}` time left in game time ("1 day 6 hours", "45 minutes"),
+`{realtime}` the same in real time ("1h 15m", from the server's day length), `{hours}` the same in whole in-game hours,
+`{days}` calendar days left, `{starts}` / `{dawn}` the horde's start and end time ("22:00", "04:00"),
 `{players}` who's online, `{count}` how many, `{player}` who joined or left, `{recap}` the horde recap, `\n` new line.
+Before the horde, `{timeleft}` counts down to it; in the start and update messages it counts down to dawn.
+
+Every default message is a short headline and a detail line, for example:
+
+> **⚠️ Blood Moon tomorrow · Day 14**
+> Horde in **1 day 10 hours** at 22:00 (about 1h 25m real time). Get your base ready!
+
+The first line of a message is the embed title in Discord and the bright red line in game chat; the
+rest shows underneath (softer colour in game chat). Embeds also carry a timestamp in each reader's own
+time zone. A `discord.txt` that still has the 1.3.0 default messages word for word gets the new wording
+on load, so you don't have to edit it; messages you changed yourself are left alone.
 
 Reminders and the countdown follow the game's own "next blood moon day", so they work with any
 blood moon frequency (a 30-day server gets its reminders before day 30, 60, ...) and with a random range.
@@ -347,10 +360,10 @@ Setup: copy `discord.example.txt` to `discord.txt` **on the server**, paste the 
 
 | Server console | What it does |
 |---|---|
-| `bmdiscord` | Status: on/off, full schedule, next blood moon day, result of the last post |
+| `bmdiscord` | Status: on/off, full schedule, next blood moon day and time left, result of the last post |
 | `bmdiscord test` | Post a test message |
-| `bmdiscord test reminder <n>` | Post reminder number n now |
-| `bmdiscord test countdown\|start\|update\|end` | Post that message now (`end` includes the recap so far) |
+| `bmdiscord test reminder <n>` | Post reminder number n now, with the time left as it will be when it really goes out |
+| `bmdiscord test countdown\|start\|update\|end` | Post that message now, timed the same way (`end` includes the recap so far) |
 | `bmdiscord test serverstart\|serverstop\|join\|leave` | Post that message now |
 | `bmdiscord recap` | The horde recap so far, or from the last horde |
 | `bmdiscord sound` | Play the horde sound for everyone online now |
@@ -367,6 +380,7 @@ Setup: copy `discord.example.txt` to `discord.txt` **on the server**, paste the 
   leaves it out of **every** zip, including the private `-with-sound` one.
 
 **Changelog**
+- 1.4.0: cleaner blood moon messages that say how long is left in hours as well as days: "Blood Moon in 1 day 6 hours", with the horde's start time and the real-time wait. New placeholders `{timeleft}`, `{realtime}`, `{hours}`, `{starts}` and `{dawn}`. Start and update messages count down to dawn. Discord embeds get a title line and a timestamp; game chat shows a bright headline with the details under it. Old 1.3.0 default wording in `discord.txt` is upgraded on load. `bmdiscord`, `bmsound` and `bmdiscord test` show the time left too.
 - 1.3.0: players: several clips per kind (`bloodmoon2.ogg`, `bloodmoon-scary.wav`...) play one at random, and each kind has its own volume (`BloodMoonVolume`, `SpawnVolume`, `MorningVolume`, `NightVolume`). Server: horde recap in the dawn post (`Recap`), server start/stop and player join/leave posts, coloured embeds (`Embeds`), and the same messages in game chat (`InGameChat`, `InGameChatFor`). `bmdiscord recap`, and `bmdiscord test` covers the new messages.
 - 1.2.2: the morning and night bells replace the game's own dawn and dusk sounds instead of playing on top of them (only while that bell is on and its file is loaded). If `WarningHour` is at or after this world's dusk, the warning plays one hour before dusk instead of never, and the log and `bmsound` say so. `settings.txt` now lists `Spawn`, `Morning` and `Night`. `PUT_YOUR_SOUND_HERE.txt` names those clips too.
 - 1.2.1: morning and night no longer play together when a world finishes loading. The enter-world clip waits until the clock has settled. Dawn and dusk also play once per event day, and a second init keeps a single player or Discord object.

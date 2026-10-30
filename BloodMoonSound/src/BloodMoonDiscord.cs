@@ -16,6 +16,64 @@ public class BmdReminder
         (DaysBefore == 0 ? "blood moon day" : DaysBefore == 1 ? "1 day before" : $"{DaysBefore} days before") + $" at {Hour:00}:00";
 }
 
+// How long until the horde (or until dawn), in game time and in real time.
+public static class BmdTime
+{
+    // 1000 world time = 1 in-game hour, 24000 = 1 in-game day.
+    public static (int duskHour, int dawnHour) DuskDawn() =>
+        GameUtils.CalcDuskDawnHours(GameStats.GetInt(EnumGameStats.DayLightLength));
+
+    // World time the horde of blood moon day bmDay starts (dusk) and ends (dawn the next morning).
+    public static ulong HordeStart(int bmDay) => GameUtils.DayTimeToWorldTime(bmDay, DuskDawn().duskHour, 0);
+    public static ulong HordeEnd(int bmDay) => GameUtils.DayTimeToWorldTime(bmDay + 1, DuskDawn().dawnHour, 0);
+
+    public static ulong Now()
+    {
+        var world = GameManager.Instance != null ? GameManager.Instance.World : null;
+        return world != null ? world.worldTime : 0UL;
+    }
+
+    public static ulong Until(ulong target, ulong now) => target > now ? target - now : 0UL;
+
+    // Whole in-game hours, rounded to the nearest hour.
+    public static int Hours(ulong span) => (int)((span + 500UL) / 1000UL);
+
+    // "1 day 6 hours", "6 hours", "1 hour 30 minutes", "45 minutes".
+    // Two hours or more is rounded to the hour; less than that to 5 minutes.
+    public static string Game(ulong span)
+    {
+        long minutes = (long)Math.Round(span * 60.0 / 1000.0);
+        if (minutes < 1) return "moments";
+        if (minutes >= 120)
+        {
+            long h = (minutes + 30) / 60;
+            long d = h / 24; h %= 24;
+            if (d == 0) return Plural(h, "hour");
+            return h == 0 ? Plural(d, "day") : Plural(d, "day") + " " + Plural(h, "hour");
+        }
+        long m5 = Math.Max(5, (minutes + 2) / 5 * 5);
+        long hh = m5 / 60, mm = m5 % 60;
+        if (hh == 0) return Plural(mm, "minute");
+        return mm == 0 ? Plural(hh, "hour") : Plural(hh, "hour") + " " + Plural(mm, "minute");
+    }
+
+    // Real time for the same span, from the server's day length: "1h 15m", "25m", "under a minute".
+    public static string Real(ulong span)
+    {
+        int dayMinutes = GamePrefs.GetInt(EnumGamePrefs.DayNightLength);
+        if (dayMinutes <= 0) return "?";
+        long secs = (long)Math.Round(span / 24000.0 * dayMinutes * 60.0);
+        if (secs < 60) return "under a minute";
+        long mins = (secs + 30) / 60;
+        if (mins < 60) return mins + "m";
+        return mins % 60 == 0 ? (mins / 60) + "h" : $"{mins / 60}h {mins % 60}m";
+    }
+
+    public static string Clock(int hour) => $"{hour:00}:00";
+
+    static string Plural(long n, string word) => n + " " + word + (n == 1 ? "" : "s");
+}
+
 public static class BmdSettings
 {
     public const string FileName = "discord.txt";
@@ -52,19 +110,45 @@ public static class BmdSettings
     public static bool Enabled => Status == null;
     public static string FilePath => Path.Combine(BmsSettings.ModPath ?? "", FileName);
 
-    public const string DefaultMsgDayBefore = "⚠️ Blood Moon **tomorrow night** (day {day}). Get your base ready!";
-    public const string DefaultMsgWarning   = "\U0001F534 Blood Moon **tonight** (day {day}). The horde comes at dusk.";
+    // The first line of a message is its headline: the embed title in Discord, the bright line in game chat.
+    public const string DefaultMsgDayBefore = "⚠️ **Blood Moon tomorrow** · Day {day}\nHorde in **{timeleft}** at {starts} (about {realtime} real time). Get your base ready!";
+    public const string DefaultMsgWarning   = "\U0001F534 **Blood Moon tonight** · Day {day}\nHorde in **{timeleft}** at {starts} (about {realtime} real time). Get inside before dark!";
+    public const string DefaultMsgDaysOut   = "⚠️ **Blood Moon in {timeleft}** · Day {day}\nHorde at {starts} (about {realtime} real time). Start stocking up!";
+    public const string DefaultMsgCountdown = "⏳ **Blood Moon in {timeleft}** · Day {day}\nHorde at {starts} (about {realtime} real time).";
+    public const string DefaultMsgStart     = "\U0001F315 **The Blood Moon has risen!** · Day {day}\nDawn in {timeleft} at {dawn}. Online: {players}";
+    public const string DefaultMsgUpdate    = "\U0001FA78 **The Blood Moon rages on** · Day {day}\nDawn in {timeleft} at {dawn}. Still standing: {players}";
+    public const string DefaultMsgEnd       = "\U0001F305 **Dawn! Blood Moon survived** · Day {day}\nOnline: {players}";
+
+    // The 1.3.0 wording. A discord.txt still using it word for word gets the new wording,
+    // so servers that copied the old example file pick up the hours left without editing it.
+    static readonly Dictionary<string, string> OldDefaults = new Dictionary<string, string>
+    {
+        { "⚠️ Blood Moon **tomorrow night** (day {day}). Get your base ready!", DefaultMsgDayBefore },
+        { "\U0001F534 Blood Moon **tonight** (day {day}). The horde comes at dusk.", DefaultMsgWarning },
+        { "⚠️ Blood Moon in **{days} days** (day {day}).", DefaultMsgDaysOut },
+        { "⏳ **{days} days** until the Blood Moon (day {day}).", DefaultMsgCountdown },
+        { "\U0001F315 The Blood Moon has risen! Horde incoming. Online: {players}", DefaultMsgStart },
+        { "\U0001FA78 The Blood Moon rages on. Still standing: {players}", DefaultMsgUpdate },
+        { "\U0001F305 Dawn! Blood Moon day {day} survived. Online: {players}", DefaultMsgEnd },
+    };
+    public static int Upgraded; // how many old-wording messages were swapped on the last load
+
+    static string Upgrade(string msg)
+    {
+        if (msg != null && OldDefaults.TryGetValue(msg, out var now)) { Upgraded++; return now; }
+        return msg;
+    }
 
     static void Defaults()
     {
         Webhook = null; BotName = "Blood Moon"; Mentions = false; SkipEmpty = true;
-        Reminders.Clear(); Problems.Clear();
+        Reminders.Clear(); Problems.Clear(); Upgraded = 0;
         Countdown = false; CountdownHour = 8; CountdownFromDays = 7;
         Start = true; UpdateEveryHours = 0; End = true;
-        MsgCountdown = "⏳ **{days} days** until the Blood Moon (day {day}).";
-        MsgStart     = "\U0001F315 The Blood Moon has risen! Horde incoming. Online: {players}";
-        MsgUpdate    = "\U0001FA78 The Blood Moon rages on. Still standing: {players}";
-        MsgEnd       = "\U0001F305 Dawn! Blood Moon day {day} survived. Online: {players}";
+        MsgCountdown = DefaultMsgCountdown;
+        MsgStart     = DefaultMsgStart;
+        MsgUpdate    = DefaultMsgUpdate;
+        MsgEnd       = DefaultMsgEnd;
         Recap = true;
         ServerStart = false; ServerStop = false; PlayerJoin = false; PlayerLeave = false;
         MsgServerStart = "\U0001F7E2 The server is up.";
@@ -180,8 +264,8 @@ public static class BmdSettings
         if (days < 0 || days > 365) { why = $"Reminder days before must be 0-365, got {days}"; return null; }
         if (hour < 0 || hour > 23) { why = $"Reminder hour must be 0-23, got {hour}"; return null; }
         if (string.IsNullOrEmpty(msg))
-            msg = days == 0 ? DefaultMsgWarning : days == 1 ? DefaultMsgDayBefore : "⚠️ Blood Moon in **{days} days** (day {day}).";
-        return new BmdReminder { DaysBefore = days, Hour = hour, Message = msg.Replace("\\n", "\n") };
+            msg = days == 0 ? DefaultMsgWarning : days == 1 ? DefaultMsgDayBefore : DefaultMsgDaysOut;
+        return new BmdReminder { DaysBefore = days, Hour = hour, Message = Upgrade(msg.Replace("\\n", "\n")) };
     }
 
     static string Short(string s) => s.Length > 60 ? s.Substring(0, 57) + "..." : s;
@@ -197,7 +281,7 @@ public static class BmdSettings
     static int Hour(string v, int fallback) => int.TryParse(v, out var h) ? Mathf.Clamp(h, 0, 23) : fallback;
 
     // Empty keeps the default; a literal \n becomes a line break.
-    static string Msg(string v, string fallback) => v.Length == 0 ? fallback : v.Replace("\\n", "\n");
+    static string Msg(string v, string fallback) => v.Length == 0 ? fallback : Upgrade(v.Replace("\\n", "\n"));
 
     // For logs and the console: never print the token part of the URL.
     public static string MaskedWebhook()
@@ -379,6 +463,8 @@ public class BmdNotifier : MonoBehaviour
             : "[BloodMoonSound] Horde sound for all players: off.");
         BmdSettings.Load();
         foreach (var p in BmdSettings.Problems) Log.Warning($"[BloodMoonDiscord] {BmdSettings.FileName} {p}");
+        if (BmdSettings.Upgraded > 0)
+            Log.Out($"[BloodMoonDiscord] {BmdSettings.Upgraded} message(s) in {BmdSettings.FileName} still had the 1.3.0 wording; using the new wording with time left instead.");
         if (BmdSettings.Enabled)
             Log.Out($"[BloodMoonDiscord] Posting to {BmdSettings.MaskedWebhook()}: {Describe()}.");
         else
@@ -515,6 +601,21 @@ public class BmdNotifier : MonoBehaviour
         return names;
     }
 
+    // "horde in 1 day 6 hours at 22:00 (about 1h 15m real time)", or how long until dawn during one.
+    public static string TimeLeftText(int bmDay)
+    {
+        if (bmDay <= 0) return "no blood moons on this server";
+        ulong now = BmdTime.Now(), start = BmdTime.HordeStart(bmDay);
+        var dd = BmdTime.DuskDawn();
+        if (now < start)
+        {
+            ulong span = start - now;
+            return $"horde in {BmdTime.Game(span)} at {BmdTime.Clock(dd.duskHour)} (about {BmdTime.Real(span)} real time)";
+        }
+        ulong left = BmdTime.Until(BmdTime.HordeEnd(bmDay), now);
+        return $"horde on now, dawn in {BmdTime.Game(left)} at {BmdTime.Clock(dd.dawnHour)} (about {BmdTime.Real(left)} real time)";
+    }
+
     // Days until the blood moon right now (0 on the day itself), for {days} in test posts.
     public static int DaysUntil(int bmDay)
     {
@@ -524,11 +625,14 @@ public class BmdNotifier : MonoBehaviour
     }
 
     // Fill in the placeholders. player is the one joining/leaving, for {player}.
-    public static string Fill(string template, int day, int daysLeft, List<string> players, string player)
+    // at: the world time to count from (null = now); test posts pass the time the message would really go out.
+    public static string Fill(string template, int day, int daysLeft, List<string> players, string player, ulong? at = null)
     {
         var text = template
             .Replace("{day}", day.ToString())
-            .Replace("{days}", daysLeft.ToString())
+            .Replace("{days}", daysLeft.ToString());
+        if (text.IndexOf('{') >= 0 && day > 0) text = FillTime(text, day, at ?? BmdTime.Now());
+        text = text
             .Replace("{count}", players.Count.ToString())
             .Replace("{players}", players.Count > 0 ? string.Join(", ", players.ConvertAll(EscapeMarkdown)) : "nobody")
             .Replace("{player}", EscapeMarkdown(player ?? ""));
@@ -536,13 +640,27 @@ public class BmdNotifier : MonoBehaviour
         return text;
     }
 
+    // {timeleft} {hours} {realtime}: until the horde starts, or until dawn once it has.
+    static string FillTime(string text, int day, ulong now)
+    {
+        var dd = BmdTime.DuskDawn();
+        ulong start = BmdTime.HordeStart(day);
+        ulong span = BmdTime.Until(now < start ? start : BmdTime.HordeEnd(day), now);
+        return text
+            .Replace("{timeleft}", BmdTime.Game(span))
+            .Replace("{hours}", BmdTime.Hours(span).ToString())
+            .Replace("{realtime}", BmdTime.Real(span))
+            .Replace("{starts}", BmdTime.Clock(dd.duskHour))
+            .Replace("{dawn}", BmdTime.Clock(dd.dawnHour));
+    }
+
     // Returns false (and says why) when nothing could go out.
-    public bool Post(string template, int day, int daysLeft = 0, BmdKind kind = BmdKind.Test, string player = null)
+    public bool Post(string template, int day, int daysLeft = 0, BmdKind kind = BmdKind.Test, string player = null, ulong? at = null)
     {
         var players = OnlinePlayers();
         // A player who is leaving is still in the client list for a moment.
         if (kind == BmdKind.Leave && player != null) players.Remove(player);
-        var text = Fill(template, day, daysLeft, players, player);
+        var text = Fill(template, day, daysLeft, players, player, at);
         if (kind == BmdKind.End && BmdSettings.Recap && !template.Contains("{recap}")) text += "\n" + BmdRecap.Text();
         bool any = false;
         if (BmdSettings.InGameChat && BmdSettings.ChatKinds.Contains(kind)) { SendChat(text); any = true; }
@@ -577,9 +695,14 @@ public class BmdNotifier : MonoBehaviour
         {
             var gm = GameManager.Instance;
             if (gm == null || gm.World == null) return;
+            bool first = true;
             foreach (var line in ForChat(text).Split('\n'))
-                if (line.Trim().Length > 0)
-                    gm.ChatMessageServer(null, EChatType.Global, -1, "[ff6060]" + line.Trim() + "[-]", null, EMessageSender.Server);
+            {
+                if (line.Trim().Length == 0) continue;
+                // Headline in blood red, the details under it in a softer pink.
+                gm.ChatMessageServer(null, EChatType.Global, -1, (first ? "[ff4040]" : "[ffc0c0]") + line.Trim() + "[-]", null, EMessageSender.Server);
+                first = false;
+            }
         }
         catch (Exception e) { Log.Warning("[BloodMoonDiscord] game chat: " + e.Message); }
     }
@@ -677,10 +800,27 @@ public class BmdNotifier : MonoBehaviour
         // Pings only work in plain content, so a message that pings is never an embed.
         bool pings = BmdSettings.Mentions && (text.Contains("@everyone") || text.Contains("@here") || text.Contains("<@"));
         var body = BmdSettings.Embeds && !pings
-            ? ",\"embeds\":[{\"description\":" + Json(text) + ",\"color\":" + Colour(kind) + "}]"
+            ? ",\"embeds\":[" + Embed(text, kind) + "]"
             : ",\"content\":" + Json(text);
         return "{\"username\":" + Json(BmdSettings.BotName) + body +
                ",\"allowed_mentions\":{\"parse\":" + mentions + "}}";
+    }
+
+    // First line becomes the embed title (Discord shows titles bold already), the rest the body,
+    // plus a timestamp that Discord shows in each reader's own time zone.
+    static string Embed(string text, BmdKind kind)
+    {
+        string title = text, desc = "";
+        int nl = text.IndexOf('\n');
+        if (nl >= 0) { title = text.Substring(0, nl); desc = text.Substring(nl + 1).Trim(); }
+        title = title.Replace("**", "").Replace("__", "").Trim();
+        if (title.Length > 256) { desc = (title + "\n" + desc).Trim(); title = ""; }
+        var sb = new StringBuilder("{");
+        if (title.Length > 0) sb.Append("\"title\":").Append(Json(title)).Append(',');
+        if (desc.Length > 0) sb.Append("\"description\":").Append(Json(desc)).Append(',');
+        sb.Append("\"color\":").Append(Colour(kind));
+        sb.Append(",\"timestamp\":").Append(Json(DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ", System.Globalization.CultureInfo.InvariantCulture)));
+        return sb.Append('}').ToString();
     }
 
     static string Json(string s)
@@ -753,14 +893,22 @@ public class ConsoleCmdAzraelBloodMoonDiscord : ConsoleCmdAbstract
             string template;
             var kind = BmdKind.Test;
             int daysLeft = BmdNotifier.DaysUntil(bmDay);
+            ulong? at = null; // world time to preview the message at
             string which = _params.Count > 1 ? _params[1].ToLowerInvariant() : "";
             switch (which)
             {
                 case "": template = "✅ Blood Moon Discord test message. Posting works!"; break;
-                case "countdown": template = BmdSettings.MsgCountdown; kind = BmdKind.Countdown; break;
-                case "start": template = BmdSettings.MsgStart; kind = BmdKind.Start; break;
-                case "update": template = BmdSettings.MsgUpdate; kind = BmdKind.Update; break;
-                case "end": template = BmdSettings.MsgEnd; kind = BmdKind.End; break;
+                case "countdown":
+                    template = BmdSettings.MsgCountdown; kind = BmdKind.Countdown;
+                    daysLeft = Math.Max(1, daysLeft);
+                    at = GameUtils.DayTimeToWorldTime(bmDay - daysLeft, BmdSettings.CountdownHour, 0);
+                    break;
+                case "start": template = BmdSettings.MsgStart; kind = BmdKind.Start; at = BmdTime.HordeStart(bmDay); break;
+                case "update":
+                    template = BmdSettings.MsgUpdate; kind = BmdKind.Update;
+                    at = BmdTime.HordeStart(bmDay) + (ulong)Math.Max(1, BmdSettings.UpdateEveryHours) * 1000UL;
+                    break;
+                case "end": template = BmdSettings.MsgEnd; kind = BmdKind.End; at = BmdTime.HordeEnd(bmDay); break;
                 case "serverstart": template = BmdSettings.MsgServerStart; kind = BmdKind.ServerStart; break;
                 case "serverstop": template = BmdSettings.MsgServerStop; kind = BmdKind.ServerStop; break;
                 case "join": template = BmdSettings.MsgJoin; kind = BmdKind.Join; break;
@@ -773,11 +921,12 @@ public class ConsoleCmdAzraelBloodMoonDiscord : ConsoleCmdAbstract
                     }
                     template = BmdSettings.Reminders[idx - 1].Message;
                     daysLeft = BmdSettings.Reminders[idx - 1].DaysBefore;
+                    at = GameUtils.DayTimeToWorldTime(bmDay - daysLeft, BmdSettings.Reminders[idx - 1].Hour, 0);
                     kind = BmdKind.Reminder;
                     break;
                 default: con.Output("Unknown message. Use: reminder <n>, countdown, start, update, end, serverstart, serverstop, join or leave."); return;
             }
-            if (n.Post(template, bmDay, daysLeft, kind, kind == BmdKind.Join || kind == BmdKind.Leave ? "TestPlayer" : null))
+            if (n.Post(template, bmDay, daysLeft, kind, kind == BmdKind.Join || kind == BmdKind.Leave ? "TestPlayer" : null, at))
                 con.Output((BmdSettings.Enabled ? "Sending... type 'bmdiscord' in a few seconds to see if it went through." : "Not posted to Discord: " + BmdSettings.Status + ".")
                            + (BmdSettings.InGameChat && BmdSettings.ChatKinds.Contains(kind) ? " Also shown in game chat." : ""));
             else
@@ -799,7 +948,7 @@ public class ConsoleCmdAzraelBloodMoonDiscord : ConsoleCmdAbstract
             ? $"Horde sound for all players: '{BmsSettings.HordeSoundName}' (settings.txt)."
             : "Horde sound for all players: off (settings.txt).");
         int next = GameStats.GetInt(EnumGameStats.BloodMoonDay);
-        con.Output($"Next blood moon: day {next} (in {BmdNotifier.DaysUntil(next)} day(s)). Last post: {n.LastResult}.");
+        con.Output($"Next blood moon: day {next}, {BmdNotifier.TimeLeftText(next)}. Last post: {n.LastResult}.");
     }
 
     static void ShowSchedule(SdtdConsole con)
