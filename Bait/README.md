@@ -34,6 +34,10 @@ The commands work from chat (/thrall ...) and from the console (F1, `thrall ...`
 
 **Look-at HP:** aim at one of your thralls, or any wild zombie or animal, and a toast shows its name, level and HP (up to 25 m, `LookHp`, `LookHpWild`, `LookHpRange`, `LookHpAngle`). Server side only, no client mod. It is a toast under the crosshair area, not a floating bar.
 
+## New in 1.12.1
+
+- Fix: a thrall (a dog, reported by Kats) died walking over its owner's spike traps. Spikes, barbed wire, blade traps and electric fence shocks no longer hurt thralls, and spikes no longer wear down or break when a thrall steps on them (`TrapsSpareThralls`, on by default). Set it to false to have traps hurt thralls again.
+
 ## New in 1.12.0
 
 **Protection**
@@ -99,7 +103,7 @@ Set the meal counts with `RichBaitMeals` and `FeastBaitMeals`. `giveself azraelB
 
 **No digging (1.4.0):** thralls never break blocks while following you or going home to a tether; only entities, depending on their mode.
 
-**Traps (1.4.0):** motion sensors (which set off dart traps and other powered traps) skip thralls the same way turrets do. Spikes and other damage blocks do not hurt drones (`DronesIgnoreSpikes`). Turrets and sensors also aim on every client, so the optional BaitUI mod stops that on screen too (the server sends it the thrall ids).
+**Traps (1.4.0):** motion sensors (which set off dart traps and other powered traps) skip thralls the same way turrets do. Spikes and other damage blocks do not hurt drones (`DronesIgnoreSpikes`). Since 1.12.1, spikes, barbed wire, blade traps and electric fence shocks do not hurt thralls either (`TrapsSpareThralls`). Turrets and sensors also aim on every client, so the optional BaitUI mod stops that on screen too (the server sends it the thrall ids).
 
 **Revive and heal costs (1.4.0):** pay with plain bait, Rich bait or Feast bait (they count as the meals they are worth). If you are short, the reply says how many the server sees in your toolbelt and bag.
 

@@ -36,6 +36,7 @@ public static class BaitConfig
     public static bool OthersCanHurtThralls = false; // false: no player can hurt anyone else's thrall
     public static bool AutoStowInVehicle = true;
     public static bool DronesIgnoreSpikes = true;   // spikes and other damage blocks do not hurt drones
+    public static bool TrapsSpareThralls = true;    // spikes, barbed wire, blade traps and electric fence shocks do not hurt thralls (or wear the trap down)
     // (AutoStowInVehicle above: thralls go inactive while you ride a vehicle and come back when you get off)
     public static bool OwnerCanHurtThralls = false;
     // tether (daycare)
