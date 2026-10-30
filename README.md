@@ -8,6 +8,7 @@ Small mods for 7 Days to Die. Every mod builds against **V3.4** (b6), and each o
 | [Quest Disconnect Fix](#quest-disconnect-fix) | Code (Harmony) | Server only | 1.1.0 |
 | [Honk Door Fix](#honk-door-fix) | Code (Harmony) | Server only | 1.0.0 |
 | [Craftable Canvas Signs](#craftable-canvas-signs) | XML only | Server only | 1.0.0 |
+| [Craftable Stained Glass](#craftable-stained-glass) | XML only | Server only | 1.0.0 |
 | [Speedometer](#speedometer) | Code + UI | Players only | 1.1.1 |
 | [Craft From Chests](#craft-from-chests) | Code (Harmony) | Players only | 1.2.0 |
 | [Upgrade Bench](#upgrade-bench) | Code + XML | Server **and** every player | 1.0.2 |
@@ -153,6 +154,22 @@ signs (just the picture, no frame; the Doggo's billboard is made of these).
 - You pick the size when you place it (up to 13 blocks wide), so a big billboard costs the same as a small sign.
 - Tougher than vanilla: 10x the HP (wood 225 -> 2250, iron 300 -> 3000). Only the picture signs change, not other wood or metal blocks. Adjust `MaxDamage` in `Config/blocks.xml`.
 - Change the costs in `Config/recipes.xml`.
+
+---
+## Craftable Stained Glass
+
+**Server only (XML); players install nothing.** The stained glass panels you find in churches and
+other POIs. In vanilla they are hidden as two of the eleven shapes inside the forge's Glass Block,
+and they share the business glass upgrade, so hitting one with a hammer turns it into a wood plug.
+
+- **Craftable on its own:** a new **Stained Glass** entry at the forge. Pick the plate or the centered plate from the shape menu (hold Reload), like other variant blocks. Same cost as the vanilla Glass Block (12 glass, 5 lead, 5 clay; 3 crushed sand, 5 scrap lead, 1 clay with the forge-without-smelting sandbox option).
+- **No more wood:** the hammer now upgrades stained glass to **Bulletproof Stained Glass**, which keeps the stained look, for one Bulletproof Glass Block (the item vanilla uses to repair bulletproof glass). It has the vanilla bulletproof glass HP and material and is repaired the same way.
+- The bulletproof stained plates are also in the forge's Bulletproof Glass Block shape menu, so you can craft them directly.
+- Only the stained panels change. Plain business and industrial glass still upgrade to wood as in vanilla.
+- Change the costs in `Config/recipes.xml`, and the upgrade item in `Config/blocks.xml`.
+
+**Changelog**
+- 1.0.0: first version.
 
 ---
 ## Honk Door Fix
