@@ -1,0 +1,74 @@
+<configs>
+	<!--
+		Vanilla has two stained glass panels, stainedGlassPlate and stainedGlassCTRPlate (texture
+		596). They are only reachable as two of the eleven shapes inside the forge's "Glass Block",
+		and they inherit the business glass upgrade, which turns a glass window into a wood plug
+		(woodShapes:plate / plainWoodWindowPlugCTRPlate) for 4 wood. That is why a hammer turns them
+		into wood.
+	-->
+
+	<!-- A Stained Glass entry of its own, with just the two stained shapes. -->
+	<append xpath="/blocks">
+		<block name="stainedGlassBlockVariantHelper">
+			<property name="Extends" value="stainedGlassPlate" />
+			<property name="CreativeMode" value="Player" />
+			<property name="CustomIcon" value="stainedGlassPlate" />
+			<property name="ItemTypeIcon" value="all_blocks" />
+			<property name="DescriptionKey" value="blockVariantHelperGroupDesc" />
+			<property name="SelectAlternates" value="true" />
+			<property name="PlaceAltBlockValue" value="stainedGlassPlate,stainedGlassCTRPlate" />
+			<property name="SortOrder1" value="U200" />
+			<property name="SortOrder2" value="0001" />
+			<property name="Group" value="Building,advBuilding" />
+			<property name="FilterTags" value="MC_playerBlocks,SC_playerHelpers" />
+			<property name="SoundPickup" value="glass_misc_grab" />
+			<property name="SoundPlace" value="glass_misc_place" />
+		</block>
+
+		<!--
+			Bulletproof stained glass: the vanilla bulletproof plates (same HP, material and repair
+			item) with the stained glass texture. Damaged ones are repaired with a Bulletproof Glass
+			Block, like vanilla bulletproof glass.
+		-->
+		<block name="stainedGlassBulletproofPlate">
+			<property name="Extends" value="glassBulletproofPlate" />
+			<property name="Texture" value="596" />
+			<property name="LightOpacity" value="4" />
+			<property name="SortOrder2" value="0310" />
+		</block>
+		<block name="stainedGlassBulletproofCTRPlate">
+			<property name="Extends" value="glassBulletproofCTRPlate" />
+			<property name="Texture" value="596" />
+			<property name="LightOpacity" value="4" />
+			<property name="SortOrder2" value="0311" />
+		</block>
+	</append>
+
+	<!-- Craft the bulletproof ones directly too: they are added to the forge's Bulletproof Glass Block. -->
+	<csv xpath="/blocks/block[@name='glassBulletproofBlockVariantHelper']/property[@name='PlaceAltBlockValue']/@value" delim="," op="add">stainedGlassBulletproofPlate,stainedGlassBulletproofCTRPlate</csv>
+
+	<!--
+		Hammer upgrade: stained glass -> bulletproof stained glass for one Bulletproof Glass Block
+		(the vanilla bulletproof repair item, already on the hammer's upgrade list), instead of wood.
+		Set on the stained blocks themselves, so plain business glass still upgrades to wood as in
+		vanilla.
+	-->
+	<append xpath="/blocks/block[@name='stainedGlassPlate']">
+		<property class="UpgradeBlock">
+			<property name="ToBlock" value="stainedGlassBulletproofPlate" />
+			<property name="Item" value="glassBulletproofBlockVariantHelper" />
+			<property name="ItemCount" value="1" />
+			<property name="UpgradeHitCount" value="4" />
+		</property>
+		<property name="UpgradeSound" value="glass_misc_place" />
+	</append>
+	<append xpath="/blocks/block[@name='stainedGlassCTRPlate']">
+		<property class="UpgradeBlock">
+			<property name="ToBlock" value="stainedGlassBulletproofCTRPlate" />
+			<property name="Item" value="glassBulletproofBlockVariantHelper" />
+			<property name="ItemCount" value="1" />
+			<property name="UpgradeHitCount" value="4" />
+		</property>
+		<property name="UpgradeSound" value="glass_misc_place" />
+	</append>
+</configs>

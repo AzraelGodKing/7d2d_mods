@@ -105,6 +105,13 @@
     "nexus_file_id": ""
   },
   {
+    "modKey": "stained-glass",
+    "modDir": "StainedGlass",
+    "zipName": "AzraelStainedGlass",
+    "nexus_mod_id": "",
+    "nexus_file_id": ""
+  },
+  {
     "modKey": "no-ding-sound",
     "modDir": "NoDingSound",
     "zipName": "AzraelNoDingSound",
