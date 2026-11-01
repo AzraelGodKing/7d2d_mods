@@ -1,0 +1,16 @@
+{
+  "slug": "storage-backpack",
+  "name": "Storage Backpack",
+  "game": "7-days-to-die",
+  "description": "A craftable backpack you set down and fill like a chest. Break it and it drops packed with everything still inside; place it anywhere to unpack. The server keeps the contents, so nothing is lost or duplicated. Server only - players install nothing.",
+  "version": "1.0.0",
+  "screenshots": [],
+  "download": {
+    "file": "storage-backpack-1.0.0.zip"
+  },
+  "links": {
+    "steam": null,
+    "thunderstore": null,
+    "nexus": null
+  }
+}

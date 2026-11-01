@@ -1,0 +1,51 @@
+<configs>
+	<!--
+		Storage Backpack (AzraelStorageBackpack). The server finds both blocks by name.
+		azrStorageBackpack: place it and use it like a chest. Break it (any tool or weapon) and the server
+		  packs whatever is inside into one Packed Storage Backpack item. An empty one drops back as itself.
+		azrStorageBackpackPacked: the packed item. Place it anywhere and the server puts the contents back
+		  and turns it into a normal Storage Backpack. The contents live on the server until then.
+		No <drop> entries on purpose: the server does the dropping, so breaking one never gives two bags.
+	-->
+	<append xpath="/blocks">
+		<block name="azrStorageBackpack">
+			<property name="CreativeMode" value="Player"/>
+			<property name="Class" value="CompositeTileEntity"/>
+			<property class="CompositeFeatures">
+				<property class="TEFeatureStorage">
+					<property name="LootList" value="azrStorageBackpack"/>
+				</property>
+			</property>
+			<property name="DescriptionKey" value="azrStorageBackpackDesc"/>
+			<property name="CustomIcon" value="cntBackpack01"/>
+			<property name="Material" value="Mcloth"/>
+			<property name="Shape" value="ModelEntity"/>
+			<property name="Model" value="@:Entities/LootContainers/backpack01Prefab.prefab"/>
+			<property name="LightOpacity" value="0"/>
+			<property name="GndAlign" value="1"/>
+			<property name="WaterFlow" value="permitted"/>
+			<property name="Collide" value="melee,bullet,arrow,rocket"/>
+			<property name="Place" value="TowardsPlacerInverted"/>
+			<property name="AllowedRotations" value="Basic90"/>
+			<property name="StabilitySupport" value="false"/>
+			<property name="MaxDamage" value="100"/>
+			<property name="Stacknumber" value="10"/>
+			<property name="EconomicValue" value="40"/>
+			<property name="SoundPlace" value="cratewood_place"/>
+			<property name="Group" value="Basics,Building"/>
+			<property name="SortOrder1" value="B113"/>
+			<property name="SortOrder2" value="1750"/>
+			<property name="FilterTags" value="MC_playerBlocks,SC_decor"/>
+		</block>
+		<block name="azrStorageBackpackPacked">
+			<property name="Extends" value="azrStorageBackpack"/>
+			<property name="CreativeMode" value="None"/>
+			<property name="DescriptionKey" value="azrStorageBackpackPackedDesc"/>
+			<property name="CustomIconTint" value="E0B050"/>
+			<property name="Stacknumber" value="1"/>
+			<property name="SellableToTrader" value="false"/>
+			<property name="NoScrapping" value="true"/>
+			<property name="EconomicValue" value="0"/>
+		</block>
+	</append>
+</configs>
