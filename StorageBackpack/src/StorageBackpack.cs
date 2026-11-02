@@ -104,8 +104,17 @@ public static class Packs
     {
         Vector3i pos = storage.ToWorldPos();
         ItemStack[] items = storage.ItemGrid.CloneItems();
+        // No packed backpacks inside packed backpacks (1.0.2): they come out and drop next to it instead,
+        // otherwise nesting gives unlimited storage in one inventory slot. Empty backpacks are plain items and stay.
+        var nested = new List<ItemStack>();
         bool any = false;
-        foreach (ItemStack s in items) if (s != null && !s.IsEmpty()) { any = true; break; }
+        for (int i = 0; i < items.Length; i++)
+        {
+            ItemStack s = items[i];
+            if (s == null || s.IsEmpty()) continue;
+            if (s.itemValue.type == PackedType) { nested.Add(s); items[i] = ItemStack.Empty.Clone(); continue; }
+            any = true;
+        }
 
         ItemValue drop;
         string id = null;
@@ -128,6 +137,8 @@ public static class Packs
         EntityPlayer p = CurrentChanger;
         if (p != null && (p.GetPosition() - at).sqrMagnitude < 15f * 15f) at = p.GetPosition() + new Vector3(0f, 0.5f, 0f);
         GameManager.Instance.ItemDropServer(new ItemStack(drop, 1), at, Vector3.zero, -1, DropLifetime);
+        foreach (ItemStack n in nested)
+            GameManager.Instance.ItemDropServer(n, at, new Vector3(0.5f, 0f, 0.5f), -1, DropLifetime);
 
         if (id != null)
             Log.Out($"{AzraelStorageBackpack.Tag} Packed backpack at {pos} into {id}" + (p != null ? $" for {p.EntityName}" : "") + ".");
