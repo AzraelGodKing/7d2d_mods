@@ -9,9 +9,10 @@ using UnityEngine;
 //
 // Pack:   the backpack block is removed. Instead of the vanilla loot bag, the server saves the contents to a
 //         record file in the save folder.
-//         - Broken by a player with a melee tool (or a harvesting gun): the game itself puts the plain backpack
-//           into that player's inventory (blocks without a Destroy drop are harvested whole), so the record is
-//           kept for that player and comes back the next time they place any Storage Backpack (1.0.3).
+//         - Broken by a player with a melee tool (or a harvesting gun): the game itself puts the block into that
+//           player's inventory (blocks without a Destroy drop are harvested whole). A backpack with things in it
+//           is the "(Packed)" block (swapped when it's closed, 1.0.4), so they get a Packed item; the record is
+//           kept for that player and comes back when they place a Packed backpack.
 //         - Anything else (zombie, explosion, a gun that doesn't harvest): the server drops one "Packed Storage
 //           Backpack" item whose metadata holds only the record id. An empty backpack drops as itself.
 // Unpack: a player places a packed backpack. Placement is client-side and the block change carries no item
@@ -173,7 +174,10 @@ public static class Packs
         // Broken up close by a player whose hit harvests: the game puts the plain backpack in their inventory.
         // Only the normal block is harvested whole (the packed block has a count-0 Destroy drop).
         string owner = OwnerKey(p);
-        if (owner != null && bvOld.type == BlockType && dist2 < 6f * 6f && WillHarvest(p))
+        // The game hands over the block as it is: the packed block when it holds things (see SyncType). If it was
+        // still the plain block with things in it (filled and broken while open), fall through and drop it packed.
+        bool harvest = owner != null && dist2 < 6f * 6f && WillHarvest(p);
+        if (harvest && (!any || bvOld.type == PackedType))
         {
             // The game puts the plain backpack in their inventory; keep the contents for them.
             int count = 0;
@@ -187,7 +191,7 @@ public static class Packs
             foreach (ItemStack n in nested)
                 GameManager.Instance.ItemDropServer(n, at, new Vector3(0.5f, 0f, 0.5f), -1, DropLifetime);
             if (count > 0)
-                Tell(p, $"Packed {count} stack(s). Place a Storage Backpack to unpack them." +
+                Tell(p, $"Packed {count} stack(s). Place the Storage Backpack (Packed) to unpack them." +
                         (nested.Count > 0 ? $" {nested.Count} packed backpack(s) inside dropped at your feet." : ""));
             else if (nested.Count > 0)
                 Tell(p, $"{nested.Count} packed backpack(s) inside dropped at your feet.");
@@ -221,35 +225,52 @@ public static class Packs
 
     public static void Unpack(Vector3i pos, BlockValue placed, EntityPlayer player)
     {
-        World world = GameManager.Instance.World;
         string id = HeldPackId(player);
         ItemStack[] items = id != null ? PackStore.Take(id) : null;
+        if (items == null && id != null)
+            Log.Warning($"{AzraelStorageBackpack.Tag} No contents found for packed backpack {id} placed at {pos} (already unpacked?).");
 
-        // Turn the packed block into a normal backpack (same rotation). The empty storage carries over.
-        BlockValue normal = Block.GetBlockValue(BlockName);
-        normal.rotation = placed.rotation;
-        normal.meta = placed.meta;
-        world.SetBlockRPC(pos, normal);
+        // A Packed item without an id came back to its owner's inventory: take the newest set kept for them.
+        bool owned = false;
+        if (items == null && id == null)
+        {
+            string owner = OwnerKey(player);
+            if (owner != null) { items = PackStore.TakeNewestOwned(owner, out id); owned = items != null; }
+        }
 
         if (items == null)
         {
-            if (id != null) Log.Warning($"{AzraelStorageBackpack.Tag} No contents found for packed backpack {id} placed at {pos} (already unpacked?).");
+            // Nothing to unpack: it's just an empty backpack.
+            SetType(pos, placed, BlockType);
             return;
         }
 
         Fill(pos, items, id, player);
+        if (owned)
+        {
+            int left = PackStore.OwnedCount(OwnerKey(player));
+            Tell(player, "Unpacked your backpack." + (left > 0 ? $" {left} more packed: place another Storage Backpack (Packed)." : ""));
+        }
     }
 
-    // A plain Storage Backpack placed by a player who has contents kept for them: put the newest set in it.
-    public static void UnpackOwned(Vector3i pos, EntityPlayer player)
+    static void SetType(Vector3i pos, BlockValue current, int type)
     {
-        string owner = OwnerKey(player);
-        if (owner == null) return;
-        ItemStack[] items = PackStore.TakeNewestOwned(owner, out string id);
-        if (items == null) return;
-        Fill(pos, items, id, player);
-        int left = PackStore.OwnedCount(owner);
-        Tell(player, "Unpacked your backpack." + (left > 0 ? $" {left} more packed: place another Storage Backpack." : ""));
+        if (current.type == type) return;
+        BlockValue bv = new BlockValue((uint)type);
+        bv.rotation = current.rotation;
+        bv.meta = current.meta;
+        GameManager.Instance.World.SetBlockRPC(pos, bv);
+    }
+
+    // Keep the block type in step with what is inside: plain when empty, Packed when not. Run when the last
+    // player closes it, so breaking it hands the right item back (the game harvests the block as it is).
+    public static void SyncType(TEFeatureStorage storage)
+    {
+        World world = GameManager.Instance.World;
+        Vector3i pos = storage.ToWorldPos();
+        BlockValue bv = world.GetBlock(pos);
+        if (!IsOurs(bv.type)) return;
+        SetType(pos, bv, storage.IsEmpty() ? BlockType : PackedType);
     }
 
     static void Fill(Vector3i pos, ItemStack[] items, string id, EntityPlayer player)
@@ -494,11 +515,10 @@ public static class Patch_ChangeBlocks
         if (packed < 0) return;
         foreach (BlockChangeInfo c in _blocksToChange)
         {
-            if (!c.bChangeBlockValue || c.blockValue.ischild) continue;
-            if (c.blockValue.type != packed && c.blockValue.type != normal) continue;
+            if (!c.bChangeBlockValue || c.blockValue.ischild || c.blockValue.type != packed) continue;
             if (!c.blockValueRef.TryGetBlockPos(out Vector3i pos)) continue;
             int old = __instance.World.GetBlock(pos).type;
-            if (old == packed || old == normal) continue; // damage, rotation, or our own packed -> normal swap
+            if (old == packed || old == normal) continue; // damage, rotation, or our own plain <-> packed swap
             (__state ??= new List<Vector3i>()).Add(pos);
         }
     }
@@ -514,7 +534,6 @@ public static class Patch_ChangeBlocks
             {
                 BlockValue bv = __instance.World.GetBlock(pos);
                 if (bv.type == Packs.PackedType) Packs.Unpack(pos, bv, changer);
-                else if (bv.type == Packs.BlockType && changer != null) Packs.UnpackOwned(pos, changer);
             }
             catch (Exception e)
             {
@@ -527,6 +546,18 @@ public static class Patch_ChangeBlocks
     {
         Packs.CurrentChanger = null;
         return __exception;
+    }
+}
+
+// Last player closed it: match the block type to the contents.
+[HarmonyPatch(typeof(TEFeatureStorage), nameof(TEFeatureStorage.OnUnlockedServer))]
+public static class Patch_StorageClosed
+{
+    static void Postfix(TEFeatureStorage __instance)
+    {
+        if (!Packs.IsServer) return;
+        try { Packs.SyncType(__instance); }
+        catch (Exception e) { Log.Error($"{AzraelStorageBackpack.Tag} Type sync failed: {e}"); }
     }
 }
 
