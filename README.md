@@ -22,7 +22,7 @@ Small mods for 7 Days to Die. Every mod builds against **V3.4** (b6), and each o
 | [Spawn Tuner](#spawn-tuner) | Code (Harmony) | Server only | 1.1.0 |
 | [Slot Lock Fix](#slot-lock-fix) | Code (Harmony) | Players only | 1.0.0 |
 | [K9 Death Sound](#k9-death-sound) | XML (+ optional own clip) | Server; players optional | 1.1.0 |
-| [Storage Backpack](#storage-backpack) | Code (Harmony) + XML | Server only | 1.0.3 |
+| [Storage Backpack](#storage-backpack) | Code (Harmony) + XML | Server only | 1.0.4 |
 
 Ideas not built yet are kept in [docs/ideas.md](docs/ideas.md).
 
@@ -600,9 +600,10 @@ new blocks, recipe and text when they join.
 
 A craftable **Storage Backpack** (10 leather, 20 cloth, 2 duct tape, no workbench) that you set down
 and fill like a chest (48 slots). To move it, **break it** up close with a melee tool or your fists
-(100 HP). It goes **back into your inventory** and the server keeps everything that was in it. Place
-any Storage Backpack again and it's all back inside (newest first if you packed more than one). You
-get a private chat message when it packs and unpacks.
+(100 HP). It goes **back into your inventory**: as a **Storage Backpack (Packed)** if it had things
+in it, or a plain one if it was empty. The server keeps the contents; place the Packed backpack and
+it's all back inside (newest first if you packed more than one). You get a private chat message when
+it packs and unpacks.
 
 If something else breaks it (a zombie, an explosion, a gun that doesn't harvest), it drops where it
 stood as a **Storage Backpack (Packed)** with the contents inside. Whoever places that one gets them.
@@ -610,7 +611,7 @@ stood as a **Storage Backpack (Packed)** with the contents inside. Whoever place
 - Contents keep everything: quality, durability, mods, dyes, ammo counts.
 - The packed backpack can be carried, dropped, stored or given to a friend; whoever places it gets the contents.
 - A dropped packed backpack stays on the ground for 24 hours (vanilla drops: 1 minute to 1 hour).
-- Contents kept for a player are theirs: giving a friend the plain backpack doesn't give them the contents.
+- Contents that went back to your inventory are yours: a friend who places your Packed backpack gets an empty one. A Packed backpack dropped on the ground (zombie, explosion, gun) belongs to whoever places it.
 - Packed backpacks don't stack, can't be sold to traders and can't be scrapped.
 - No backpacks inside backpacks: a packed backpack can't go inside another one. If one is inside when you break a backpack, it drops next to it (still packed, contents safe). Empty backpacks can go inside, they are plain items.
 - Drone Automation's Auto-Loot drones leave both backpack items alone, on the ground and in containers (no need to add them to `/dai`).
@@ -634,6 +635,7 @@ Change the size in `Config/loot.xml` (`size="8,6"`), the recipe in `Config/recip
 whatever no longer fits as a loot bag.
 
 **Changelog**
+- 1.0.4: a backpack with things in it comes back as a Storage Backpack (Packed), not the plain one. So it no longer stacks with empty backpacks, drops out when it's inside another backpack you pack, and can't be scrapped. A placed backpack turns into the Packed block when you close it with things inside.
 - 1.0.3: breaking a backpack with a melee tool puts it back in your inventory (the game does that itself); the server keeps the contents for you and refills the next Storage Backpack you place. Chat messages say what was packed and unpacked.
 - 1.0.2: packed backpacks inside a backpack drop out next to it when it's packed instead of nesting (nesting gave unlimited storage in one slot).
 - 1.0.1: breaking a backpack no longer also puts a plain backpack in your inventory (the game does that for blocks without a Destroy drop, which duplicated empty backpacks). Drone Automation Auto-Loot drones no longer pick up backpacks.
