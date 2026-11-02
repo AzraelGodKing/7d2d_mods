@@ -21,7 +21,7 @@ Small mods for 7 Days to Die. Every mod builds against **V3.4** (b6), and each o
 | [Spawn Tuner](#spawn-tuner) | Code (Harmony) | Server only | 1.1.0 |
 | [Slot Lock Fix](#slot-lock-fix) | Code (Harmony) | Players only | 1.0.0 |
 | [K9 Death Sound](#k9-death-sound) | XML (+ optional own clip) | Server; players optional | 1.1.0 |
-| [Storage Backpack](#storage-backpack) | Code (Harmony) + XML | Server only | 1.0.0 |
+| [Storage Backpack](#storage-backpack) | Code (Harmony) + XML | Server only | 1.0.1 |
 
 Ideas not built yet are kept in [docs/ideas.md](docs/ideas.md).
 
@@ -592,6 +592,8 @@ back as itself.
 - If a zombie or an explosion breaks it, it packs too and drops where it stood, so nothing spills.
 - A dropped packed backpack stays on the ground for 24 hours (vanilla drops: 1 minute to 1 hour).
 - Packed backpacks don't stack, can't be sold to traders and can't be scrapped.
+- Drone Automation's Auto-Loot drones leave both backpack items alone, on the ground and in containers (no need to add them to `/dai`).
+- The game can't put an item straight into your inventory from the server, so the backpack drops at your feet; press E to pick it up.
 
 **How it stays dupe-safe.** Vanilla places blocks on the client and sends only the block, never the
 item, so the contents can't live inside the item. The server keeps them instead: packing saves the
@@ -612,6 +614,7 @@ Change the size in `Config/loot.xml` (`size="8,6"`), the recipe in `Config/recip
 whatever no longer fits as a loot bag.
 
 **Changelog**
+- 1.0.1: breaking a backpack no longer also puts a plain backpack in your inventory (the game does that for blocks without a Destroy drop, which duplicated empty backpacks). Drone Automation Auto-Loot drones no longer pick up backpacks.
 - 1.0.0: first version.
 
 ---

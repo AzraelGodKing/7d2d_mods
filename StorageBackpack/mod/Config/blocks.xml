@@ -5,7 +5,8 @@
 		  packs whatever is inside into one Packed Storage Backpack item. An empty one drops back as itself.
 		azrStorageBackpackPacked: the packed item. Place it anywhere and the server puts the contents back
 		  and turns it into a normal Storage Backpack. The contents live on the server until then.
-		No <drop> entries on purpose: the server does the dropping, so breaking one never gives two bags.
+		The server does the dropping. The Destroy drop with count 0 is there on purpose: a block with no Destroy
+		drop is put straight into the breaker's inventory by the game, which gave a second backpack (1.0.0 bug).
 	-->
 	<append xpath="/blocks">
 		<block name="azrStorageBackpack">
@@ -36,6 +37,7 @@
 			<property name="SortOrder1" value="B113"/>
 			<property name="SortOrder2" value="1750"/>
 			<property name="FilterTags" value="MC_playerBlocks,SC_decor"/>
+			<drop event="Destroy" name="resourceCloth" count="0"/>
 		</block>
 		<block name="azrStorageBackpackPacked">
 			<property name="Extends" value="azrStorageBackpack"/>
@@ -46,6 +48,7 @@
 			<property name="SellableToTrader" value="false"/>
 			<property name="NoScrapping" value="true"/>
 			<property name="EconomicValue" value="0"/>
+			<drop event="Destroy" name="resourceCloth" count="0"/>
 		</block>
 	</append>
 </configs>

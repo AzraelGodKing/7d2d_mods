@@ -31,6 +31,7 @@ public class AzraelStorageBackpack : IModApi
     {
         try { PackStore.PurgeUsed(); }
         catch (Exception e) { Log.Warning($"{Tag} Could not clean old records: {e.Message}"); }
+        DroneGuard.TryPatch();
     }
 }
 
@@ -269,6 +270,64 @@ public static class PackStore
         DateTime cutoff = DateTime.UtcNow.AddDays(-7);
         foreach (string f in Directory.GetFiles(UsedDir, "*.bin"))
             if (File.GetLastWriteTimeUtc(f) < cutoff) File.Delete(f);
+    }
+}
+
+// Drone Automation (tehAon) Auto-Loot drones vacuum up dropped items, packed backpacks included, which can end
+// with one in the drone and one in the player's inventory. Keep drones off both backpack items, on the ground and
+// in containers. Optional: does nothing without Drone Automation. Same hooks Drone Loot Filter uses.
+public static class DroneGuard
+{
+    static bool done;
+
+    public static void TryPatch()
+    {
+        if (done) return;
+        done = true;
+        Type vac = null;
+        foreach (var a in AppDomain.CurrentDomain.GetAssemblies())
+        {
+            if (a.GetName().Name != "DroneAutomation") continue;
+            try { foreach (var t in a.GetTypes()) if (t.Name == "VacuumCore") vac = t; }
+            catch (Exception e) { Log.Warning($"{AzraelStorageBackpack.Tag} Could not read Drone Automation: {e.Message}"); }
+        }
+        if (vac == null) return;
+        var h = new Harmony("azrael.storagebackpack.drone");
+        int hooked = 0;
+        var settled = AccessTools.Method(vac, "IsSettledLoot");
+        if (settled != null && settled.ReturnType == typeof(bool) && HasParam(settled, "_item", typeof(EntityItem)))
+        {
+            h.Patch(settled, postfix: new HarmonyMethod(typeof(DroneGuard), nameof(SettledPost)));
+            hooked++;
+        }
+        var absorb = AccessTools.Method(vac, "Absorb");
+        if (absorb != null && absorb.ReturnType == typeof(bool) && HasParam(absorb, "_moving", typeof(ItemStack)))
+        {
+            h.Patch(absorb, prefix: new HarmonyMethod(typeof(DroneGuard), nameof(AbsorbPre)));
+            hooked++;
+        }
+        if (hooked == 2) Log.Out($"{AzraelStorageBackpack.Tag} Drone Automation found: Auto-Loot drones leave Storage Backpacks alone.");
+        else Log.Warning($"{AzraelStorageBackpack.Tag} Drone Automation found but its Auto-Loot changed ({hooked}/2 hooks); drones may still pick up packed backpacks.");
+    }
+
+    static bool HasParam(System.Reflection.MethodInfo m, string name, Type type)
+    {
+        foreach (var p in m.GetParameters()) if (p.Name == name && p.ParameterType == type) return true;
+        return false;
+    }
+
+    static bool IsBackpack(ItemStack s) => s != null && !s.IsEmpty() && Packs.IsOurs(s.itemValue.type);
+
+    public static void SettledPost(EntityItem _item, ref bool __result)
+    {
+        if (__result && _item != null && IsBackpack(_item.itemStack)) __result = false;
+    }
+
+    public static bool AbsorbPre(ItemStack _moving, ref bool __result)
+    {
+        if (!IsBackpack(_moving)) return true;
+        __result = false;
+        return false;
     }
 }
 
