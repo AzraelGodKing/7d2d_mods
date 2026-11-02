@@ -474,10 +474,11 @@ public static partial class Thralls
             {
                 if (!IsAdmin(me)) { Tell(me, "Admins only."); break; }
                 string sub = arg ?? "who";
-                string usage = "/thrall admin who | list <player> | release <player> <n> | limit <player> <owned> <active> | give <from> <to> | heal|revive|tp <player> <n|all> | log [n] | banword list|add|remove <word> | ui [player]";
+                string usage = "/thrall admin who | list <player> | release <player> <n> | limit <player> <owned> <active> | give <from> <to> | heal|revive|tp <player> <n|all> | log [n] | banword list|add|remove <word> | ui [player] | webhook [reload|test|on|off]";
                 if (sub == "log") { AuditCommand(me, a); break; }
                 if (sub == "banword") { BanwordCommand(me, a); break; }
                 if (sub == "ui") { AdminUiCommand(me, a); break; }
+                if (sub == "webhook") { WebhookCommand(me, a); break; }
                 if (AdminCare(me, sub, a)) { Audit(me, "admin " + string.Join(" ", a, 2, a.Length - 2)); break; }
                 if (sub == "who")
                 {

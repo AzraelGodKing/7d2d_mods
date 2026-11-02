@@ -1,4 +1,69 @@
-# Copy this file to webhook.txt and put your Discord webhook URL on the line below.
-# Bait posts rare tames, level milestones (WebhookLevelStep) and evolutions there.
-# Without webhook.txt, Bait uses the Webhook= line of Blood Moon Sound's discord.txt if that mod is installed.
-# https://discord.com/api/webhooks/...
+# Bait Discord posts (SERVER ONLY - players can ignore this file).
+#
+# Bait can post rare tames, level milestones, evolutions, retirements and Alphas to a Discord channel.
+# To turn it on:
+#   1. In Discord: Channel settings > Integrations > Webhooks > New Webhook > Copy Webhook URL
+#   2. On the SERVER, copy this file to  webhook.txt  (same folder) and paste the URL after Webhook=
+#   3. Restart the server, or type  /thrall admin webhook reload  in game chat (admins)
+#   4. /thrall admin webhook  shows what is posted, and  /thrall admin webhook test  sends a test post
+#
+# Without a URL here, Bait uses the Webhook= line of Blood Moon Sound's discord.txt if that mod is installed
+# (the settings below still apply). Keep the URL private, and don't put webhook.txt in a zip you give players.
+#
+# In every message you can use:
+#   {player}   the player who tamed, owns or retired the thrall (the nearest player for an Alpha sighting)
+#   {thrall}   the thrall's name, or its creature type if it has none
+#   {creature} the creature type, like "Feral Wight"
+#   {level}    its level
+#   {kills}    its kills (level, evolve and retire messages)
+#   {from}     what it was before it evolved (evolve message)
+#   {alpha}    the Alpha's name (Alpha messages)
+#   {where}    how far and which way the Alpha is from {player}, like "85m NE" (Alpha sighting)
+#   \n         a new line
+# Discord formatting works too: **bold**, *italics*, emoji. Leave a message empty to use the standard one.
+
+Webhook=
+
+# off stops every Bait post, even when Blood Moon Sound's discord.txt has a webhook.
+# (Admins can also stop them in game with  /thrall admin webhook off .)
+Enabled=on
+
+# Name the posts are made under.
+BotName=Bait
+
+
+# ---- TAMES --------------------------------------------------------------------------------
+# rare = radiated, charged, infernal, bosses and demolishers only, all = every tame, off = none.
+PostTames=rare
+
+# Only post tames of this level or more (0 = any level).
+TameMinLevel=0
+
+MsgTame=🧟 **{player}** tamed a **{creature}** (level {level})!
+
+
+# ---- LEVELS ---------------------------------------------------------------------------------
+# Post when a thrall reaches a multiple of this level, like 50, 100, 150 (0 = never).
+LevelEvery=50
+
+MsgLevel=⭐ **{thrall}** reached level {level} for **{player}** ({kills} kills).
+
+
+# ---- EVOLUTIONS AND RETIREMENTS -------------------------------------------------------------
+# A thrall evolved with /thrall evolve.
+Evolutions=on
+MsgEvolve=✨ **{player}**'s {from} evolved into **{thrall}**.
+
+# A thrall retired with /thrall retire.
+Retirements=on
+MsgRetire=**{player}** retired **{thrall}** after {kills} kills.
+
+
+# ---- ALPHAS -------------------------------------------------------------------------------
+# A named Alpha appeared near a player (AlphaEveryDays in AzraelBait.cfg).
+AlphaSightings=on
+MsgAlpha=**Alpha:** An Alpha roams: {alpha} the {creature}, level {level}, {where} of {player}. Only Feast Bait tames it.
+
+# Someone tamed an Alpha (this replaces the tame post for it).
+AlphaTames=on
+MsgAlphaTamed=**Alpha tamed:** {player} tamed the Alpha {alpha} the {creature}.
