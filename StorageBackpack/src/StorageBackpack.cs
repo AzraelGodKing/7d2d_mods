@@ -7,9 +7,13 @@ using UnityEngine;
 
 // Storage Backpack: a placeable storage block that can be carried with its contents. Server only.
 //
-// Pack:   the backpack block is removed (broken by anyone, or anything). Instead of the vanilla loot bag, the
-//         server saves the contents to a record file in the save folder and drops one "Packed Storage
-//         Backpack" item whose metadata holds only the record id. An empty backpack drops as itself.
+// Pack:   the backpack block is removed. Instead of the vanilla loot bag, the server saves the contents to a
+//         record file in the save folder.
+//         - Broken by a player with a melee tool (or a harvesting gun): the game itself puts the plain backpack
+//           into that player's inventory (blocks without a Destroy drop are harvested whole), so the record is
+//           kept for that player and comes back the next time they place any Storage Backpack (1.0.3).
+//         - Anything else (zombie, explosion, a gun that doesn't harvest): the server drops one "Packed Storage
+//           Backpack" item whose metadata holds only the record id. An empty backpack drops as itself.
 // Unpack: a player places a packed backpack. Placement is client-side and the block change carries no item
 //         data, so the server reads the record id from the item that player is holding (the client sends the
 //         held item, metadata included, whenever it changes). It swaps the block for a normal backpack, puts
@@ -70,6 +74,50 @@ public static class Packs
     // The player whose block changes the server is applying right now (set around GameManager.ChangeBlocks).
     [ThreadStatic] public static EntityPlayer CurrentChanger;
 
+    // Stable per-player key (platform id) for records kept for a player.
+    public static string OwnerKey(EntityPlayer player)
+    {
+        if (player == null) return null;
+        PersistentPlayerData ppd = GameManager.Instance.persistentPlayers?.GetPlayerDataFromEntityID(player.entityId);
+        return ppd?.PrimaryId?.CombinedString;
+    }
+
+    static ItemStack HeldStack(EntityPlayer player)
+    {
+        if (!(player is EntityPlayerLocal) && Held.TryGetValue(player.entityId, out ItemStack sent)) return sent;
+        return player.inventory?.holdingItemStack;
+    }
+
+    // Will the game harvest the broken block into this player's inventory? Melee (bare hands included) always
+    // harvests; guns only when the weapon supports harvesting. Used to decide between "back in your inventory"
+    // and "drop a packed backpack", so the player never gets both or neither.
+    public static bool WillHarvest(EntityPlayer player)
+    {
+        if (player == null) return false;
+        ItemStack held = HeldStack(player);
+        if (held == null || held.IsEmpty()) return true; // bare hands are a melee item
+        ItemAction[] actions = held.itemValue.ItemClass?.Actions;
+        if (actions == null) return false;
+        for (int i = 0; i < actions.Length && i < 2; i++)
+        {
+            ItemAction a = actions[i];
+            if (a is ItemActionMelee || a is ItemActionDynamic) return true;
+            if (a is ItemActionRanged r && r.bSupportHarvesting) return true;
+        }
+        return false;
+    }
+
+    public static void Tell(EntityPlayer player, string msg)
+    {
+        if (player == null) return;
+        try
+        {
+            GameManager.Instance.ChatMessageServer(null, EChatType.Whisper, -1, "[ffc860][Backpack][-] " + msg,
+                new List<int> { player.entityId }, EMessageSender.None);
+        }
+        catch (Exception e) { Log.Warning($"{AzraelStorageBackpack.Tag} chat: {e.Message}"); }
+    }
+
     public static EntityPlayer ResolvePlayer(PlatformUserIdentifierAbs persistentPlayerId)
     {
         GameManager gm = GameManager.Instance;
@@ -116,6 +164,36 @@ public static class Packs
             any = true;
         }
 
+        // Drops go to the feet of the player who broke it when they are close, otherwise where it stood.
+        Vector3 at = pos.ToVector3() + new Vector3(0.5f, 0.5f, 0.5f);
+        EntityPlayer p = CurrentChanger;
+        float dist2 = p != null ? (p.GetPosition() - at).sqrMagnitude : float.MaxValue;
+        if (dist2 < 15f * 15f) at = p.GetPosition() + new Vector3(0f, 0.5f, 0f);
+
+        // Broken up close by a player whose hit harvests: the game puts the plain backpack in their inventory.
+        // Only the normal block is harvested whole (the packed block has a count-0 Destroy drop).
+        string owner = OwnerKey(p);
+        if (owner != null && bvOld.type == BlockType && dist2 < 6f * 6f && WillHarvest(p))
+        {
+            // The game puts the plain backpack in their inventory; keep the contents for them.
+            int count = 0;
+            if (any)
+            {
+                foreach (ItemStack s in items) if (s != null && !s.IsEmpty()) count++;
+                string kept = PackStore.Save(items, owner);
+                Log.Out($"{AzraelStorageBackpack.Tag} Packed backpack at {pos} into {kept} for {p.EntityName} (back on next placement).");
+            }
+            storage.SetEmpty();
+            foreach (ItemStack n in nested)
+                GameManager.Instance.ItemDropServer(n, at, new Vector3(0.5f, 0f, 0.5f), -1, DropLifetime);
+            if (count > 0)
+                Tell(p, $"Packed {count} stack(s). Place a Storage Backpack to unpack them." +
+                        (nested.Count > 0 ? $" {nested.Count} packed backpack(s) inside dropped at your feet." : ""));
+            else if (nested.Count > 0)
+                Tell(p, $"{nested.Count} packed backpack(s) inside dropped at your feet.");
+            return;
+        }
+
         ItemValue drop;
         string id = null;
         if (any)
@@ -131,11 +209,6 @@ public static class Packs
 
         // Empty the grid so the vanilla code that runs next drops no loot bag.
         storage.SetEmpty();
-
-        // Drop it at the feet of the player who broke it when they are close, otherwise where it stood.
-        Vector3 at = pos.ToVector3() + new Vector3(0.5f, 0.5f, 0.5f);
-        EntityPlayer p = CurrentChanger;
-        if (p != null && (p.GetPosition() - at).sqrMagnitude < 15f * 15f) at = p.GetPosition() + new Vector3(0f, 0.5f, 0f);
         GameManager.Instance.ItemDropServer(new ItemStack(drop, 1), at, Vector3.zero, -1, DropLifetime);
         foreach (ItemStack n in nested)
             GameManager.Instance.ItemDropServer(n, at, new Vector3(0.5f, 0f, 0.5f), -1, DropLifetime);
@@ -164,6 +237,24 @@ public static class Packs
             return;
         }
 
+        Fill(pos, items, id, player);
+    }
+
+    // A plain Storage Backpack placed by a player who has contents kept for them: put the newest set in it.
+    public static void UnpackOwned(Vector3i pos, EntityPlayer player)
+    {
+        string owner = OwnerKey(player);
+        if (owner == null) return;
+        ItemStack[] items = PackStore.TakeNewestOwned(owner, out string id);
+        if (items == null) return;
+        Fill(pos, items, id, player);
+        int left = PackStore.OwnedCount(owner);
+        Tell(player, "Unpacked your backpack." + (left > 0 ? $" {left} more packed: place another Storage Backpack." : ""));
+    }
+
+    static void Fill(Vector3i pos, ItemStack[] items, string id, EntityPlayer player)
+    {
+        World world = GameManager.Instance.World;
         TEFeatureStorage storage = (world.GetTileEntity(pos) as ITileEntity)?.GetSelfOrFeature<TEFeatureStorage>();
         if (storage == null)
         {
@@ -203,10 +294,14 @@ public static class PackStore
     static string Dir => Path.Combine(GameIO.GetSaveGameDir(), "AzraelStorageBackpack");
     static string UsedDir => Path.Combine(Dir, "used");
 
-    public static string Save(ItemStack[] items)
+    static readonly Regex Unsafe = new Regex("[^A-Za-z0-9_-]");
+    static string OwnerDir(string owner) => Path.Combine(Dir, "owners", Unsafe.Replace(owner, "_"));
+
+    public static string Save(ItemStack[] items, string owner = null)
     {
         string id = Guid.NewGuid().ToString("N");
-        Directory.CreateDirectory(Dir);
+        string dir = owner == null ? Dir : OwnerDir(owner);
+        Directory.CreateDirectory(dir);
         byte[] data;
         using (var ms = new MemoryStream())
         {
@@ -218,7 +313,7 @@ public static class PackStore
             }
             data = ms.ToArray();
         }
-        string path = Path.Combine(Dir, id + ".bin");
+        string path = Path.Combine(dir, id + ".bin");
         File.WriteAllBytes(path + ".tmp", data);
         File.Move(path + ".tmp", path);
         return id;
@@ -228,7 +323,31 @@ public static class PackStore
     public static ItemStack[] Take(string id)
     {
         if (string.IsNullOrEmpty(id) || !IdPattern.IsMatch(id)) return null;
-        string path = Path.Combine(Dir, id + ".bin");
+        return TakeFile(Path.Combine(Dir, id + ".bin"), id);
+    }
+
+    // Newest record kept for this player, read and retired. Null if none.
+    public static ItemStack[] TakeNewestOwned(string owner, out string id)
+    {
+        id = null;
+        string dir = OwnerDir(owner);
+        if (!Directory.Exists(dir)) return null;
+        string newest = null;
+        foreach (string f in Directory.GetFiles(dir, "*.bin"))
+            if (newest == null || File.GetLastWriteTimeUtc(f) > File.GetLastWriteTimeUtc(newest)) newest = f;
+        if (newest == null) return null;
+        id = Path.GetFileNameWithoutExtension(newest);
+        return TakeFile(newest, id);
+    }
+
+    public static int OwnedCount(string owner)
+    {
+        string dir = OwnerDir(owner);
+        return Directory.Exists(dir) ? Directory.GetFiles(dir, "*.bin").Length : 0;
+    }
+
+    static ItemStack[] TakeFile(string path, string id)
+    {
         if (!File.Exists(path)) return null;
 
         ItemStack[] items;
@@ -254,7 +373,10 @@ public static class PackStore
     public static List<(string id, bool used, DateTime saved)> List()
     {
         var list = new List<(string, bool, DateTime)>();
-        foreach (var (dir, used) in new[] { (Dir, false), (UsedDir, true) })
+        var dirs = new List<(string, bool)> { (Dir, false), (UsedDir, true) };
+        string owners = Path.Combine(Dir, "owners");
+        if (Directory.Exists(owners)) foreach (string d in Directory.GetDirectories(owners)) dirs.Add((d, false));
+        foreach (var (dir, used) in dirs)
         {
             if (!Directory.Exists(dir)) continue;
             foreach (string f in Directory.GetFiles(dir, "*.bin"))
@@ -269,9 +391,13 @@ public static class PackStore
     {
         if (string.IsNullOrEmpty(id) || !IdPattern.IsMatch(id)) return false;
         if (Exists(id)) return true;
-        string used = Path.Combine(UsedDir, id + ".bin");
-        if (!File.Exists(used)) return false;
-        File.Move(used, Path.Combine(Dir, id + ".bin"));
+        string from = Path.Combine(UsedDir, id + ".bin");
+        string owners = Path.Combine(Dir, "owners");
+        if (!File.Exists(from) && Directory.Exists(owners))
+            foreach (string d in Directory.GetDirectories(owners))
+                if (File.Exists(Path.Combine(d, id + ".bin"))) { from = Path.Combine(d, id + ".bin"); break; }
+        if (!File.Exists(from)) return false;
+        File.Move(from, Path.Combine(Dir, id + ".bin"));
         return true;
     }
 
@@ -364,13 +490,15 @@ public static class Patch_ChangeBlocks
         __state = null;
         if (!Packs.IsServer || __instance.World == null || _blocksToChange == null) return;
         Packs.CurrentChanger = Packs.ResolvePlayer(persistentPlayerId);
-        int packed = Packs.PackedType;
+        int packed = Packs.PackedType, normal = Packs.BlockType;
         if (packed < 0) return;
         foreach (BlockChangeInfo c in _blocksToChange)
         {
-            if (!c.bChangeBlockValue || c.blockValue.type != packed || c.blockValue.ischild) continue;
+            if (!c.bChangeBlockValue || c.blockValue.ischild) continue;
+            if (c.blockValue.type != packed && c.blockValue.type != normal) continue;
             if (!c.blockValueRef.TryGetBlockPos(out Vector3i pos)) continue;
-            if (__instance.World.GetBlock(pos).type == packed) continue; // damage or rotation, not a placement
+            int old = __instance.World.GetBlock(pos).type;
+            if (old == packed || old == normal) continue; // damage, rotation, or our own packed -> normal swap
             (__state ??= new List<Vector3i>()).Add(pos);
         }
     }
@@ -386,6 +514,7 @@ public static class Patch_ChangeBlocks
             {
                 BlockValue bv = __instance.World.GetBlock(pos);
                 if (bv.type == Packs.PackedType) Packs.Unpack(pos, bv, changer);
+                else if (bv.type == Packs.BlockType && changer != null) Packs.UnpackOwned(pos, changer);
             }
             catch (Exception e)
             {
