@@ -1,14 +1,12 @@
 <configs>
 	<!--
 		Storage Backpack (AzraelStorageBackpack). The server finds both blocks by name.
-		azrStorageBackpack: place it and use it like a chest. Break it up close with a melee tool and it goes back
-		  in your inventory; the server keeps the contents for you until you place a backpack again. Broken any
-		  other way (zombie, explosion, gun), it drops as one Packed Storage Backpack holding the contents.
-		azrStorageBackpackPacked: the packed item. Place it anywhere and the server puts the contents back
-		  and turns it into a normal Storage Backpack. The contents live on the server until then.
-		azrStorageBackpack has no Destroy drop on purpose: the game then puts it straight into the inventory of the
-		player who breaks it (melee), and the server keeps the contents for that player until they place a backpack.
-		The packed block has a count-0 Destroy drop so breaking it never gives a second item; the server drops it.
+		azrStorageBackpack: an empty backpack. azrStorageBackpackPacked: a backpack with things in it. The server
+		  swaps a placed backpack between the two when the last player closes it, and places a Packed item as Packed.
+		Neither block has a Destroy drop, on purpose: the game then puts the block itself into the inventory of the
+		  player who breaks it with melee. Break a full one and you get a Packed backpack; the server keeps its
+		  contents for you and puts them back when you place it. Broken any other way (zombie, explosion, gun),
+		  the server drops a Packed backpack that carries an id to its contents, for whoever places it.
 	-->
 	<append xpath="/blocks">
 		<block name="azrStorageBackpack">
@@ -49,7 +47,6 @@
 			<property name="SellableToTrader" value="false"/>
 			<property name="NoScrapping" value="true"/>
 			<property name="EconomicValue" value="0"/>
-			<drop event="Destroy" name="resourceCloth" count="0"/>
 		</block>
 	</append>
 </configs>
