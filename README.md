@@ -8,6 +8,7 @@ Small mods for 7 Days to Die. Every mod builds against **V3.4** (b6), and each o
 | [Quest Disconnect Fix](#quest-disconnect-fix) | Code (Harmony) | Server only | 1.1.0 |
 | [Honk Door Fix](#honk-door-fix) | Code (Harmony) | Server only | 1.0.0 |
 | [Craftable Canvas Signs](#craftable-canvas-signs) | XML only | Server only | 1.0.0 |
+| [Craftable Stained Glass](#craftable-stained-glass) | XML only | Server only | 1.0.0 |
 | [Speedometer](#speedometer) | Code + UI | Players only | 1.1.1 |
 | [Craft From Chests](#craft-from-chests) | Code (Harmony) | Players only | 1.2.0 |
 | [Upgrade Bench](#upgrade-bench) | Code + XML | Server **and** every player | 1.0.2 |
@@ -21,6 +22,7 @@ Small mods for 7 Days to Die. Every mod builds against **V3.4** (b6), and each o
 | [Spawn Tuner](#spawn-tuner) | Code (Harmony) | Server only | 1.1.0 |
 | [Slot Lock Fix](#slot-lock-fix) | Code (Harmony) | Players only | 1.0.0 |
 | [K9 Death Sound](#k9-death-sound) | XML (+ optional own clip) | Server; players optional | 1.1.0 |
+| [Storage Backpack](#storage-backpack) | Code (Harmony) + XML | Server only | 1.0.3 |
 
 Ideas not built yet are kept in [docs/ideas.md](docs/ideas.md).
 
@@ -153,6 +155,22 @@ signs (just the picture, no frame; the Doggo's billboard is made of these).
 - You pick the size when you place it (up to 13 blocks wide), so a big billboard costs the same as a small sign.
 - Tougher than vanilla: 10x the HP (wood 225 -> 2250, iron 300 -> 3000). Only the picture signs change, not other wood or metal blocks. Adjust `MaxDamage` in `Config/blocks.xml`.
 - Change the costs in `Config/recipes.xml`.
+
+---
+## Craftable Stained Glass
+
+**Server only (XML); players install nothing.** The stained glass panels you find in churches and
+other POIs. In vanilla they are hidden as two of the eleven shapes inside the forge's Glass Block,
+and they share the business glass upgrade, so hitting one with a hammer turns it into a wood plug.
+
+- **Craftable on its own:** a new **Stained Glass** entry at the forge. Pick the plate or the centered plate from the shape menu (hold Reload), like other variant blocks. Same cost as the vanilla Glass Block (12 glass, 5 lead, 5 clay; 3 crushed sand, 5 scrap lead, 1 clay with the forge-without-smelting sandbox option).
+- **No more wood:** the hammer now upgrades stained glass to **Bulletproof Stained Glass**, which keeps the stained look, for one Bulletproof Glass Block (the item vanilla uses to repair bulletproof glass). It has the vanilla bulletproof glass HP and material and is repaired the same way.
+- The bulletproof stained plates are also in the forge's Bulletproof Glass Block shape menu, so you can craft them directly.
+- Only the stained panels change. Plain business and industrial glass still upgrade to wood as in vanilla.
+- Change the costs in `Config/recipes.xml`, and the upgrade item in `Config/blocks.xml`.
+
+**Changelog**
+- 1.0.0: first version.
 
 ---
 ## Honk Door Fix
@@ -571,6 +589,54 @@ top of the world's options, and a setting you never change keeps the world's val
 
 **Changelog**
 - 1.1.0: wandering hordes (`HordeFrequency`, `HordeSize`), presets (`spawns save/load/presets`, ships `chill` and `hard`), ramps by game day (`spawns ramp`), and `spawns` shows zombies/animals alive and the next wandering horde.
+- 1.0.0: first version.
+
+---
+
+## Storage Backpack
+
+**Server only.** Players install nothing and can leave EasyAntiCheat on; the server sends them the
+new blocks, recipe and text when they join.
+
+A craftable **Storage Backpack** (10 leather, 20 cloth, 2 duct tape, no workbench) that you set down
+and fill like a chest (48 slots). To move it, **break it** up close with a melee tool or your fists
+(100 HP). It goes **back into your inventory** and the server keeps everything that was in it. Place
+any Storage Backpack again and it's all back inside (newest first if you packed more than one). You
+get a private chat message when it packs and unpacks.
+
+If something else breaks it (a zombie, an explosion, a gun that doesn't harvest), it drops where it
+stood as a **Storage Backpack (Packed)** with the contents inside. Whoever places that one gets them.
+
+- Contents keep everything: quality, durability, mods, dyes, ammo counts.
+- The packed backpack can be carried, dropped, stored or given to a friend; whoever places it gets the contents.
+- A dropped packed backpack stays on the ground for 24 hours (vanilla drops: 1 minute to 1 hour).
+- Contents kept for a player are theirs: giving a friend the plain backpack doesn't give them the contents.
+- Packed backpacks don't stack, can't be sold to traders and can't be scrapped.
+- No backpacks inside backpacks: a packed backpack can't go inside another one. If one is inside when you break a backpack, it drops next to it (still packed, contents safe). Empty backpacks can go inside, they are plain items.
+- Drone Automation's Auto-Loot drones leave both backpack items alone, on the ground and in containers (no need to add them to `/dai`).
+
+**How it stays dupe-safe.** Vanilla places blocks on the client and sends only the block, never the
+item, so the contents can't live inside the item. The server keeps them instead: packing saves the
+contents to `<save>/AzraelStorageBackpack/<id>.bin`, and the packed item carries only that id. When a
+player places a packed backpack, the server reads the id from the item that player is holding, puts
+the contents back, and retires the record. An id can unpack only once, so copying an item can't copy
+its contents. Unpacked records move to `used/` and are deleted after 7 days.
+
+| Server console | What it does |
+|---|---|
+| `sbp` | List stored backpacks, newest first (`active` = still packed, `used` = unpacked in the last 7 days) |
+| `sbp give <player> <id>` | Drop a packed backpack with that id at an online player (name or entity id). Brings back a lost one; a `used` id is made active again. |
+
+Every pack and unpack is in the server log (`[StorageBackpack] Packed backpack at ... into <id> for <name>`), which is where to find the id.
+
+Change the size in `Config/loot.xml` (`size="8,6"`), the recipe in `Config/recipes.xml`, and the HP in
+`Config/blocks.xml` (`MaxDamage`). Don't shrink the size on a running server: placed backpacks drop
+whatever no longer fits as a loot bag.
+
+**Changelog**
+- 1.0.3: breaking a backpack with a melee tool puts it back in your inventory (the game does that itself); the server keeps the contents for you and refills the next Storage Backpack you place. Chat messages say what was packed and unpacked.
+- 1.0.2: packed backpacks inside a backpack drop out next to it when it's packed instead of nesting (nesting gave unlimited storage in one slot).
+- 1.0.1: breaking a backpack no longer also puts a plain backpack in your inventory (the game does that for blocks without a Destroy drop, which duplicated empty backpacks). Drone Automation Auto-Loot drones no longer pick up backpacks.
 - 1.0.0: first version.
 
 ---

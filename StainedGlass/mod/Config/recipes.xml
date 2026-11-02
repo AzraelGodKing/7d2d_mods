@@ -1,0 +1,25 @@
+<configs>
+	<!--
+		Same cost as the vanilla forge "Glass Block" (one craft = one panel). There are two recipes
+		because vanilla has two: the normal forge one (smelted units) and the one the "forge without
+		smelting" sandbox option uses (raw resources). Change the counts here to rebalance.
+	-->
+	<append xpath="/recipes">
+		<recipe name="stainedGlassBlockVariantHelper" count="1" material_based="true" craft_area="forge" is_trackable="false" tags="use_smelter,perkAdvancedEngineering">
+			<ingredient name="unit_glass" count="12"/>
+			<ingredient name="unit_lead" count="5"/>
+			<ingredient name="unit_clay" count="5"/>
+			<effect_group>
+				<passive_effect name="CraftingIngredientCount" operation="perc_add" level="0,1,2,3,4" value=".25,.25,.25,.12,.06" tags="unit_clay,unit_glass,unit_lead"/>
+			</effect_group>
+		</recipe>
+		<recipe name="stainedGlassBlockVariantHelper" count="1" craft_area="forge" is_trackable="false" tags="replace_smelter,perkAdvancedEngineering">
+			<ingredient name="resourceCrushedSand" count="3"/>
+			<ingredient name="resourceScrapLead" count="5"/>
+			<ingredient name="resourceClayLump" count="1"/>
+			<effect_group>
+				<passive_effect name="CraftingIngredientCount" operation="perc_add" level="0,1,2,3,4" value=".25,.25,.25,.12,.06" tags="resourceCrushedSand,resourceScrapLead"/>
+			</effect_group>
+		</recipe>
+	</append>
+</configs>

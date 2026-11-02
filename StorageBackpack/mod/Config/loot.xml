@@ -1,0 +1,9 @@
+<configs>
+	<!-- 48 slots, same as a wooden writable crate. Change size="8,6" to resize (keep it the same on every update:
+	     shrinking it drops whatever no longer fits next to the backpack). -->
+	<append xpath="/lootcontainers">
+		<lootcontainer name="azrStorageBackpack" count="0" size="8,6" sound_open="UseActions/open_backpack" sound_close="UseActions/close_backpack" loot_quality_template="qualBaseTemplate">
+			<item name="cobweb" count="0"/>
+		</lootcontainer>
+	</append>
+</configs>
