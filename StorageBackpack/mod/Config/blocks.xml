@@ -1,12 +1,14 @@
 <configs>
 	<!--
 		Storage Backpack (AzraelStorageBackpack). The server finds both blocks by name.
-		azrStorageBackpack: place it and use it like a chest. Break it (any tool or weapon) and the server
-		  packs whatever is inside into one Packed Storage Backpack item. An empty one drops back as itself.
+		azrStorageBackpack: place it and use it like a chest. Break it up close with a melee tool and it goes back
+		  in your inventory; the server keeps the contents for you until you place a backpack again. Broken any
+		  other way (zombie, explosion, gun), it drops as one Packed Storage Backpack holding the contents.
 		azrStorageBackpackPacked: the packed item. Place it anywhere and the server puts the contents back
 		  and turns it into a normal Storage Backpack. The contents live on the server until then.
-		The server does the dropping. The Destroy drop with count 0 is there on purpose: a block with no Destroy
-		drop is put straight into the breaker's inventory by the game, which gave a second backpack (1.0.0 bug).
+		azrStorageBackpack has no Destroy drop on purpose: the game then puts it straight into the inventory of the
+		player who breaks it (melee), and the server keeps the contents for that player until they place a backpack.
+		The packed block has a count-0 Destroy drop so breaking it never gives a second item; the server drops it.
 	-->
 	<append xpath="/blocks">
 		<block name="azrStorageBackpack">
@@ -37,7 +39,6 @@
 			<property name="SortOrder1" value="B113"/>
 			<property name="SortOrder2" value="1750"/>
 			<property name="FilterTags" value="MC_playerBlocks,SC_decor"/>
-			<drop event="Destroy" name="resourceCloth" count="0"/>
 		</block>
 		<block name="azrStorageBackpackPacked">
 			<property name="Extends" value="azrStorageBackpack"/>

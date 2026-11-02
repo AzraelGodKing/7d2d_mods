@@ -2,8 +2,8 @@
 <xml>
 	<Name value="AzraelStorageBackpack" />
 	<DisplayName value="Storage Backpack" />
-	<Description value="Server-side. A craftable Storage Backpack you place and fill like a chest. Break it and it drops as a Packed Storage Backpack with everything still inside; place that anywhere to unpack it. The server keeps the contents, so nothing is lost or duplicated. Players do not install this mod." />
+	<Description value="Server-side. A craftable Storage Backpack you place and fill like a chest. Break it and it goes back in your inventory; place it again and everything is back inside. The server keeps the contents, so nothing is lost or duplicated. Players do not install this mod." />
 	<Author value="Azrael" />
-	<Version value="1.0.2" />
+	<Version value="1.0.3" />
 	<Website value="https://github.com/AzraelGodKing/7d2d_mods" />
 </xml>
