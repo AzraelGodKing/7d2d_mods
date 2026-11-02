@@ -117,5 +117,12 @@
     "zipName": "AzraelNoDingSound",
     "nexus_mod_id": "",
     "nexus_file_id": ""
+  },
+  {
+    "modKey": "storage-backpack",
+    "modDir": "StorageBackpack",
+    "zipName": "AzraelStorageBackpack",
+    "nexus_mod_id": "",
+    "nexus_file_id": ""
   }
 ]

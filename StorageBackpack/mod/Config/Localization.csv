@@ -1,0 +1,5 @@
+Key,File,Type,UsedInMainMenu,NoTranslate,english
+azrStorageBackpack,blocks,Container,,,Storage Backpack
+azrStorageBackpackDesc,blocks,Container,,,"A backpack you can set down and fill like a chest (48 slots).\nBreak it to pack it up: it drops as a Packed Storage Backpack with everything still inside. An empty one drops as itself."
+azrStorageBackpackPacked,blocks,Container,,,Storage Backpack (Packed)
+azrStorageBackpackPackedDesc,blocks,Container,,,"A packed Storage Backpack. Everything that was in it is kept safe on the server.\nPlace it anywhere to unpack it. It can be carried, dropped or given to a friend, and whoever places it gets the contents."

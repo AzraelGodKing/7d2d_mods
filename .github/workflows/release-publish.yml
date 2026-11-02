@@ -43,6 +43,7 @@ on:
           - craftable-signs
           - stained-glass
           - no-ding-sound
+          - storage-backpack
       create_github_release:
         description: "Create a versioned GitHub Release (tag Name-vVERSION, not marked latest)"
         required: true

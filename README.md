@@ -22,6 +22,7 @@ Small mods for 7 Days to Die. Every mod builds against **V3.4** (b6), and each o
 | [Spawn Tuner](#spawn-tuner) | Code (Harmony) | Server only | 1.1.0 |
 | [Slot Lock Fix](#slot-lock-fix) | Code (Harmony) | Players only | 1.0.0 |
 | [K9 Death Sound](#k9-death-sound) | XML (+ optional own clip) | Server; players optional | 1.1.0 |
+| [Storage Backpack](#storage-backpack) | Code (Harmony) + XML | Server only | 1.0.2 |
 
 Ideas not built yet are kept in [docs/ideas.md](docs/ideas.md).
 
@@ -588,6 +589,51 @@ top of the world's options, and a setting you never change keeps the world's val
 
 **Changelog**
 - 1.1.0: wandering hordes (`HordeFrequency`, `HordeSize`), presets (`spawns save/load/presets`, ships `chill` and `hard`), ramps by game day (`spawns ramp`), and `spawns` shows zombies/animals alive and the next wandering horde.
+- 1.0.0: first version.
+
+---
+
+## Storage Backpack
+
+**Server only.** Players install nothing and can leave EasyAntiCheat on; the server sends them the
+new blocks, recipe and text when they join.
+
+A craftable **Storage Backpack** (10 leather, 20 cloth, 2 duct tape, no workbench) that you set down
+and fill like a chest (48 slots). To move it, **break it** with any tool or weapon (100 HP). It drops
+at your feet as a **Storage Backpack (Packed)** with everything still inside. Place the packed one
+anywhere and it unpacks into a normal backpack with all of its contents. An empty backpack just drops
+back as itself.
+
+- Contents keep everything: quality, durability, mods, dyes, ammo counts.
+- The packed backpack can be carried, dropped, stored or given to a friend; whoever places it gets the contents.
+- If a zombie or an explosion breaks it, it packs too and drops where it stood, so nothing spills.
+- A dropped packed backpack stays on the ground for 24 hours (vanilla drops: 1 minute to 1 hour).
+- Packed backpacks don't stack, can't be sold to traders and can't be scrapped.
+- No backpacks inside backpacks: a packed backpack can't go inside another one. If one is inside when you break a backpack, it drops next to it (still packed, contents safe). Empty backpacks can go inside, they are plain items.
+- Drone Automation's Auto-Loot drones leave both backpack items alone, on the ground and in containers (no need to add them to `/dai`).
+- The game can't put an item straight into your inventory from the server, so the backpack drops at your feet; press E to pick it up.
+
+**How it stays dupe-safe.** Vanilla places blocks on the client and sends only the block, never the
+item, so the contents can't live inside the item. The server keeps them instead: packing saves the
+contents to `<save>/AzraelStorageBackpack/<id>.bin`, and the packed item carries only that id. When a
+player places a packed backpack, the server reads the id from the item that player is holding, puts
+the contents back, and retires the record. An id can unpack only once, so copying an item can't copy
+its contents. Unpacked records move to `used/` and are deleted after 7 days.
+
+| Server console | What it does |
+|---|---|
+| `sbp` | List stored backpacks, newest first (`active` = still packed, `used` = unpacked in the last 7 days) |
+| `sbp give <player> <id>` | Drop a packed backpack with that id at an online player (name or entity id). Brings back a lost one; a `used` id is made active again. |
+
+Every pack and unpack is in the server log (`[StorageBackpack] Packed backpack at ... into <id> for <name>`), which is where to find the id.
+
+Change the size in `Config/loot.xml` (`size="8,6"`), the recipe in `Config/recipes.xml`, and the HP in
+`Config/blocks.xml` (`MaxDamage`). Don't shrink the size on a running server: placed backpacks drop
+whatever no longer fits as a loot bag.
+
+**Changelog**
+- 1.0.2: packed backpacks inside a backpack drop out next to it when it's packed instead of nesting (nesting gave unlimited storage in one slot).
+- 1.0.1: breaking a backpack no longer also puts a plain backpack in your inventory (the game does that for blocks without a Destroy drop, which duplicated empty backpacks). Drone Automation Auto-Loot drones no longer pick up backpacks.
 - 1.0.0: first version.
 
 ---
