@@ -34,6 +34,18 @@ The commands work from chat (/thrall ...) and from the console (F1, `thrall ...`
 
 **Look-at HP:** aim at one of your thralls, or any wild zombie or animal, and a toast shows its name, level and HP (up to 25 m, `LookHp`, `LookHpWild`, `LookHpRange`, `LookHpAngle`). Server side only, no client mod. It is a toast under the crosshair area, not a floating bar.
 
+## New in 1.13.0
+
+**Discord posts you control.** `webhook.txt` (copy `webhook.example.txt`) now holds the webhook URL plus what gets posted and how it reads:
+- `Enabled=off` stops every Bait post, even when Blood Moon Sound's `discord.txt` has a webhook. Admins can also type `/thrall admin webhook off` (and `on`) in game; that sets `WebhookEvents` and is saved with the world.
+- `PostTames=rare|all|off` (rare is radiated, charged, infernal, bosses and demolishers, as before) and `TameMinLevel` to skip low-level tames.
+- `LevelEvery` (0 = no level posts; without it, `WebhookLevelStep` from `AzraelBait.cfg` is used), `Evolutions`, `Retirements`, `AlphaSightings`, `AlphaTames` on or off.
+- Every post has its own message (`MsgTame`, `MsgLevel`, `MsgEvolve`, `MsgRetire`, `MsgAlpha`, `MsgAlphaTamed`) with `{player}`, `{thrall}`, `{creature}`, `{level}`, `{kills}`, `{from}`, `{alpha}`, `{where}` and `\n`. `BotName` sets the name posts are made under.
+- `/thrall admin webhook` shows where the URL came from and what is posted, `reload` re-reads `webhook.txt` without a restart, `test` sends a test post.
+- A taming of an Alpha now posts only the Alpha message, not a tame post as well.
+- An old `webhook.txt` that is only the URL keeps working with the standard posts.
+- The azraelsmods.com page for Bait builds the whole file for you.
+
 ## New in 1.12.1
 
 - Fix: a thrall (a dog, reported by Kats) died walking over its owner's spike traps. Spikes, barbed wire, blade traps and electric fence shocks no longer hurt thralls, and spikes no longer wear down or break when a thrall steps on them (`TrapsSpareThralls`, on by default). Set it to false to have traps hurt thralls again.
@@ -70,6 +82,7 @@ The commands work from chat (/thrall ...) and from the console (F1, `thrall ...`
 - `/thrall config cap.<class> <n>`: the most of one creature a player may hold (`cap.animalBear 2`). `TamingResistPct` gives radiated, charged and infernal creatures a chance to break off a meal.
 - `/thrall admin log [n]`: the last admin and settings changes (also in `AzraelBaitAudit.log`). `/thrall admin banword add|remove|list <word>` and `NameMaxLength` keep thrall names clean.
 - `/thrall admin ui [player]` sends the player list and one player's thralls to the Bait UI admin window.
+- `/thrall admin webhook [reload|test|on|off]`: what Bait posts to Discord and where, re-read `webhook.txt`, send a test post, or stop and start every post (1.13.0).
 
 ## Baby animals
 
@@ -170,7 +183,7 @@ Set the meal counts with `RichBaitMeals` and `FeastBaitMeals`. `giveself azraelB
 - **Scout:** `/thrall scout <n>` sends a thrall that follows you 30 m ahead the way you look (`ScoutDistance`). It doesn't stop to fight. When it gets there (or after 20 s) you get a toast with how many hostiles are within 40 m of it (`ScoutRange`), how many are asleep, and the closest one's type, level, distance and direction from you. Then it comes back. Once every 30 s (`ScoutCooldownSeconds`).
 - **Evolution:** `/thrall evolve <n>` turns a zombie thrall of level 50 or more (`EvolveLevel`, 0 = off) into its next stronger version (walker to feral, feral to radiated, radiated to charged where that exists) for 3 Feast Bait (`EvolveFeastCost`). It keeps its level, name, perks and kills.
 - **Admin tools:** `/thrall admin heal|revive|tp <player> <n|all>` heals a player's thralls to full, revives downed ones, or brings the ones that follow them to their side (the player needs to be online for tp). The player gets a toast.
-- **Discord:** rare tames (radiated, charged, infernal, bosses), every 50th level (`WebhookLevelStep`) and evolutions are posted to Discord. Put the webhook URL in `webhook.txt` in this mod's folder (see `webhook.example.txt`). Without it, Bait uses the `Webhook=` line of Blood Moon Sound's `discord.txt`. `WebhookEvents=false` turns it off.
+- **Discord:** rare tames (radiated, charged, infernal, bosses), every 50th level (`WebhookLevelStep`) and evolutions are posted to Discord. Put the webhook URL in `webhook.txt` in this mod's folder (see `webhook.example.txt`). Without it, Bait uses the `Webhook=` line of Blood Moon Sound's `discord.txt`. `WebhookEvents=false` turns it off. Since 1.13.0 `webhook.txt` also picks which posts are sent and how they read (see New in 1.13.0).
 - `/thrall list` shows guards, patrols and perks. Each thrall now also remembers its deaths and when it was tamed (thralls tamed before 1.10.0 have no date).
 - For Bait UI: the taming helper record (`L|`), perks, guard, patrol, deaths, tame date, perk slots, evolution target and tether position on `T|`, and your blood moon mode on `S|`. `TamingHelper=false` stops the taming helper.
 

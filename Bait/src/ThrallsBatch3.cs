@@ -494,7 +494,7 @@ public static partial class Thralls
         DespawnLive(r.Id); list.Remove(r); dirty = true;
         CountStat(key, "retired", 1);
         Tell(me, Label(r) + " retired after " + r.Kills + " kills. You got " + reward + ".");
-        Webhook("**" + Esc(NameOfKey(key)) + "** retired **" + Esc(Label(r)) + "** after " + r.Kills + " kills.");
+        WebhookRetired(key, r);
     }
 
     // ------------------------------------------------------------------ S65 Alpha creatures
@@ -529,9 +529,10 @@ public static partial class Thralls
         int lvl = Math.Min(BaitConfig.MaxLevel, Math.Max(LevelOf(a.entityId), DayLevel(ClassName(a))) + BaitConfig.AlphaLevelBonus);
         levels[a.entityId] = lvl; ApplyMarker(a, lvl);
         PSet(ServerKey, "alphaDay", day.ToString());
-        string msg = "An Alpha roams: " + name + " the " + Pretty(ClassName(a)) + ", level " + lvl + ", " + Mathf.RoundToInt((a.position - p.position).magnitude) + "m " + Compass(p.position, a.position) + " of " + p.EntityName + ". Only Feast Bait tames it.";
+        string where = Mathf.RoundToInt((a.position - p.position).magnitude) + "m " + Compass(p.position, a.position);
+        string msg = "An Alpha roams: " + name + " the " + Pretty(ClassName(a)) + ", level " + lvl + ", " + where + " of " + p.EntityName + ". Only Feast Bait tames it.";
         try { GameManager.Instance.ChatMessageServer(null, EChatType.Global, -1, "[ff9933][Bait][-] " + msg, null, EMessageSender.Server); } catch (Exception e) { Dbg("alpha chat: " + e.Message); }
-        Webhook("**Alpha:** " + Esc(msg));
+        WebhookAlphaSeen(name, ClassName(a), lvl, where, p.EntityName);
         Log.Out("[Bait] " + msg);
     }
 
@@ -544,7 +545,7 @@ public static partial class Thralls
         CountStat(rec.OwnerKey, "alphas", 1);
         string msg = NameOfKey(rec.OwnerKey) + " tamed the Alpha " + name + " the " + Pretty(rec.ClassName) + ".";
         try { GameManager.Instance.ChatMessageServer(null, EChatType.Global, -1, "[ff9933][Bait][-] " + msg, null, EMessageSender.Server); } catch { }
-        Webhook("**Alpha tamed:** " + Esc(msg));
+        WebhookAlphaTamed(rec, name);
     }
 
     // ------------------------------------------------------------------ S67 taming resistance

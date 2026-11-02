@@ -7,7 +7,7 @@ using UnityEngine;
 using UnityEngine.Networking;
 
 // Roles (1.10.0): perks, guard posts, patrol routes, blood moon mode, the leaderboard, scouting, evolution, extra admin
-// tools, Discord webhook events and the taming helper feed for Bait UI. All server side.
+// tools, Discord webhook events (posts in ThrallsWebhook.cs) and the taming helper feed for Bait UI. All server side.
 public static partial class Thralls
 {
     // ------------------------------------------------------------------ perks
@@ -484,7 +484,7 @@ public static partial class Thralls
         DespawnLive(r.Id); nextSpawn.Remove(r.Id); nextSlow = 0f;
         Log.Out("[Bait] " + owner.EntityName + " evolved " + from + " into " + to + " (record " + r.Id + ")");
         Tell(me, Pretty(from) + " evolved into " + Label(r) + ".");
-        Webhook("✨ **" + Esc(owner.EntityName) + "**'s " + Esc(Pretty(from)) + " evolved into **" + Esc(Label(r)) + "**.");
+        WebhookEvolved(owner, from, r);
     }
 
     // ------------------------------------------------------------------ admin tools: heal, revive, tp
@@ -519,111 +519,6 @@ public static partial class Thralls
         Log.Out("[Bait] admin #" + me + " " + sub + " " + n + " thralls of " + tkey);
         if (target != null && n > 0) Notify(target.entityId, "An admin " + (sub == "revive" ? "revived" : sub == "heal" ? "healed" : "brought back") + " " + n + " of your thralls.");
         return true;
-    }
-
-    // ------------------------------------------------------------------ Discord webhook
-    // The URL comes from webhook.txt in this mod's folder (one line, the URL), or else from Blood Moon Sound's discord.txt.
-    static string webhookUrl;
-    static bool webhookRead;
-    static readonly List<UnityWebRequest> webSends = new List<UnityWebRequest>();
-
-    static string WebhookUrl()
-    {
-        if (webhookRead) return webhookUrl;
-        webhookRead = true;
-        try
-        {
-            string mod = BaitConfig.ModPath;
-            if (string.IsNullOrEmpty(mod)) return null;
-            string own = Path.Combine(mod, "webhook.txt");
-            if (File.Exists(own)) webhookUrl = UrlFrom(File.ReadAllLines(own));
-            if (webhookUrl == null)
-            {
-                foreach (string dir in Directory.GetDirectories(Path.GetDirectoryName(mod.TrimEnd('/', '\\'))))
-                {
-                    string f = Path.Combine(dir, "discord.txt");
-                    if (File.Exists(f)) { webhookUrl = UrlFrom(File.ReadAllLines(f)); if (webhookUrl != null) break; }
-                }
-            }
-            if (webhookUrl != null) Log.Out("[Bait] Discord webhook found: rare tames, level " + BaitConfig.WebhookLevelStep + "s and evolutions are posted.");
-        }
-        catch (Exception e) { Log.Warning("[Bait] webhook: " + e.Message); }
-        return webhookUrl;
-    }
-
-    static string UrlFrom(string[] lines)
-    {
-        foreach (string raw in lines)
-        {
-            string l = raw.Trim();
-            if (l.Length == 0 || l[0] == '#') continue;
-            if (l.StartsWith("webhook=", StringComparison.OrdinalIgnoreCase)) l = l.Substring(8).Trim();
-            if (l.StartsWith("https://", StringComparison.OrdinalIgnoreCase) && l.IndexOf("/api/webhooks/", StringComparison.OrdinalIgnoreCase) > 0) return l;
-        }
-        return null;
-    }
-
-    static string Esc(string s) { return (s ?? "").Replace("*", "\\*").Replace("_", "\\_").Replace("@", "@​"); }
-
-    static string Json(string s)
-    {
-        var sb = new StringBuilder("\"");
-        foreach (char c in s)
-        {
-            if (c == '"' || c == '\\') sb.Append('\\').Append(c);
-            else if (c == '\n') sb.Append("\\n");
-            else if (c < 32) sb.Append(' ');
-            else sb.Append(c);
-        }
-        return sb.Append('"').ToString();
-    }
-
-    static void Webhook(string text)
-    {
-        if (!BaitConfig.WebhookEvents) return;
-        string url = WebhookUrl();
-        if (url == null) return;
-        try
-        {
-            var req = new UnityWebRequest(url, "POST");
-            req.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes("{\"username\":\"Bait\",\"content\":" + Json(text) + ",\"allowed_mentions\":{\"parse\":[]}}"));
-            req.downloadHandler = new DownloadHandlerBuffer();
-            req.SetRequestHeader("Content-Type", "application/json");
-            req.timeout = 15;
-            req.SendWebRequest();   // async; finished ones are cleaned up by WebTick
-            webSends.Add(req);
-        }
-        catch (Exception e) { Log.Warning("[Bait] webhook post: " + e.Message); }
-    }
-
-    static void WebTick()
-    {
-        for (int i = webSends.Count - 1; i >= 0; i--)
-        {
-            var r = webSends[i];
-            if (!r.isDone) continue;
-            if (r.responseCode < 200 || r.responseCode >= 300) Log.Warning("[Bait] webhook post failed: " + (r.responseCode > 0 ? "HTTP " + r.responseCode : r.error));
-            r.Dispose();
-            webSends.RemoveAt(i);
-        }
-    }
-
-    static bool IsRare(string cls)
-    {
-        string c = (cls ?? "").ToLowerInvariant();
-        return TierOf(cls) >= 2 || c.Contains("boss") || c.Contains("demolition") || c.Contains("behemoth");
-    }
-
-    static void WebhookTamed(EntityPlayer owner, ThrallRecord r)
-    {
-        if (IsRare(r.ClassName)) Webhook("\U0001F9DF **" + Esc(owner.EntityName) + "** tamed a **" + Esc(Pretty(r.ClassName)) + "**" + (r.Level > 0 ? " (level " + r.Level + ")" : "") + "!");
-    }
-
-    static void WebhookLevel(ThrallRecord r)
-    {
-        int step = BaitConfig.WebhookLevelStep;
-        if (step > 0 && r.Level > 0 && r.Level % step == 0)
-            Webhook("⭐ **" + Esc(Label(r)) + "** reached level " + r.Level + " for **" + Esc(NameOfKey(r.OwnerKey)) + "** (" + r.Kills + " kills).");
     }
 
     // ------------------------------------------------------------------ taming helper (Bait UI)
