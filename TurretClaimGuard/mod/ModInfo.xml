@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xml>
+	<Name value="AzraelTurretClaimGuard" />
+	<DisplayName value="Turret Claim Guard" />
+	<Description value="Player turrets (auto, shotgun, M60, junk turret and junk sledge) no longer damage blocks inside your land claim or an ally's. Zombies still take full damage, and outside claims turrets work as in vanilla. Server only - players install nothing." />
+	<Author value="Azrael" />
+	<Version value="1.0.0" />
+	<Website value="https://github.com/AzraelGodKing/7d2d_mods" />
+</xml>

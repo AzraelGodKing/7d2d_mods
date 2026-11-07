@@ -35,6 +35,7 @@ $mods = @(
     @{ Dir = 'SpawnTuner';         Name = 'AzraelSpawnTuner';         Project = 'src/AzraelSpawnTuner.csproj' },
     @{ Dir = 'SlotLockFix';        Name = 'AzraelSlotLockFix';        Project = 'src/AzraelSlotLockFix.csproj' },
     @{ Dir = 'StorageBackpack';    Name = 'AzraelStorageBackpack';    Project = 'src/AzraelStorageBackpack.csproj' },
+    @{ Dir = 'TurretClaimGuard';   Name = 'AzraelTurretClaimGuard';   Project = 'src/AzraelTurretClaimGuard.csproj' },
     @{ Dir = 'CraftableSigns';     Name = 'AzraelCraftableSigns' },
     @{ Dir = 'StainedGlass';       Name = 'AzraelStainedGlass' },
     @{ Dir = 'NoDingSound';        Name = 'AzraelNoDingSound' },
