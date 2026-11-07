@@ -124,5 +124,12 @@
     "zipName": "AzraelStorageBackpack",
     "nexus_mod_id": "",
     "nexus_file_id": ""
+  },
+  {
+    "modKey": "turret-claim-guard",
+    "modDir": "TurretClaimGuard",
+    "zipName": "AzraelTurretClaimGuard",
+    "nexus_mod_id": "",
+    "nexus_file_id": ""
   }
 ]
