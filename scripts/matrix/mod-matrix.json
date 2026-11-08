@@ -138,5 +138,12 @@
     "zipName": "AzraelRepairPad",
     "nexus_mod_id": "",
     "nexus_file_id": ""
+  },
+  {
+    "modKey": "drag-spread",
+    "modDir": "DragSpread",
+    "zipName": "AzraelDragSpread",
+    "nexus_mod_id": "",
+    "nexus_file_id": ""
   }
 ]

@@ -1,0 +1,16 @@
+{
+  "slug": "drag-spread",
+  "name": "Drag Spread",
+  "game": "7-days-to-die",
+  "description": "Hold a stack on the cursor, then hold a mouse button and sweep over slots to spread it. Left-drag splits the stack evenly, right-drag puts 1 in each slot. Fills empty slots and tops up stacks of the same item, in every inventory window. Client-side: install on each player that wants it (EAC off).",
+  "version": "1.0.0",
+  "screenshots": [],
+  "download": {
+    "file": "drag-spread-1.0.0.zip"
+  },
+  "links": {
+    "steam": null,
+    "thunderstore": null,
+    "nexus": null
+  }
+}

@@ -24,6 +24,7 @@ Small mods for 7 Days to Die. Every mod builds against **V3.4** (b6), and each o
 | [K9 Death Sound](#k9-death-sound) | XML (+ optional own clip) | Server; players optional | 1.1.0 |
 | [Storage Backpack](#storage-backpack) | Code (Harmony) + XML | Server only | 1.0.4 |
 | [Turret Claim Guard](#turret-claim-guard) | Code (Harmony) | Server only | 1.0.0 |
+| [Drag Spread](#drag-spread) | Code (Harmony) | Players only | 1.0.0 |
 | [Repair Pad](#repair-pad) | Code (Harmony) + XML | Server only | 1.0.0 |
 
 Ideas not built yet are kept in [docs/ideas.md](docs/ideas.md).
@@ -681,6 +682,35 @@ How it works: turrets only fire on the server, and every shot ends in `ItemActio
 prefixes it, works out the turret's owner (junk turrets pass their own entity id; the placed turrets are
 tracked while `AutoTurretFireController.Fire` runs), asks the game's `World.GetLandClaimOwner` whether the
 block is in the owner's, an ally's or someone else's claim, and sets the block damage to 0 when it's protected.
+
+**Changelog**
+- 1.0.0: first version.
+
+## Drag Spread
+
+Click and drag a stack across inventory slots to spread it out.
+
+1. Pick up a stack so it is on the cursor (left-click it, or right-click for half).
+2. Hold a mouse button on a slot and sweep over the slots you want, then let go.
+   - **Left button:** the stack is split evenly over the slots. Odd items go one each to the first slots
+     you swept, so the whole stack is placed (unless the slots run out of room).
+   - **Right button:** 1 item goes into each slot. The rest stays on the cursor.
+3. Slots the drag will fill get a white border while you sweep.
+
+It fills empty slots and tops up stacks of the same item (up to the stack limit). It works in every
+inventory window: backpack, toolbelt, storage boxes, loot, vehicles, and workstation slots (fuel, tools and
+inputs only take what they allow). One drag can cross from the backpack into a storage box. Locked slots
+(lock timers, crafting) and quest items in containers are skipped, the same as a normal click.
+A plain click (press and release on one slot) works as in vanilla, and Shift-click is untouched.
+
+**Players only** (it is UI code), so each player who wants it installs it and needs EasyAntiCheat off.
+Players without it are not affected, and the server needs nothing: items placed in a container go through
+the game's normal container sync.
+
+How it works: a Harmony prefix on `XUiC_ItemStack.Update` watches the mouse. NGUI stops updating its hover
+target while a button is held, so the mod follows `UICamera.mouse0.current` (the slot under the mouse) to
+see which slots the drag crosses. On release it sets each slot's `ItemStack`, which fires the same
+`SlotChangedEvent` a normal click uses to write into the bag or container.
 
 **Changelog**
 - 1.0.0: first version.
