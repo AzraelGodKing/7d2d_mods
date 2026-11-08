@@ -10,6 +10,11 @@ from pathlib import Path
 VERSION = re.compile(r'<Version\s+value="([^"]+)"', re.I)
 DISPLAY = re.compile(r'<DisplayName\s+value="([^"]*)"', re.I)
 DESCRIPTION = re.compile(r'<Description\s+value="([^"]*)"', re.I)
+TRAILING_PARENS = re.compile(r"\s*\([^()]*\)\s*$")
+
+# Nexus v3 rejects CreateModFileVersionRequest.name past its max length (422).
+# The exact limit is not published; 50 keeps every name well inside it.
+NEXUS_NAME_MAX = 50
 
 
 def parse_version(about: str) -> str:
@@ -25,6 +30,25 @@ def parse_name(about: str) -> str:
 def parse_description(about: str) -> str:
     match = DESCRIPTION.search(about)
     return match.group(1).strip() if match else ""
+
+
+def nexus_file_name(name: str, version: str, limit: int = NEXUS_NAME_MAX) -> str:
+    """Name for the Nexus Files tab: "<name> <version>.zip", kept under `limit`.
+
+    Long ModInfo names drop trailing "(...)" notes first, then get cut on a
+    word boundary. The version and .zip suffix are always kept.
+    """
+    suffix = f" {version}.zip"
+    base = name.strip()
+    while len(base) + len(suffix) > limit and TRAILING_PARENS.search(base):
+        base = TRAILING_PARENS.sub("", base).strip()
+    room = limit - len(suffix)
+    if len(base) > room:
+        cut = base[:room].rstrip()
+        if " " in cut and not base[room:room + 1].isspace():
+            cut = cut.rsplit(" ", 1)[0]
+        base = cut.rstrip(" -:(,")
+    return f"{base}{suffix}"
 
 
 def write_github_output(path: Path, values: dict[str, str]) -> None:
@@ -61,6 +85,7 @@ def main() -> int:
     values = {
         "version": version,
         "display_name": name,
+        "nexus_file_name": nexus_file_name(name, version),
         "changelog_md": description,
         "changelog_bbcode": description,
     }

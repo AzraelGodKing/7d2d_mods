@@ -223,7 +223,7 @@ jobs:
           file_id: ${{ steps.matrix.outputs.nexus_file_id }}
           filename: ${{ steps.nexus_preflight.outputs.zip_path }}
           version: ${{ steps.meta.outputs.version }}
-          display_name: ${{ steps.meta.outputs.display_name }} ${{ steps.meta.outputs.version }}.zip
+          display_name: ${{ steps.meta.outputs.nexus_file_name }}
           description: |
             ${{ steps.meta.outputs.changelog_bbcode }}
 
@@ -243,7 +243,7 @@ jobs:
           file_id: ${{ steps.matrix.outputs.nexus_file_id }}
           filename: ${{ steps.nexus_preflight.outputs.zip_path }}
           version: ${{ steps.meta.outputs.version }}
-          display_name: ${{ steps.meta.outputs.display_name }} ${{ steps.meta.outputs.version }}.zip
+          display_name: ${{ steps.meta.outputs.nexus_file_name }}
           description: |
             ${{ steps.meta.outputs.changelog_bbcode }}
 
@@ -263,7 +263,7 @@ jobs:
           file_id: ${{ steps.matrix.outputs.nexus_file_id }}
           filename: ${{ steps.nexus_preflight.outputs.zip_path }}
           version: ${{ steps.meta.outputs.version }}
-          display_name: ${{ steps.meta.outputs.display_name }} ${{ steps.meta.outputs.version }}.zip
+          display_name: ${{ steps.meta.outputs.nexus_file_name }}
           description: |
             ${{ steps.meta.outputs.changelog_bbcode }}
 
@@ -287,7 +287,7 @@ jobs:
           file_id: ${{ steps.matrix.outputs.nexus_file_id }}
           filename: ${{ steps.nexus_preflight.outputs.zip_path }}
           version: ${{ steps.meta.outputs.version }}
-          display_name: ${{ steps.meta.outputs.display_name }} ${{ steps.meta.outputs.version }}.zip
+          display_name: ${{ steps.meta.outputs.nexus_file_name }}
           description: |
             ${{ steps.meta.outputs.changelog_bbcode }}
 
