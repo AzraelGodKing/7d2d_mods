@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xml>
+	<Name value="AzraelRepairPad" />
+	<DisplayName value="Repair Pad" />
+	<Description value="Server-side. A powered Repair Pad: step on it and it repairs every damaged block in your land claim, paid for with materials (or repair kits) from Repair Supply Chests in that claim. Players do not install this mod." />
+	<Author value="Azrael" />
+	<Version value="1.0.0" />
+	<Website value="https://github.com/AzraelGodKing/7d2d_mods" />
+</xml>
