@@ -1,0 +1,89 @@
+<configs>
+	<!--
+		Repair Pad (AzraelRepairPad). The server finds both blocks by name.
+		azrRepairPad: a powered pressure plate. Step on it and the server repairs every damaged block in the land
+		  claim it sits in (yours or an ally's), paying from Repair Supply Chests in that claim.
+		azrRepairPadChest: a steel crate the pad pulls supplies from. No other storage is ever touched.
+		Both use vanilla models, so the server sends these to players and nobody installs anything.
+	-->
+	<append xpath="/blocks">
+		<block name="azrRepairPad">
+			<property name="CreativeMode" value="Player"/>
+			<property name="Class" value="PressurePlate"/>
+			<property name="DescriptionKey" value="azrRepairPadDesc"/>
+			<property name="CustomIcon" value="pressureplate"/>
+			<property name="CustomIconTint" value="40C060"/>
+			<property name="TintColor" value="64,192,96"/>
+			<property name="RequiredPower" value="1"/>
+			<property name="UnlockedBy" value="craftingElectrician"/>
+			<property name="DisplayType" value="blockElectricalHardened"/>
+			<property name="Material" value="Mmetal_medium"/>
+			<property name="Shape" value="ModelEntity"/>
+			<property name="Model" value="@:Entities/Electrical/pressure_platePrefab.prefab"/>
+			<property name="MultiBlockDim" value="1,1,1"/>
+			<property name="ImposterExchange" value="imposterPlate" param1="143"/>
+			<property name="WaterFlow" value="permitted"/>
+			<property name="HandleFace" value="Bottom"/>
+			<property name="AllowedRotations" value="Basic90"/>
+			<property name="EconomicValue" value="124"/>
+			<property name="SoundPickup" value="triggerplate_grab"/>
+			<property name="SoundPlace" value="triggerplate_place"/>
+			<property name="TraderStageTemplate" value="electricTier1"/>
+			<property name="CanPickup" value="true"/>
+			<property name="TakeDelay" value="5"/>
+			<property class="RepairItems">
+				<property name="resourceForgedIron" value="8"/>
+				<property name="resourceMechanicalParts" value="1"/>
+				<property name="resourceElectricParts" value="1"/>
+			</property>
+			<drop event="Harvest" name="resourceElectricParts" count="1" tag="salvageHarvest"/>
+			<drop event="Harvest" name="resourceMechanicalParts" count="1" tag="salvageHarvest"/>
+			<drop event="Destroy" name="resourceScrapIron" count="5,20"/>
+			<drop event="Fall" name="scrapMetalPile" count="1" prob="0.75" stick_chance="1"/>
+			<property name="SortOrder1" value="B155"/>
+			<property name="SortOrder2" value="0008"/>
+			<property name="Group" value="Science,TCScience"/>
+			<property name="Tags" value="electricianSkill,scrap100"/>
+			<property name="FilterTags" value="MC_playerBlocks,SC_electrical,SC_traps"/>
+		</block>
+		<block name="azrRepairPadChest">
+			<property name="CreativeMode" value="Player"/>
+			<property name="Class" value="CompositeTileEntity"/>
+			<property class="CompositeFeatures">
+				<property class="TEFeatureStorage">
+					<property name="LootList" value="playerSteelWritableStorage"/>
+				</property>
+				<property class="TEFeatureLockable"/>
+				<property class="TEFeatureSignable">
+					<property name="FontSize" value="90"/>
+					<property name="LineCount" value="3"/>
+					<property name="LineWidth" value="0.55"/>
+					<property name="LineSpacing" value="1"/>
+				</property>
+			</property>
+			<property name="DescriptionKey" value="azrRepairPadChestDesc"/>
+			<property name="CustomIcon" value="cntSteelWritableCrate"/>
+			<property name="CustomIconTint" value="40C060"/>
+			<property name="Material" value="Msteel"/>
+			<property name="Shape" value="ModelEntity"/>
+			<property name="Model" value="@:Entities/LootContainers/steelWritableCratePrefab.prefab"/>
+			<property name="WaterFlow" value="permitted"/>
+			<property name="Path" value="solid"/>
+			<property name="Place" value="TowardsPlacerInverted"/>
+			<property name="AllowedRotations" value="Basic90"/>
+			<property name="EconomicValue" value="20"/>
+			<property name="MaxDamage" value="5000"/>
+			<property name="SoundPickup" value="cratesteel_grab"/>
+			<property name="SoundPlace" value="cratesteel_place"/>
+			<property class="RepairItems">
+				<property name="resourceForgedSteel" value="10"/>
+			</property>
+			<drop event="Destroy" name="resourceScrapIron" count="5,15"/>
+			<drop event="Fall" name="scrapMetalPile" count="1" prob="0.75" stick_chance="1"/>
+			<property name="SortOrder1" value="B106"/>
+			<property name="SortOrder2" value="0010"/>
+			<property name="Group" value="Basics,Building,advBuilding"/>
+			<property name="FilterTags" value="MC_playerBlocks,SC_decor"/>
+		</block>
+	</append>
+</configs>

@@ -1,0 +1,13 @@
+<configs>
+	<append xpath="/recipes">
+		<recipe name="azrRepairPad" count="1" craft_time="240" craft_area="workbench">
+			<ingredient name="resourceForgedSteel" count="2500"/>
+			<ingredient name="resourceMechanicalParts" count="250"/>
+			<ingredient name="resourceElectricParts" count="350"/>
+		</recipe>
+		<recipe name="azrRepairPadChest" count="1" craft_time="30" craft_area="workbench" always_unlocked="true">
+			<ingredient name="resourceForgedSteel" count="10"/>
+			<ingredient name="resourceMechanicalParts" count="5"/>
+		</recipe>
+	</append>
+</configs>

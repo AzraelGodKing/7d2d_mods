@@ -46,6 +46,7 @@ on:
           - storage-backpack
           - turret-claim-guard
           - drag-spread
+          - repair-pad
       create_github_release:
         description: "Create a versioned GitHub Release (tag Name-vVERSION, not marked latest)"
         required: true
