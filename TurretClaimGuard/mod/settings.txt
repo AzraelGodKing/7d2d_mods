@@ -1,0 +1,19 @@
+# Turret Claim Guard. The server reads this at startup and when you run:  tcg reload
+# Players do not install this mod.
+#
+# Which land claims stop a player's turrets from damaging blocks:
+#   own     = only the turret owner's own claim
+#   allies  = the owner's claim and the claims of their allies (friends list)
+#   any     = every active land claim, whoever owns it
+#   off     = vanilla, turrets damage blocks everywhere
+# A claim only counts while it is active (its owner hasn't been offline past the claim expiry).
+Protect=allies
+
+# Which turrets this applies to (on/off).
+# BlockTurrets = the placed auto turret, shotgun turret and M60 turret
+# JunkTurrets  = the robotics junk turret and junk sledge
+BlockTurrets=on
+JunkTurrets=on
+
+# Write a server log line every time a turret hit on a block is blocked (on/off). For testing only.
+LogBlocked=off

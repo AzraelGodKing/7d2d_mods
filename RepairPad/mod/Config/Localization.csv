@@ -1,0 +1,5 @@
+Key,File,Type,UsedInMainMenu,NoTranslate,english
+azrRepairPad,blocks,Block,,,Repair Pad
+azrRepairPadDesc,blocks,Block,,,"A powered pressure plate. Step on it and it repairs every damaged block in the land claim it sits in (yours or an ally's).\nRepairs are paid for from Repair Supply Chests in the same claim. No other storage is touched. If supplies run short it repairs what it can, most damaged first."
+azrRepairPadChest,blocks,Container,,,Repair Supply Chest
+azrRepairPadChestDesc,blocks,Container,,,"Holds the materials (or repair kits) a Repair Pad uses.\nPlace it anywhere inside the same land claim as the pad. Close it before you step on the pad, or the pad skips it."

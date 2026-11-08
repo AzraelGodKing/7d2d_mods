@@ -23,6 +23,9 @@ Small mods for 7 Days to Die. Every mod builds against **V3.4** (b6), and each o
 | [Slot Lock Fix](#slot-lock-fix) | Code (Harmony) | Players only | 1.0.0 |
 | [K9 Death Sound](#k9-death-sound) | XML (+ optional own clip) | Server; players optional | 1.1.0 |
 | [Storage Backpack](#storage-backpack) | Code (Harmony) + XML | Server only | 1.0.4 |
+| [Turret Claim Guard](#turret-claim-guard) | Code (Harmony) | Server only | 1.0.0 |
+| [Drag Spread](#drag-spread) | Code (Harmony) | Players only | 1.0.0 |
+| [Repair Pad](#repair-pad) | Code (Harmony) + XML | Server only | 1.0.0 |
 
 Ideas not built yet are kept in [docs/ideas.md](docs/ideas.md).
 
@@ -640,6 +643,124 @@ whatever no longer fits as a loot bag.
 - 1.0.3: breaking a backpack with a melee tool puts it back in your inventory (the game does that itself); the server keeps the contents for you and refills the next Storage Backpack you place. Chat messages say what was packed and unpacked.
 - 1.0.2: packed backpacks inside a backpack drop out next to it when it's packed instead of nesting (nesting gave unlimited storage in one slot).
 - 1.0.1: breaking a backpack no longer also puts a plain backpack in your inventory (the game does that for blocks without a Destroy drop, which duplicated empty backpacks). Drone Automation Auto-Loot drones no longer pick up backpacks.
+- 1.0.0: first version.
+
+---
+
+## Turret Claim Guard
+
+**Server only.** Players install nothing and can leave EasyAntiCheat on.
+
+Player turrets no longer chip away at your base. In vanilla every turret shot that misses, or a shotgun
+pellet that spreads into the wall a zombie is standing against, damages that block: the auto, shotgun and
+M60 turrets do 1 (x2 on wood), junk turret regular and AP ammo 1, the junk sledge 17 and up. With this mod
+a turret does **no block damage inside a protected land claim**. Zombies still take full damage, and
+outside claims turrets behave as in vanilla.
+
+Set what counts as protected in `settings.txt`:
+
+| Setting | Values | Default |
+|---|---|---|
+| `Protect` | `own` (the turret owner's claim), `allies` (owner's claim plus their allies'), `any` (every active claim), `off` | `allies` |
+| `BlockTurrets` | auto, shotgun and M60 turrets (`on`/`off`) | `on` |
+| `JunkTurrets` | junk turret and junk sledge (`on`/`off`) | `on` |
+| `LogBlocked` | log every blocked hit, for testing (`on`/`off`) | `off` |
+
+A claim only counts while it's active, the same as vanilla (its owner hasn't been offline past the claim
+expiry). "Allies" are the game's allies (friends list), the same ones a land claim already trusts.
+
+| Server console | What it does |
+|---|---|
+| `tcg` | Show what is protected |
+| `tcg reload` | Re-read `settings.txt`, takes effect right away |
+
+Good to know:
+- Turrets also can't set off explosive barrels that sit inside a protected claim (shooting the barrel is a block hit).
+- A block turret a player is steering by hand fires from that player's game, not the server, so those shots aren't covered. Automatic fire always is.
+
+How it works: turrets only fire on the server, and every shot ends in `ItemActionAttack.Hit`. The mod
+prefixes it, works out the turret's owner (junk turrets pass their own entity id; the placed turrets are
+tracked while `AutoTurretFireController.Fire` runs), asks the game's `World.GetLandClaimOwner` whether the
+block is in the owner's, an ally's or someone else's claim, and sets the block damage to 0 when it's protected.
+
+**Changelog**
+- 1.0.0: first version.
+
+## Drag Spread
+
+Click and drag a stack across inventory slots to spread it out.
+
+1. Pick up a stack so it is on the cursor (left-click it, or right-click for half).
+2. Hold a mouse button on a slot and sweep over the slots you want, then let go.
+   - **Left button:** the stack is split evenly over the slots. Odd items go one each to the first slots
+     you swept, so the whole stack is placed (unless the slots run out of room).
+   - **Right button:** 1 item goes into each slot. The rest stays on the cursor.
+3. Slots the drag will fill get a white border while you sweep.
+
+It fills empty slots and tops up stacks of the same item (up to the stack limit). It works in every
+inventory window: backpack, toolbelt, storage boxes, loot, vehicles, and workstation slots (fuel, tools and
+inputs only take what they allow). One drag can cross from the backpack into a storage box. Locked slots
+(lock timers, crafting) and quest items in containers are skipped, the same as a normal click.
+A plain click (press and release on one slot) works as in vanilla, and Shift-click is untouched.
+
+**Players only** (it is UI code), so each player who wants it installs it and needs EasyAntiCheat off.
+Players without it are not affected, and the server needs nothing: items placed in a container go through
+the game's normal container sync.
+
+How it works: a Harmony prefix on `XUiC_ItemStack.Update` watches the mouse. NGUI stops updating its hover
+target while a button is held, so the mod follows `UICamera.mouse0.current` (the slot under the mouse) to
+see which slots the drag crosses. On release it sets each slot's `ItemStack`, which fires the same
+`SlotChangedEvent` a normal click uses to write into the bag or container.
+
+**Changelog**
+- 1.0.0: first version.
+
+---
+
+## Repair Pad
+
+**Server only.** Players install nothing and can leave EasyAntiCheat on.
+
+A powered pressure plate that repairs your whole base. Step on a **Repair Pad** and the server repairs every
+damaged block in the land claim the pad sits in, paid for from **Repair Supply Chests** in that same claim.
+No other storage is ever touched. If supplies run short it repairs what it can, most damaged blocks first,
+and tells you in chat what it fixed, what it used and how many blocks still need work.
+
+| Block | Recipe | Notes |
+|---|---|---|
+| Repair Pad | Workbench: 2500 forged steel, 250 mechanical parts, 350 electrical parts | Needs power. Unlocked by the Electrician crafting skill. |
+| Repair Supply Chest | Workbench: 10 forged steel, 5 mechanical parts | Steel writable crate (80 slots), lockable. Any number per claim. |
+
+Rules:
+- The pad works only inside an active land claim owned by the player stepping on it or one of their allies.
+  The area is the whole claim (your server's land claim size), full height.
+- It fires once per step, then waits `CooldownSeconds` before it can run again.
+- A supply chest someone has open is skipped, so close them before stepping on the pad.
+- The scan and the repairs are spread over many frames, so even a big claim never stalls the server.
+
+`settings.txt`:
+
+| Setting | Values | Default |
+|---|---|---|
+| `CostMode` | `materials` (each block costs what a repair hammer would: concrete mix for concrete, forged iron for steel and so on) or `kits` (repair kits) | `materials` |
+| `HpPerKit` | kits mode: hit points one repair kit restores, spread over as many blocks as it covers | `10000` |
+| `KitItem` | kits mode: the item that counts as a kit | `resourceRepairKit` |
+| `CooldownSeconds` | seconds before the same pad can run again | `10` |
+| `RequirePower` | the pad only works while powered (`on`/`off`) | `on` |
+| `RepairsPerFrame` | blocks repaired per frame; lower it if a big repair hitches | `100` |
+| `LogRuns` | a server log line for every pad run (`on`/`off`) | `on` |
+
+| Server console | What it does |
+|---|---|
+| `rpad` | Show how the pad is set up |
+| `rpad reload` | Re-read `settings.txt`, takes effect right away |
+
+How it works: the server checks the block under each player's feet and starts a repair when someone steps
+onto a pad. It finds the claim through the game's land claim list (same owner, ally and expiry rules as
+vanilla), scans the claim one chunk layer per frame, and charges materials with the same formula as the
+game's own land claim repair (each block's repair items scaled by how damaged it is).
+
+**Changelog**
 - 1.0.0: first version.
 
 ---

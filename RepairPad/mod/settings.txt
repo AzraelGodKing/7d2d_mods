@@ -1,0 +1,23 @@
+# Repair Pad. The server reads this at startup and when you run:  rpad reload
+# Players do not install this mod.
+
+# How repairs are paid for, taken only from Repair Supply Chests inside the same land claim.
+#   materials = each block costs what a repair hammer would (concrete mix for concrete, forged iron for steel...)
+#   kits      = repair kits; each kit restores HpPerKit hit points, spread over as many blocks as it covers
+CostMode=materials
+
+# Kits mode only: hit points one repair kit restores, and which item counts as a kit.
+HpPerKit=10000
+KitItem=resourceRepairKit
+
+# Seconds before the same pad can run again.
+CooldownSeconds=10
+
+# The pad only works while it has electrical power (on/off).
+RequirePower=on
+
+# Blocks repaired per frame. Lower it if a big repair causes a hitch on your server.
+RepairsPerFrame=100
+
+# Write a server log line for every pad run (on/off).
+LogRuns=on
