@@ -45,6 +45,7 @@ on:
           - no-ding-sound
           - storage-backpack
           - turret-claim-guard
+          - drag-spread
       create_github_release:
         description: "Create a versioned GitHub Release (tag Name-vVERSION, not marked latest)"
         required: true

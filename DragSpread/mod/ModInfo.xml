@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xml>
+	<Name value="AzraelDragSpread" />
+	<DisplayName value="Drag Spread" />
+	<Description value="Hold a stack on the cursor, then hold a mouse button and sweep over slots to spread it. Left-drag splits the stack evenly, right-drag puts 1 in each slot. Fills empty slots and tops up stacks of the same item, in every inventory window. Client-side: install on each player that wants it (EAC off)." />
+	<Author value="Azrael" />
+	<Version value="1.0.0" />
+	<Website value="https://github.com/AzraelGodKing/7d2d_mods" />
+</xml>
