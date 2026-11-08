@@ -1,0 +1,16 @@
+{
+  "slug": "repair-pad",
+  "name": "Repair Pad",
+  "game": "7-days-to-die",
+  "description": "A powered pressure plate that repairs every damaged block in your land claim when you step on it, paid for with materials (or repair kits) from Repair Supply Chests in that claim. Repairs what it can when supplies run short. Server only - players install nothing.",
+  "version": "1.0.0",
+  "screenshots": [],
+  "download": {
+    "file": "repair-pad-1.0.0.zip"
+  },
+  "links": {
+    "steam": null,
+    "thunderstore": null,
+    "nexus": null
+  }
+}

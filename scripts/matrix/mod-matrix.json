@@ -131,5 +131,12 @@
     "zipName": "AzraelTurretClaimGuard",
     "nexus_mod_id": "",
     "nexus_file_id": ""
+  },
+  {
+    "modKey": "repair-pad",
+    "modDir": "RepairPad",
+    "zipName": "AzraelRepairPad",
+    "nexus_mod_id": "",
+    "nexus_file_id": ""
   }
 ]
