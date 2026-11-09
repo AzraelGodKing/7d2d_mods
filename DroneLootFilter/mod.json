@@ -5,6 +5,6 @@
   "description": "Companion for Drone Automation. Choose items your Auto-Loot drone leaves alone (bags, containers and loose items) with /dai. Server-side: players install nothing.",
   "version": "1.2.0",
   "screenshots": [],
-  "download": { "file": "AzraelDroneLootFilter-v1.2.0.zip" },
+  "download": { "file": "drone-loot-filter-1.2.0.zip" },
   "links": { "steam": null, "thunderstore": null, "nexus": null }
 }
