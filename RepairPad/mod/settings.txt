@@ -2,11 +2,12 @@
 # Players do not install this mod.
 
 # How repairs are paid for, taken only from Repair Supply Chests inside the same land claim.
-#   materials = each block costs what a repair hammer would (concrete mix for concrete, forged iron for steel...)
-#   kits      = repair kits; each kit restores HpPerKit hit points, spread over as many blocks as it covers
-CostMode=materials
+#   both      = materials first, then repair kits for whatever the materials couldn't pay for
+#   materials = only materials: each block costs what a repair hammer would (concrete mix for concrete, forged iron for steel...)
+#   kits      = only repair kits; each kit restores HpPerKit hit points, spread over as many blocks as it covers
+CostMode=both
 
-# Kits mode only: hit points one repair kit restores, and which item counts as a kit.
+# Kits (both or kits mode): hit points one repair kit restores, and which item counts as a kit.
 HpPerKit=10000
 KitItem=resourceRepairKit
 

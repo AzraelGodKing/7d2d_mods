@@ -18,8 +18,9 @@ using UnityEngine;
 //   (same Self/Ally rules as World.GetLandClaimOwner). The area is the claim block +/- (LandClaimSize-1)/2 on X/Z,
 //   full height, the same square vanilla protects.
 // - Scanning: one 4-block-high chunk layer per frame, so a whole claim never stalls the server.
-// - Cost: "materials" copies vanilla's own claim repair (TEFeatureAreaRepair.repairBlock): each block's
-//   RepairItems scaled by how damaged it is. "kits" turns repair kits into a pool of hit points.
+// - Cost: materials copy vanilla's own claim repair (TEFeatureAreaRepair.repairBlock): each block's
+//   RepairItems scaled by how damaged it is. Repair kits are a pool of hit points. "both" (default) runs a
+//   materials pass first, then spends kits on whatever materials couldn't pay for.
 // - Chests that a player has open are skipped, so nobody's open container gets out of sync.
 public class AzraelRepairPad : IModApi
 {
@@ -40,12 +41,12 @@ public class AzraelRepairPad : IModApi
     }
 }
 
-public enum RpCostMode { Materials, Kits }
+public enum RpCostMode { Materials, Kits, Both }
 
 public static class RpConfig
 {
     public static string ModPath = "";
-    public static RpCostMode CostMode = RpCostMode.Materials;
+    public static RpCostMode CostMode = RpCostMode.Both;
     public static int HpPerKit = 10000;
     public static string KitItem = "resourceRepairKit";
     public static float CooldownSeconds = 10f;
@@ -57,7 +58,7 @@ public static class RpConfig
 
     public static void Load()
     {
-        CostMode = RpCostMode.Materials;
+        CostMode = RpCostMode.Both;
         HpPerKit = 10000;
         KitItem = "resourceRepairKit";
         CooldownSeconds = 10f;
@@ -83,9 +84,10 @@ public static class RpConfig
                 switch (key)
                 {
                     case "costmode":
-                        if (lower == "materials" || lower == "material") CostMode = RpCostMode.Materials;
+                        if (lower == "both") CostMode = RpCostMode.Both;
+                        else if (lower == "materials" || lower == "material") CostMode = RpCostMode.Materials;
                         else if (lower == "kits" || lower == "kit") CostMode = RpCostMode.Kits;
-                        else Warn(key, value, "materials or kits");
+                        else Warn(key, value, "both, materials or kits");
                         break;
                     case "hpperkit":
                         if (int.TryParse(value, out int hp) && hp > 0) HpPerKit = hp; else Warn(key, value, "a whole number above 0");
@@ -129,9 +131,10 @@ public static class RpConfig
 
     public static string Describe()
     {
-        string cost = CostMode == RpCostMode.Kits
-            ? $"Cost: repair kits ({KitItem}), {HpPerKit} HP each."
-            : "Cost: materials, same as a repair hammer.";
+        string kits = $"repair kits ({KitItem}, {HpPerKit} HP each)";
+        string cost = CostMode == RpCostMode.Kits ? "Cost: " + kits + "."
+            : CostMode == RpCostMode.Materials ? "Cost: materials, same as a repair hammer."
+            : "Cost: materials first (same as a repair hammer), then " + kits + " for the rest.";
         return cost + $" Cooldown {CooldownSeconds:0.#}s. Power {(RequirePower ? "required" : "not required")}.";
     }
 }
@@ -384,26 +387,32 @@ public static class RepairPad
             yield break;
         }
 
-        // 3. Repair, most damaged first.
+        // 3. Repair, most damaged first. Materials pass first, then repair kits for whatever is left.
         damaged.Sort((a, b) => b.Fraction.CompareTo(a.Fraction));
-        bool kits = RpConfig.CostMode == RpCostMode.Kits;
+        bool useMaterials = RpConfig.CostMode != RpCostMode.Kits;
+        bool useKits = RpConfig.CostMode != RpCostMode.Materials;
         ItemValue kit = null;
-        if (kits)
+        if (useKits)
         {
             kit = ItemClass.GetItem(RpConfig.KitItem);
             if (kit == null || kit.IsEmpty() || kit.ItemClass == null)
             {
                 Log.Warning($"{AzraelRepairPad.Tag} KitItem '{RpConfig.KitItem}' is not an item. Check settings.txt.");
-                Tell(player, "The pad is set up wrong (unknown repair kit item). Tell an admin.");
-                yield break;
+                if (!useMaterials)
+                {
+                    Tell(player, "The pad is set up wrong (unknown repair kit item). Tell an admin.");
+                    yield break;
+                }
+                useKits = false;
             }
         }
         hpBank.TryGetValue(padPos, out int bank);
 
-        int repaired = 0, partial = 0, skipped = 0, hpRestored = 0, kitsUsed = 0, sinceYield = 0;
+        int repaired = 0, partial = 0, hpRestored = 0, kitsUsed = 0, sinceYield = 0;
         var used = new Dictionary<string, int>();
-        bool outOfKits = false;
+        var unpaid = new List<Damaged>();
 
+        // 3a. Materials: the same cost vanilla's land claim repair charges. All or nothing per block.
         foreach (Damaged d in damaged)
         {
             if (++sinceYield >= RpConfig.RepairsPerFrame)
@@ -411,14 +420,34 @@ public static class RepairPad
                 sinceYield = 0;
                 yield return null;
             }
-
             BlockValue bv = world.GetBlock(d.Pos);
             if (bv.type != d.Type || bv.damage <= 0) continue; // changed since the scan
-            Block block = bv.Block;
-
-            if (kits)
+            if (!useMaterials) { unpaid.Add(d); continue; }
+            List<RpCost> cost = MaterialCost(bv, out int amount);
+            if (cost == null || !cost.TrueForAll(c => Count(supplies, c.Item) >= c.Count)) { unpaid.Add(d); continue; }
+            foreach (RpCost c in cost)
             {
-                if (outOfKits) { skipped++; continue; }
+                Take(supplies, c.Item, c.Count);
+                used.TryGetValue(c.Name, out int had);
+                used[c.Name] = had + c.Count;
+            }
+            bv.Block.DamageBlock(world, new BlockValueRef(d.Pos), bv, -amount, -1);
+            hpRestored += amount;
+            repaired++;
+        }
+
+        // 3b. Repair kits: a pool of hit points for the blocks materials couldn't pay for.
+        if (useKits)
+        {
+            foreach (Damaged d in unpaid)
+            {
+                if (++sinceYield >= RpConfig.RepairsPerFrame)
+                {
+                    sinceYield = 0;
+                    yield return null;
+                }
+                BlockValue bv = world.GetBlock(d.Pos);
+                if (bv.type != d.Type || bv.damage <= 0) continue;
                 int need = bv.damage;
                 while (bank < need)
                 {
@@ -427,77 +456,113 @@ public static class RepairPad
                     kitsUsed++;
                 }
                 int heal = Math.Min(need, bank);
-                if (heal <= 0) { outOfKits = true; skipped++; continue; }
+                if (heal <= 0) break; // out of kits
                 bank -= heal;
-                block.DamageBlock(world, new BlockValueRef(d.Pos), bv, -heal, -1);
+                bv.Block.DamageBlock(world, new BlockValueRef(d.Pos), bv, -heal, -1);
                 hpRestored += heal;
-                if (heal < need) { partial++; outOfKits = true; } else repaired++;
-                continue;
+                if (heal < need) partial++; else repaired++;
             }
-
-            // Materials: the same cost vanilla's land claim repair charges.
-            int amount = bv.damage;
-            float fraction = (float)bv.damage / block.MaxDamage;
-            List<Block.SItemNameCount> items = block.RepairItems;
-            if (block.RepairItemsMeshDamage != null && block.shape.UseRepairDamageState(bv))
-            {
-                amount = 1;
-                fraction = 1f;
-                items = block.RepairItemsMeshDamage;
-            }
-            if (items == null || items.Count == 0) { skipped++; continue; }
-
-            var cost = new List<(ItemValue item, int count, string name)>();
-            bool affordable = true;
-            foreach (Block.SItemNameCount ic in items)
-            {
-                ItemValue iv = ItemClass.GetItem(ic.ItemName);
-                if (iv == null || iv.ItemClass == null) { affordable = false; break; }
-                int count = Math.Max((int)(ic.Count * fraction * block.ResourceScale), 1);
-                if (Count(supplies, iv) < count) { affordable = false; break; }
-                cost.Add((iv, count, ic.ItemName));
-            }
-            if (!affordable) { skipped++; continue; }
-            foreach (var c in cost)
-            {
-                Take(supplies, c.item, c.count);
-                used.TryGetValue(c.name, out int had);
-                used[c.name] = had + c.count;
-            }
-            block.DamageBlock(world, new BlockValueRef(d.Pos), bv, -amount, -1);
-            hpRestored += amount;
-            repaired++;
+            hpBank[padPos] = bank;
         }
 
-        if (kits) hpBank[padPos] = bank;
         foreach (Supply s in supplies)
             if (s.Changed) s.Te.SetModified();
+
+        // 3c. What is still damaged, and what it would take to finish.
+        int left = 0, hpLeft = 0;
+        var stillNeed = new Dictionary<string, (ItemValue item, int count)>();
+        foreach (Damaged d in unpaid)
+        {
+            BlockValue bv = world.GetBlock(d.Pos);
+            if (bv.type != d.Type || bv.damage <= 0) continue;
+            left++;
+            hpLeft += bv.damage;
+            List<RpCost> cost = MaterialCost(bv, out _);
+            if (cost == null) continue;
+            foreach (RpCost c in cost)
+            {
+                stillNeed.TryGetValue(c.Name, out var n);
+                stillNeed[c.Name] = (c.Item, n.count + c.Count);
+            }
+        }
+        var missing = new List<string>();
+        if (useMaterials)
+        {
+            foreach (var kv in stillNeed.OrderByDescending(kv => kv.Value.count))
+            {
+                int short_ = kv.Value.count - Count(supplies, kv.Value.item);
+                if (short_ > 0) missing.Add($"{short_} {Localization.Get(kv.Key)}");
+            }
+        }
+        int kitsMissing = useKits && hpLeft > bank ? (hpLeft - bank + RpConfig.HpPerKit - 1) / RpConfig.HpPerKit : 0;
 
         // 4. Report.
         player = world.GetEntity(playerId) as EntityPlayer;
         var sb = new StringBuilder();
         if (repaired + partial == 0)
-        {
             sb.Append($"Not enough supplies to repair any of the {damaged.Count} damaged blocks.");
-            sb.Append(kits ? $" Put {Localization.Get(RpConfig.KitItem)} in a Repair Supply Chest." : " Stock a Repair Supply Chest with building materials.");
-        }
         else
         {
             sb.Append($"Repaired {repaired} block{(repaired == 1 ? "" : "s")}");
             if (partial > 0) sb.Append($" ({partial} partly)");
-            sb.Append(". Used ");
-            if (kits) sb.Append($"{kitsUsed} {Localization.Get(RpConfig.KitItem)}.");
-            else sb.Append(string.Join(", ", used.OrderByDescending(kv => kv.Value).Select(kv => $"{kv.Value} {Localization.Get(kv.Key)}")) + ".");
-            if (skipped > 0) sb.Append($" {skipped} still need repair, not enough supplies.");
+            var usedParts = used.OrderByDescending(kv => kv.Value).Select(kv => $"{kv.Value} {Localization.Get(kv.Key)}").ToList();
+            if (kitsUsed > 0) usedParts.Add($"{kitsUsed} {Localization.Get(RpConfig.KitItem)}");
+            sb.Append(". Used " + string.Join(", ", usedParts) + ".");
+        }
+        if (left > 0)
+        {
+            sb.Append($" {left} block{(left == 1 ? "" : "s")} still need repair. Missing: ");
+            var parts = new List<string>();
+            if (missing.Count > 0)
+            {
+                const int maxShown = 8;
+                string mats = string.Join(", ", missing.Take(maxShown));
+                if (missing.Count > maxShown) mats += $" and {missing.Count - maxShown} more";
+                parts.Add(mats);
+            }
+            if (kitsMissing > 0) parts.Add($"{kitsMissing} {Localization.Get(RpConfig.KitItem)}");
+            sb.Append(parts.Count == 0 ? "nothing the pad can use." : string.Join(parts.Count == 2 && missing.Count > 0 ? ", or " : ", ", parts) + ".");
         }
         if (openChests > 0) sb.Append($" Skipped {openChests} open chest{(openChests == 1 ? "" : "s")}.");
         Tell(player, sb.ToString());
 
         if (RpConfig.LogRuns)
             Log.Out($"{AzraelRepairPad.Tag} Pad {padPos} (claim {claimPos}) for {player?.EntityName ?? playerId.ToString()}: " +
-                    $"{repaired} repaired, {partial} partly, {skipped} unpaid, {hpRestored} HP, " +
-                    (kits ? $"{kitsUsed} kits" : $"items {string.Join(", ", used.Select(kv => kv.Key + " x" + kv.Value))}") +
-                    $", {supplies.Count} chest(s), {openChests} open.");
+                    $"{repaired} repaired, {partial} partly, {left} left, {hpRestored} HP, " +
+                    $"items {string.Join(", ", used.Select(kv => kv.Key + " x" + kv.Value))}, {kitsUsed} kits, " +
+                    $"{supplies.Count} chest(s), {openChests} open.");
+    }
+
+    struct RpCost
+    {
+        public ItemValue Item;
+        public int Count;
+        public string Name;
+    }
+
+    // What a repair hammer would charge to fully repair this block (vanilla TEFeatureAreaRepair.repairBlock).
+    // Null if the block has no repair items or one of them isn't a real item.
+    static List<RpCost> MaterialCost(BlockValue bv, out int amount)
+    {
+        Block block = bv.Block;
+        amount = bv.damage;
+        float fraction = (float)bv.damage / block.MaxDamage;
+        List<Block.SItemNameCount> items = block.RepairItems;
+        if (block.RepairItemsMeshDamage != null && block.shape.UseRepairDamageState(bv))
+        {
+            amount = 1;
+            fraction = 1f;
+            items = block.RepairItemsMeshDamage;
+        }
+        if (items == null || items.Count == 0) return null;
+        var cost = new List<RpCost>(items.Count);
+        foreach (Block.SItemNameCount ic in items)
+        {
+            ItemValue iv = ItemClass.GetItem(ic.ItemName);
+            if (iv == null || iv.ItemClass == null) return null;
+            cost.Add(new RpCost { Item = iv, Count = Math.Max((int)(ic.Count * fraction * block.ResourceScale), 1), Name = ic.ItemName });
+        }
+        return cost;
     }
 
     static int Count(List<Supply> supplies, ItemValue item)
