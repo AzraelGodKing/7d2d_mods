@@ -503,7 +503,6 @@ public static class UiSettings
     public static void NextTarget() { int n = BaitData.Thralls.Count; ColorTarget = ColorTarget + 1 >= n ? -1 : ColorTarget + 1; }
     public static string NameLabel() { var t = TargetThrall; int[] c; if (t == null || !PerThrall.TryGetValue(ThrallKey(t), out c) || c[0] < 0) return t == null ? ColorNames[NameColorIdx] : "Default (" + ColorNames[NameColorIdx] + ")"; return ColorNames[c[0]]; }
     public static string BarLabel() { var t = TargetThrall; int[] c; if (t == null || !PerThrall.TryGetValue(ThrallKey(t), out c) || c[1] < 0) return t == null ? BarColorNames[BarColorIdx] : "Default (" + BarColorNames[BarColorIdx] + ")"; return BarColorNames[c[1]]; }
-    public static KeyCode GroupKey(int g) { return g == 1 ? FollowKey : g == 2 ? StayKey : g == 3 ? HereKey : KeyCode.None; }
     public static void SetGroupKey(int g, KeyCode k) { if (g == 1) FollowKey = k; else if (g == 2) StayKey = k; else if (g == 3) HereKey = k; }
     public static string KeyText(KeyCode k) { return k == KeyCode.None ? "none" : k.ToString(); }
     public static int NameColorIdx = 0;   // colour of the name tag text

@@ -355,7 +355,6 @@ public class BmsPlayer : MonoBehaviour
     public static event Action<string, string> OnBanner;  // headline, detail
     public static event Action OnHordeStart;
     public AudioClip Clip => BloodMoon.Clip;
-    public string ClipFile => BloodMoon.File;
     public string LoadError => BloodMoon.Error;
     AudioSource source;
 

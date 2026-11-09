@@ -501,8 +501,6 @@ public static partial class Thralls
     static readonly Dictionary<int, string> alphas = new Dictionary<int, string>();
     static readonly string[] AlphaNames = { "Grimfang", "Old Scar", "Ashjaw", "Red Maw", "Bonecrusher", "Widowmaker", "Gutripper", "Nightfang", "Ironhide", "Hollow King", "Rotclaw", "the Butcher" };
 
-    public static string AlphaOf(int entityId) { string n; return alphas.TryGetValue(entityId, out n) ? n : null; }
-
     static void AlphaTick(World world, Dictionary<string, EntityPlayer> online)
     {
         foreach (int id in new List<int>(alphas.Keys)) { var e = world.GetEntity(id) as EntityAlive; if (e == null || e.IsDead() || Live.ContainsKey(id)) alphas.Remove(id); }
