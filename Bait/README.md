@@ -34,6 +34,10 @@ The commands work from chat (/thrall ...) and from the console (F1, `thrall ...`
 
 **Look-at HP:** aim at one of your thralls, or any wild zombie or animal, and a toast shows its name, level and HP (up to 25 m, `LookHp`, `LookHpWild`, `LookHpRange`, `LookHpAngle`). Server side only, no client mod. It is a toast under the crosshair area, not a floating bar.
 
+## New in 1.13.1
+
+- The mod no longer hooks every Unity log to write `AzraelBaitTrace.log`, and no longer prints health, buffs and a stack trace to the server log on every thrall death. Death toasts still name the killing blow when `Kill` runs without `DamageEntity`.
+
 ## New in 1.13.0
 
 **Discord posts you control.** `webhook.txt` (copy `webhook.example.txt`) now holds the webhook URL plus what gets posted and how it reads:
