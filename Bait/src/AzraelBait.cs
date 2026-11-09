@@ -21,7 +21,6 @@ public class AzraelBaitMod : IModApi
             try { harmony.CreateClassProcessor(type).Patch(); }
             catch (Exception e) { Log.Warning("[Bait] patch " + type.Name + " failed: " + e.Message); }
         }
-        BaitTrace.Start(_modInstance.Path);
         ModEvents.GameStartDone.RegisterHandler(Thralls.OnGameStart);
         ModEvents.GameShutdown.RegisterHandler(Thralls.OnShutdown);
         ModEvents.GameUpdate.RegisterHandler(Thralls.OnUpdate);
@@ -105,37 +104,6 @@ public static class BaitMiniTurretIgnore
     static void Postfix(Entity _target, ref bool __result)
     {
         if (!__result && _target != null && (BaitCheck.ActiveBait(_target) != null || Thralls.IsThrall(_target.entityId))) __result = true;
-    }
-}
-// Writes the stack trace of any NullReferenceException (the player log sometimes drops them) to AzraelBaitTrace.log
-// in the mod folder, so a spam of NREs can be traced to the code that throws it. Capped so it can't fill the disk.
-public static class BaitTrace
-{
-    static string path;
-    static int written;
-    static readonly HashSet<string> seen = new HashSet<string>();
-
-    public static void Start(string modPath)
-    {
-        try
-        {
-            path = System.IO.Path.Combine(modPath, "AzraelBaitTrace.log");
-            UnityEngine.Application.logMessageReceived += OnLog;
-        }
-        catch { }
-    }
-
-    static void OnLog(string msg, string stack, UnityEngine.LogType type)
-    {
-        if (type != UnityEngine.LogType.Exception || written >= 40) return;
-        try
-        {
-            string key = (msg ?? "") + "|" + (stack ?? "");
-            if (!seen.Add(key)) return;
-            written++;
-            System.IO.File.AppendAllText(path, DateTime.Now.ToString("s") + " " + msg + "\n" + stack + "\n----\n");
-        }
-        catch { }
     }
 }
 // A thrown item is removed after 60 seconds, which cut the bait short. Keep it for as long as it calls creatures
