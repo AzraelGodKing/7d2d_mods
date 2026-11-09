@@ -174,8 +174,6 @@ Cap|Limit|Límite|Limite|Limite
         return lang;
     }
 
-    public static void LanguageChanged() { lang = -2; }
-
     public static string T(string en)
     {
         int i = Lang();

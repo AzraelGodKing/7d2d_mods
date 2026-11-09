@@ -144,9 +144,6 @@ public static class BaitConfig
     public static int NameMaxLength = 24;       // longest thrall name (banned words: /thrall admin banword)
     public static bool Debug = false;
 
-    // Animal classes whose AI list is replaced by other mods and so needs the bait task added in code.
-    public static readonly HashSet<string> NeedsBaitAi = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "animalBearCub" };
-
     public static readonly HashSet<string> Exclude = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
         // empty: every creature can be tamed. Add class names with  Exclude=name1,name2  to protect some.
