@@ -1,0 +1,34 @@
+# POI Registry settings (SERVER ONLY). One Key=value per line; # starts a comment.
+# Type  poi reload  in the server console after editing, no restart needed.
+#
+# Keep Token private. Environment variables POI_REGISTRY_URL and POI_REGISTRY_TOKEN, when set,
+# win over PostUrl and Token below, so a reinstall of the mod never wipes them.
+
+Enabled=on
+
+# Where to push the snapshot (https only, except localhost). Leave empty to only write poi-owners.json.
+PostUrl=
+# The bearer token the web page expects (its POI_INGEST_TOKEN).
+Token=
+
+# Shown on the page.
+ServerName=
+
+# Seconds between claim checks. A post is only sent when something changed.
+IntervalSeconds=60
+# Minutes between "still alive" posts when nothing changed.
+HeartbeatMinutes=5
+
+# What goes to the web. Player ids are always a salted hash, never a Steam or platform id.
+ShowNames=on
+ShowCoordinates=off
+
+# A claim only counts for a POI when it overlaps it by at least this many blocks (x * z).
+# Stops a base next door from being listed as the owner.
+MinOverlapBlocks=16
+
+# Leave trader compounds out of the list.
+HideTraders=on
+
+# Also write poi-owners.json next to this file.
+WriteFile=on

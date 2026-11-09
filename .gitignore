@@ -42,5 +42,10 @@ BloodMoonSound/mod/discord.txt
 # clear-command password (set in-game with: kbags password)
 KeepBackpacks/mod/password.txt
 
+# POI Registry output written next to its settings when run from this folder
+PoiRegistry/mod/poi-owners.json
+PoiRegistry/mod/poi-owners.json.tmp
+PoiRegistry/mod/poi-state.txt
+
 # Nexus page art (not needed to build or run the mods)
 media/
