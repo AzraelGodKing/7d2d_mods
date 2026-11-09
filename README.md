@@ -25,7 +25,7 @@ Small mods for 7 Days to Die. Every mod builds against **V3.4** (b6), and each o
 | [Storage Backpack](#storage-backpack) | Code (Harmony) + XML | Server only | 1.0.4 |
 | [Turret Claim Guard](#turret-claim-guard) | Code (Harmony) | Server only | 1.0.0 |
 | [Drag Spread](#drag-spread) | Code (Harmony) | Players only | 1.0.0 |
-| [Repair Pad](#repair-pad) | Code (Harmony) + XML | Server only | 1.0.0 |
+| [Repair Pad](#repair-pad) | Code (Harmony) + XML | Server only | 1.1.0 |
 
 Ideas not built yet are kept in [docs/ideas.md](docs/ideas.md).
 
@@ -722,9 +722,10 @@ see which slots the drag crosses. On release it sets each slot's `ItemStack`, wh
 **Server only.** Players install nothing and can leave EasyAntiCheat on.
 
 A powered pressure plate that repairs your whole base. Step on a **Repair Pad** and the server repairs every
-damaged block in the land claim the pad sits in, paid for from **Repair Supply Chests** in that same claim.
-No other storage is ever touched. If supplies run short it repairs what it can, most damaged blocks first,
-and tells you in chat what it fixed, what it used and how many blocks still need work.
+damaged block in the land claim the pad sits in, paid for from **Repair Supply Chests** in that same claim: building materials first, then repair kits for
+whatever the materials couldn't cover. No other storage is ever touched. If supplies run short it repairs
+what it can, most damaged blocks first, and tells you in chat what it fixed, what it used, and exactly what
+is missing to finish (for example `Missing: 40 Concrete Mix, 12 Forged Iron, or 3 Repair Kit.`).
 
 | Block | Recipe | Notes |
 |---|---|---|
@@ -742,9 +743,9 @@ Rules:
 
 | Setting | Values | Default |
 |---|---|---|
-| `CostMode` | `materials` (each block costs what a repair hammer would: concrete mix for concrete, forged iron for steel and so on) or `kits` (repair kits) | `materials` |
-| `HpPerKit` | kits mode: hit points one repair kit restores, spread over as many blocks as it covers | `10000` |
-| `KitItem` | kits mode: the item that counts as a kit | `resourceRepairKit` |
+| `CostMode` | `both` (materials first, then repair kits for the rest), `materials` (only materials: each block costs what a repair hammer would, concrete mix for concrete, forged iron for steel and so on) or `kits` (only repair kits) | `both` |
+| `HpPerKit` | hit points one repair kit restores, spread over as many blocks as it covers | `10000` |
+| `KitItem` | the item that counts as a kit | `resourceRepairKit` |
 | `CooldownSeconds` | seconds before the same pad can run again | `10` |
 | `RequirePower` | the pad only works while powered (`on`/`off`) | `on` |
 | `RepairsPerFrame` | blocks repaired per frame; lower it if a big repair hitches | `100` |
@@ -761,6 +762,7 @@ vanilla), scans the claim one chunk layer per frame, and charges materials with 
 game's own land claim repair (each block's repair items scaled by how damaged it is).
 
 **Changelog**
+- 1.1.0: repair kits are now used as well. `CostMode=both` (new default) spends materials first, then kits on what is left. When supplies run short the chat message lists what is missing.
 - 1.0.0: first version.
 
 ---
