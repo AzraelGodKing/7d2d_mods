@@ -102,7 +102,6 @@ public static class BmdSettings
     // Also show these messages in the game's chat, for every player.
     public static bool InGameChat;
     public static readonly HashSet<BmdKind> ChatKinds = new HashSet<BmdKind>();
-    public static bool AnyOutput => Enabled || InGameChat;
 
     // 1.5.0
     public static bool LiveCountdown; public static int LiveEveryHours; public static string MsgLiveDone;

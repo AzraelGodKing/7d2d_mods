@@ -1,0 +1,17 @@
+{
+  "slug": "poi-registry",
+  "name": "POI Registry",
+  "game": "7-days-to-die",
+  "private": true,
+  "description": "Private server mod. Works out which player owns which POI from land claims and reports it to a web page. Not released.",
+  "version": "1.0.0",
+  "screenshots": [],
+  "download": {
+    "file": null
+  },
+  "links": {
+    "steam": null,
+    "thunderstore": null,
+    "nexus": null
+  }
+}

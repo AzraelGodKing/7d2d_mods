@@ -15,7 +15,7 @@ Small mods for 7 Days to Die. Every mod builds against **V3.4** (b6), and each o
 | [No Ding Sound](#no-ding-sound) | XML only | Server only | 1.0.0 |
 | [Keep Backpacks](#keep-backpacks) | Code (Harmony) | Server only | 1.3.0 |
 | [Blood Moon Sound](#blood-moon-sound) | Code (Harmony) | Players (own sound, on-screen countdown); server optional (sounds for everyone, Discord and game chat posts, records, `/bm`) | 1.5.0 |
-| [Zombie and Animal Bait](#zombie-and-animal-bait) | Code (Harmony) + XML | Server only | 1.13.0 |
+| [Zombie and Animal Bait](#zombie-and-animal-bait) | Code (Harmony) + XML | Server only | 1.13.1 |
 | [Gyro Safe](#gyro-safe) | Code (Harmony) | Server and players who fly | 1.0.0 |
 | [Drone Loot Filter](#drone-loot-filter) | Code (Harmony), needs Drone Automation | Server only | 1.2.0 |
 | [Bait UI](#bait-ui) | Code + UI | Players only (optional, needs Bait on the server) | 1.9.0 |
@@ -25,7 +25,7 @@ Small mods for 7 Days to Die. Every mod builds against **V3.4** (b6), and each o
 | [Storage Backpack](#storage-backpack) | Code (Harmony) + XML | Server only | 1.0.4 |
 | [Turret Claim Guard](#turret-claim-guard) | Code (Harmony) | Server only | 1.0.0 |
 | [Drag Spread](#drag-spread) | Code (Harmony) | Players only | 1.0.0 |
-| [Repair Pad](#repair-pad) | Code (Harmony) + XML | Server only | 1.0.0 |
+| [Repair Pad](#repair-pad) | Code (Harmony) + XML | Server only | 1.1.0 |
 
 Ideas not built yet are kept in [docs/ideas.md](docs/ideas.md).
 
@@ -483,6 +483,7 @@ Companion for tehAon's Drone Automation. Each player chooses items their Auto-Lo
 - **Limits:** turret bullets are credited to the turret's owner, so a stray bullet from the thrower's own turret can still hit a baited creature in its line of fire (the turret just won't aim at it). Hits from other players are not blocked (their client sends that damage to the server).
 - Tune the radius, time and eat ticks in `Config/items.xml`.
 - Taming, thralls and every `/thrall` command: see [Bait/README.md](Bait/README.md).
+- **1.13.1:** stop writing `AzraelBaitTrace.log` and an always-on kill-trace line on every thrall death. Death toasts still name the killing blow.
 - **1.13.0:** better control over Discord posts: `webhook.txt` now picks which posts are sent (tames: rare, all or off, with a minimum level; level milestones; evolutions; retirements; Alpha sightings and tames), how each one reads, and the bot name. `Enabled=off` or `/thrall admin webhook off` stops them all. `/thrall admin webhook reload|test` without a restart. A webhook.txt that is only the URL still works.
 - **1.12.1:** fix: spike traps, barbed wire, blade traps and electric fences no longer kill thralls (`TrapsSpareThralls`, on by default).
 - **1.12.0:** thralls guard your backpack when you die, rush to you at low HP, walk quietly while you crouch and make no heat; `/t` short commands and aliases; `/thrall scream`, `pvp`, `duel`, `secondchance`, `retire`, `kennel`, `goto`, `stats`; catch-up XP, owner XP share and quest kill credit; a named Alpha after every horde night (Feast bait only); new Thrall Whistle item, Bait Feeder and Thrall Kennel blocks; per-creature caps, taming resistance, `config preset casual|default|hardcore`, an admin audit log and a name filter. See [Bait/README.md](Bait/README.md#new-in-1120).
@@ -722,9 +723,10 @@ see which slots the drag crosses. On release it sets each slot's `ItemStack`, wh
 **Server only.** Players install nothing and can leave EasyAntiCheat on.
 
 A powered pressure plate that repairs your whole base. Step on a **Repair Pad** and the server repairs every
-damaged block in the land claim the pad sits in, paid for from **Repair Supply Chests** in that same claim.
-No other storage is ever touched. If supplies run short it repairs what it can, most damaged blocks first,
-and tells you in chat what it fixed, what it used and how many blocks still need work.
+damaged block in the land claim the pad sits in, paid for from **Repair Supply Chests** in that same claim: building materials first, then repair kits for
+whatever the materials couldn't cover. No other storage is ever touched. If supplies run short it repairs
+what it can, most damaged blocks first, and tells you in chat what it fixed, what it used, and exactly what
+is missing to finish (for example `Missing: 40 Concrete Mix, 12 Forged Iron, or 3 Repair Kit.`).
 
 | Block | Recipe | Notes |
 |---|---|---|
@@ -742,9 +744,9 @@ Rules:
 
 | Setting | Values | Default |
 |---|---|---|
-| `CostMode` | `materials` (each block costs what a repair hammer would: concrete mix for concrete, forged iron for steel and so on) or `kits` (repair kits) | `materials` |
-| `HpPerKit` | kits mode: hit points one repair kit restores, spread over as many blocks as it covers | `10000` |
-| `KitItem` | kits mode: the item that counts as a kit | `resourceRepairKit` |
+| `CostMode` | `both` (materials first, then repair kits for the rest), `materials` (only materials: each block costs what a repair hammer would, concrete mix for concrete, forged iron for steel and so on) or `kits` (only repair kits) | `both` |
+| `HpPerKit` | hit points one repair kit restores, spread over as many blocks as it covers | `10000` |
+| `KitItem` | the item that counts as a kit | `resourceRepairKit` |
 | `CooldownSeconds` | seconds before the same pad can run again | `10` |
 | `RequirePower` | the pad only works while powered (`on`/`off`) | `on` |
 | `RepairsPerFrame` | blocks repaired per frame; lower it if a big repair hitches | `100` |
@@ -761,6 +763,7 @@ vanilla), scans the claim one chunk layer per frame, and charges materials with 
 game's own land claim repair (each block's repair items scaled by how damaged it is).
 
 **Changelog**
+- 1.1.0: repair kits are now used as well. `CostMode=both` (new default) spends materials first, then kits on what is left. When supplies run short the chat message lists what is missing.
 - 1.0.0: first version.
 
 ---

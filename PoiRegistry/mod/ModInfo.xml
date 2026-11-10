@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xml>
+	<Name value="AzraelPoiRegistry" />
+	<DisplayName value="POI Registry" />
+	<Description value="Server-side and private. Works out which player owns which POI from land claims, writes it to poi-owners.json, and can push it to a web page. Players do not install this mod." />
+	<Author value="Azrael" />
+	<Version value="1.2.0" />
+	<Website value="https://github.com/AzraelGodKing/7d2d_mods" />
+</xml>

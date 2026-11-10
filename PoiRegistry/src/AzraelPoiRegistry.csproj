@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Shared settings and game references come from ../../Directory.Build.props -->
+  <PropertyGroup>
+    <AssemblyName>AzraelPoiRegistry</AssemblyName>
+    <RootNamespace>AzraelPoiRegistry</RootNamespace>
+    <Version>1.2.0</Version>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="UnityEngine.UnityWebRequestModule"><HintPath>$(ManagedDir)\UnityEngine.UnityWebRequestModule.dll</HintPath><Private>false</Private></Reference>
+  </ItemGroup>
+</Project>

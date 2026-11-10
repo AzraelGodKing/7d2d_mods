@@ -1,0 +1,58 @@
+# =============================================================================
+# Build POI Registry (private mod) — zip as a workflow artifact only.
+# POI Registry is not in the release matrix (mod.json "private": true), so it never goes to GitHub Releases,
+# Nexus, R2 or the website. This builds it on the same self-hosted runner that has the game DLLs and keeps the
+# zip as an artifact (14 days) for installing on the server by hand.
+# Runs on a push that changes PoiRegistry/, or by hand from the Actions tab.
+# =============================================================================
+name: Build POI Registry
+
+on:
+  push:
+    paths:
+      - "PoiRegistry/**"
+      - ".github/workflows/build-poi-registry.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and zip
+    runs-on: [self-hosted, linux, 7d2d]
+    steps:
+      - uses: actions/checkout@v4
+
+      # The runner's /usr/share/dotnet is root-owned, so a newer 8.0 SDK can't go there.
+      - uses: actions/setup-dotnet@v4
+        env:
+          DOTNET_INSTALL_DIR: ${{ runner.tool_cache }}/dotnet
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Build
+        shell: pwsh
+        env:
+          SEVEND2D_DIR: ${{ vars.SEVEND2D_DIR }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $buildArgs = @{ Only = 'PoiRegistry' }
+          $gameDir = if ($env:RUNNER_7D2D_GAMEDIR) { $env:RUNNER_7D2D_GAMEDIR } else { $env:SEVEND2D_DIR }
+          if ($gameDir) { $buildArgs.GameDir = $gameDir }
+          & ./build.ps1 @buildArgs
+          $zip = Get-ChildItem dist -Filter 'AzraelPoiRegistry-v*.zip' | Select-Object -First 1
+          if (-not $zip) { throw 'build.ps1 did not write dist/AzraelPoiRegistry-v*.zip' }
+          Get-Item $zip.FullName | Format-List Name, Length
+
+      - name: Upload zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: AzraelPoiRegistry
+          path: dist/AzraelPoiRegistry-v*.zip
+          if-no-files-found: error
+          retention-days: 14

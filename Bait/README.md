@@ -3,7 +3,7 @@
 ### Taming
 Feed a wild zombie bait until it has eaten enough meals (4 for a walker, +2 feral, +4 radiated, +6 charged/infernal) and it becomes your thrall: it follows you, fights other zombies and never hurts players. Wild zombies near a thrall sometimes go for it instead of you.
 
-Chat commands: `/thrall list | call <n> | stow [n|all] | release <n> | kill <n|all>`. Holding tamed zombies grants hidden perk buffs (Horde Bond I-III). Settings in `AzraelBait.cfg`. Server only. Untested in game.
+Chat commands: `/thrall list | call <n> | stow [n|all] | release <n> | kill <n|all>`. Holding tamed zombies grants hidden perk buffs (Horde Bond I-III). Settings in `AzraelBait.cfg`. Server only.
 
 Animals tame the same way (3 meals by default) and follow you. **Daycare:** stand where the pen is and run `/thrall tether <n|all> [radius]`; tethered creatures stay inside the circle, keep standing while you are offline, and do not use your active slots. `/thrall untether` frees them.
 
@@ -33,6 +33,10 @@ Animals tame the same way (3 meals by default) and follow you. **Daycare:** stan
 The commands work from chat (/thrall ...) and from the console (F1, `thrall ...`). Every command is logged as `[Bait] command from #id: ...`.
 
 **Look-at HP:** aim at one of your thralls, or any wild zombie or animal, and a toast shows its name, level and HP (up to 25 m, `LookHp`, `LookHpWild`, `LookHpRange`, `LookHpAngle`). Server side only, no client mod. It is a toast under the crosshair area, not a floating bar.
+
+## New in 1.13.1
+
+- The mod no longer hooks every Unity log to write `AzraelBaitTrace.log`, and no longer prints health, buffs and a stack trace to the server log on every thrall death. Death toasts still name the killing blow when `Kill` runs without `DamageEntity`.
 
 ## New in 1.13.0
 

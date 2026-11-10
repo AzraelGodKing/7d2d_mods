@@ -1,0 +1,44 @@
+# POI Registry settings (SERVER ONLY). One Key=value per line; # starts a comment.
+# Type  poi reload  in the server console after editing, no restart needed.
+#
+# Keep Token private. Environment variables POI_REGISTRY_URL and POI_REGISTRY_TOKEN, when set,
+# win over PostUrl and Token below, so a reinstall of the mod never wipes them.
+
+Enabled=on
+
+# Where to push the snapshot (https only, except localhost). Leave empty to only write poi-owners.json.
+PostUrl=
+# The bearer token the web page expects (its POI_INGEST_TOKEN).
+Token=
+
+# Shown on the page.
+ServerName=
+
+# Seconds between quick looks at the claim list. Ownership is only recalculated when a claim was placed,
+# removed or destroyed, or a player joined or left. A post is only sent when the result changed.
+IntervalSeconds=10
+# Minutes between "still alive" posts when nothing changed (this also catches claims that expired with time).
+HeartbeatMinutes=10
+
+# What goes to the web. Player ids are always a salted hash, never a Steam or platform id.
+# With ShowCoordinates=off the POI ids are hashed too, because the normal id holds the position.
+ShowNames=on
+# The Map tab needs this on: with it off the page has no POI positions and the world map is not uploaded.
+ShowCoordinates=off
+
+# Upload the world's map images (biomes.png and splat3.png from the world folder) so the Map tab draws the
+# POIs on the real map. Sent once per world, only when the page does not have them yet. Type  poi map  to resend.
+UploadMap=on
+# Only if the mod can't find the world folder by itself: the folder that holds biomes.png, for example
+# C:\Users\you\AppData\Roaming\7DaysToDie\GeneratedWorlds\Old Honihebu County
+MapFolder=
+
+# A claim only counts for a POI when it overlaps it by at least this many blocks (x * z).
+# Stops a base next door from being listed as the owner.
+MinOverlapBlocks=16
+
+# Leave trader compounds out of the list.
+HideTraders=on
+
+# Also write poi-owners.json next to this file.
+WriteFile=on
