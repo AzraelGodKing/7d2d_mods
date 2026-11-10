@@ -538,6 +538,8 @@ public static class PrRunner
 {
     // The page takes one post per 5 seconds and answers 429 otherwise.
     const float MinPostGap = 6f;
+    // Well past the 10 second request timeout.
+    const float StuckPostSeconds = 60f;
 
     static bool active;
     static bool dirty;
@@ -641,13 +643,28 @@ public static class PrRunner
         string problem = PrConfig.UrlProblem();
         if (problem != null) { PostStatus = "not pushing: " + problem; return; }
         float now = Time.time;
+        // A post can't take longer than its 10 second timeout. If the flag is still set well after that, the
+        // coroutine died without finishing (an exception, or its host stopped it), and without this reset the
+        // mod would never post again until a restart.
+        if (posting && now - lastAttemptAt > StuckPostSeconds)
+        {
+            posting = false;
+            Log.Warning(AzraelPoiRegistry.Tag + " A push never finished; trying again.");
+        }
         if (posting || now < nextPostAllowed || now - lastAttemptAt < MinPostGap) return;
         bool changed = snap.Signature != lastPostedSignature;
         bool heartbeat = now - lastPostAt >= PrConfig.HeartbeatMinutes * 60f;
         if (!force && !changed && !heartbeat) return;
         posting = true;
         lastAttemptAt = now;
-        GameManager.Instance.StartCoroutine(Post(snap));
+        PostStatus = "posting (started " + DateTime.Now.ToString("HH:mm:ss") + ")";
+        try { GameManager.Instance.StartCoroutine(Post(snap)); }
+        catch (Exception e)
+        {
+            posting = false;
+            PostStatus = "failed to start a push: " + e.Message;
+            Log.Warning(AzraelPoiRegistry.Tag + " Could not start a push: " + e.Message);
+        }
     }
 
     // UnityWebRequest in a coroutine: the request runs in the background and the game never waits for it.
