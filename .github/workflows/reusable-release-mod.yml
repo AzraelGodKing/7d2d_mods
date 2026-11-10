@@ -61,6 +61,9 @@ jobs:
           MOD_DIR="$(echo "$ROW" | jq -r '.modDir')"
           SITE_SLUG="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8-sig")).get("slug", ""))' "$MOD_DIR/mod.json" 2>/dev/null || true)"
           echo "site_slug=${SITE_SLUG:-${{ inputs.mod }}}" >> "$GITHUB_OUTPUT"
+          # A mod whose mod.json says "private": true is never put on the website (R2 or downloads.json).
+          SITE_PRIVATE="$(python3 -c 'import json,sys; print("true" if json.load(open(sys.argv[1], encoding="utf-8-sig")).get("private") is True else "false")' "$MOD_DIR/mod.json" 2>/dev/null || echo false)"
+          echo "site_private=${SITE_PRIVATE}" >> "$GITHUB_OUTPUT"
 
       - name: Read ModInfo.xml version + changelog
         id: meta
@@ -92,7 +95,7 @@ jobs:
           ls -lh "$NAMED"
 
       - name: Update website download
-        if: inputs.dry_run != 'true'
+        if: inputs.dry_run != 'true' && steps.matrix.outputs.site_private != 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

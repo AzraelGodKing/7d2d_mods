@@ -38,7 +38,7 @@ $mods = @(
     @{ Dir = 'TurretClaimGuard';   Name = 'AzraelTurretClaimGuard';   Project = 'src/AzraelTurretClaimGuard.csproj' },
     @{ Dir = 'DragSpread';         Name = 'AzraelDragSpread';         Project = 'src/AzraelDragSpread.csproj' },
     @{ Dir = 'RepairPad';          Name = 'AzraelRepairPad';          Project = 'src/AzraelRepairPad.csproj' },
-    # Private: built for your own server, never released (not in the release matrix, no mod.json, so the website skips it)
+    # Private: built for your own server, never released (not in the release matrix; mod.json says private, so the website skips it)
     @{ Dir = 'PoiRegistry';        Name = 'AzraelPoiRegistry';        Project = 'src/AzraelPoiRegistry.csproj' },
     @{ Dir = 'CraftableSigns';     Name = 'AzraelCraftableSigns' },
     @{ Dir = 'StainedGlass';       Name = 'AzraelStainedGlass' },
