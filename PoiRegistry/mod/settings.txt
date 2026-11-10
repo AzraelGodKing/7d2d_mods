@@ -23,7 +23,15 @@ HeartbeatMinutes=10
 # What goes to the web. Player ids are always a salted hash, never a Steam or platform id.
 # With ShowCoordinates=off the POI ids are hashed too, because the normal id holds the position.
 ShowNames=on
+# The Map tab needs this on: with it off the page has no POI positions and the world map is not uploaded.
 ShowCoordinates=off
+
+# Upload the world's map images (biomes.png and splat3.png from the world folder) so the Map tab draws the
+# POIs on the real map. Sent once per world, only when the page does not have them yet. Type  poi map  to resend.
+UploadMap=on
+# Only if the mod can't find the world folder by itself: the folder that holds biomes.png, for example
+# C:\Users\you\AppData\Roaming\7DaysToDie\GeneratedWorlds\Old Honihebu County
+MapFolder=
 
 # A claim only counts for a POI when it overlaps it by at least this many blocks (x * z).
 # Stops a base next door from being listed as the owner.

@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -57,6 +58,8 @@ public static class PrConfig
     public static int MinOverlapBlocks = 16;
     public static bool HideTraders = true;
     public static bool WriteFile = true;
+    public static bool UploadMap = true;
+    public static string MapFolder = "";
 
     public static string SettingsPath { get { return Path.Combine(ModPath, "settings.txt"); } }
     public static string OutputPath { get { return Path.Combine(ModPath, "poi-owners.json"); } }
@@ -66,6 +69,7 @@ public static class PrConfig
     {
         Enabled = true; PostUrl = ""; Token = ""; ServerName = ""; IntervalSeconds = 10; HeartbeatMinutes = 10;
         ShowNames = true; ShowCoordinates = false; MinOverlapBlocks = 16; HideTraders = true; WriteFile = true;
+        UploadMap = true; MapFolder = "";
         try
         {
             if (!File.Exists(SettingsPath))
@@ -103,6 +107,7 @@ public static class PrConfig
             case "posturl": PostUrl = value; return;
             case "token": Token = value; return;
             case "servername": ServerName = value; return;
+            case "mapfolder": MapFolder = value; return;
             case "intervalseconds": if (int.TryParse(value, out n)) IntervalSeconds = n; else Bad(key, value); return;
             case "heartbeatminutes": if (int.TryParse(value, out n)) HeartbeatMinutes = n; else Bad(key, value); return;
             case "minoverlapblocks": if (int.TryParse(value, out n)) MinOverlapBlocks = n; else Bad(key, value); return;
@@ -115,6 +120,7 @@ public static class PrConfig
             case "showcoordinates": ShowCoordinates = on; break;
             case "hidetraders": HideTraders = on; break;
             case "writefile": WriteFile = on; break;
+            case "uploadmap": UploadMap = on; break;
             default: Log.Warning(AzraelPoiRegistry.Tag + " Unknown setting '" + key + "'."); break;
         }
     }
@@ -538,6 +544,8 @@ public static class PrRunner
 {
     // The page takes one post per 5 seconds and answers 429 otherwise.
     const float MinPostGap = 6f;
+    // Well past the 10 second request timeout.
+    const float StuckPostSeconds = 60f;
 
     static bool active;
     static bool dirty;
@@ -562,6 +570,7 @@ public static class PrRunner
         worldReady = false;
         dirty = true;
         nextCheck = Time.time + 5f;
+        PrMap.Reset();
         if (active) Log.Out(AzraelPoiRegistry.Tag + " Running. " + PrConfig.Describe());
     }
 
@@ -641,13 +650,28 @@ public static class PrRunner
         string problem = PrConfig.UrlProblem();
         if (problem != null) { PostStatus = "not pushing: " + problem; return; }
         float now = Time.time;
+        // A post can't take longer than its 10 second timeout. If the flag is still set well after that, the
+        // coroutine died without finishing (an exception, or its host stopped it), and without this reset the
+        // mod would never post again until a restart.
+        if (posting && now - lastAttemptAt > StuckPostSeconds)
+        {
+            posting = false;
+            Log.Warning(AzraelPoiRegistry.Tag + " A push never finished; trying again.");
+        }
         if (posting || now < nextPostAllowed || now - lastAttemptAt < MinPostGap) return;
         bool changed = snap.Signature != lastPostedSignature;
         bool heartbeat = now - lastPostAt >= PrConfig.HeartbeatMinutes * 60f;
         if (!force && !changed && !heartbeat) return;
         posting = true;
         lastAttemptAt = now;
-        GameManager.Instance.StartCoroutine(Post(snap));
+        PostStatus = "posting (started " + DateTime.Now.ToString("HH:mm:ss") + ")";
+        try { GameManager.Instance.StartCoroutine(Post(snap)); }
+        catch (Exception e)
+        {
+            posting = false;
+            PostStatus = "failed to start a push: " + e.Message;
+            Log.Warning(AzraelPoiRegistry.Tag + " Could not start a push: " + e.Message);
+        }
     }
 
     // UnityWebRequest in a coroutine: the request runs in the background and the game never waits for it.
@@ -677,6 +701,8 @@ public static class PrRunner
             lastPostAt = Time.time;
             lastPostedSignature = snap.Signature;
             PostStatus = "sent OK (" + DateTime.Now.ToString("HH:mm:ss") + ")";
+            // The URL and token work, so this is a good moment to make sure the page has the world map.
+            PrMap.Kick(false);
             yield break;
         }
 
@@ -720,13 +746,20 @@ public class ConsoleCmdPoiRegistry : ConsoleCmdAbstract
                "poi list [name]  - POIs with an owner (optionally only a player's, part of the name works)\n" +
                "poi here         - the POI you are standing in (in game)\n" +
                "poi now          - recompute and push now (the page allows one post per 5 seconds)\n" +
-               "poi reload       - re-read settings.txt";
+               "poi reload       - re-read settings.txt\n" +
+               "poi map          - upload the world map (biomes.png, splat3.png) to the page again";
     }
 
     public override void Execute(List<string> _params, CommandSenderInfo _senderInfo)
     {
         var con = SingletonMonoBehaviour<SdtdConsole>.Instance;
         string sub = _params.Count > 0 ? _params[0].ToLowerInvariant() : "";
+        if (sub == "map")
+        {
+            PrMap.Kick(true);
+            con.Output("Map: " + PrMap.Status);
+            return;
+        }
         if (sub == "reload")
         {
             PrConfig.Load();
@@ -769,6 +802,7 @@ public class ConsoleCmdPoiRegistry : ConsoleCmdAbstract
                    " unclaimed. " + s.ClaimCount + " active claims, " + s.Players.Count + " players. Updated " + s.BuiltAt +
                    " (took " + s.BuildMs.ToString("0.0", CultureInfo.InvariantCulture) + " ms).");
         con.Output("Push: " + PrRunner.PostStatus + ". " + PrConfig.Describe());
+        con.Output("Map: " + PrMap.Status + ".");
     }
 
     static string Line(PrPoi p)
@@ -778,5 +812,230 @@ public class ConsoleCmdPoiRegistry : ConsoleCmdAbstract
         if (p.CoOwners.Count > 0) extra += " + " + string.Join(", ", p.CoOwners.Select(c => c.Name ?? c.Id).ToArray());
         if (p.Contested.Count > 0) extra += " CONTESTED by " + string.Join(", ", p.Contested.Select(c => c.Name ?? c.Id).ToArray());
         return p.Name + " (" + p.X + "," + p.Z + "): " + owner + extra;
+    }
+}
+
+// Uploads the world's own map images so the page can draw the POIs on a real map: biomes.png (forest, desert,
+// snow, burnt, wasteland) and splat3.png (roads), both 1 px per metre, from the world's folder. It asks the page
+// which images it has first (a SHA-256 per layer), so an image is only sent when the page lacks it or the world
+// changed: normally once per world, not once per restart.
+public static class PrMap
+{
+    static readonly string[] LayerNames = { "biomes", "roads" };
+    static readonly string[] FileNames = { "biomes.png", "splat3.png" };
+    // The page keeps at most 24 MB per image.
+    const long MaxBytes = 24L * 1024 * 1024;
+    const float RetryAfterFailure = 30f * 60f;
+    const float StuckSeconds = 10f * 60f;
+
+    static string doneFor;
+    static float nextTry;
+    static bool running;
+    static float startedAt;
+    public static string Status = "not checked yet";
+
+    public static void Reset()
+    {
+        doneFor = null;
+        nextTry = 0f;
+        Status = "not checked yet";
+    }
+
+    static string Problem()
+    {
+        if (!PrConfig.UploadMap) return "UploadMap=off";
+        if (!PrConfig.ShowCoordinates) return "ShowCoordinates=off (the map needs the POI positions)";
+        return PrConfig.UrlProblem();
+    }
+
+    public static void Kick(bool force)
+    {
+        if (running && Time.time - startedAt > StuckSeconds) running = false;
+        if (running) { if (force) Status = "already uploading"; return; }
+        string problem = Problem();
+        if (problem != null) { Status = "not uploading: " + problem; return; }
+        string world = WorldName();
+        if (!force && (world == doneFor || Time.time < nextTry)) return;
+
+        Job job;
+        try { job = Prepare(world); }
+        catch (Exception e) { Fail("could not read the map files: " + e.Message); return; }
+        if (job == null) return;
+        running = true;
+        startedAt = Time.time;
+        Status = "checking what the page has";
+        try { GameManager.Instance.StartCoroutine(Sync(job)); }
+        catch (Exception e) { running = false; Fail("could not start: " + e.Message); }
+    }
+
+    class Job
+    {
+        public string World, Folder, BaseUrl;
+        public int Size;
+        public readonly List<string> Layers = new List<string>();
+        public readonly List<byte[]> Bytes = new List<byte[]>();
+        public readonly List<string> Hashes = new List<string>();
+    }
+
+    static Job Prepare(string world)
+    {
+        string folder = FindWorldFolder(world);
+        if (folder == null) { Fail("could not find the folder of world '" + world + "' (set MapFolder in settings.txt)"); return null; }
+        var job = new Job { World = world, Folder = folder, BaseUrl = MapBaseUrl(), Size = WorldSize(folder) };
+        for (int i = 0; i < LayerNames.Length; i++)
+        {
+            string file = Path.Combine(folder, FileNames[i]);
+            if (!File.Exists(file)) continue;
+            if (new FileInfo(file).Length > MaxBytes) { Log.Warning(AzraelPoiRegistry.Tag + " " + FileNames[i] + " is over 24 MB, not uploading it."); continue; }
+            byte[] bytes = File.ReadAllBytes(file);
+            job.Layers.Add(LayerNames[i]);
+            job.Bytes.Add(bytes);
+            job.Hashes.Add(Sha256(bytes));
+        }
+        if (job.Layers.Count == 0) { Fail("no biomes.png or splat3.png in " + folder); return null; }
+        return job;
+    }
+
+    static IEnumerator Sync(Job job)
+    {
+        // 1. What the page already has.
+        string have = null;
+        using (var req = UnityWebRequest.Get(job.BaseUrl + "/status"))
+        {
+            req.SetRequestHeader("Authorization", "Bearer " + PrConfig.Token);
+            req.timeout = 20;
+            yield return req.SendWebRequest();
+            if (req.responseCode >= 200 && req.responseCode < 300 && req.downloadHandler != null) have = req.downloadHandler.text;
+        }
+        bool sameWorld = have != null && JsonText(have, "world") == job.World && (job.Size == 0 || JsonNumber(have, "size") == job.Size);
+
+        // 2. Upload what is missing or different.
+        int sent = 0, kept = 0;
+        string error = null;
+        for (int i = 0; i < job.Layers.Count; i++)
+        {
+            string layer = job.Layers[i];
+            if (sameWorld && LayerHash(have, layer) == job.Hashes[i]) { kept++; continue; }
+            Status = "uploading " + layer + " (" + (job.Bytes[i].Length / 1024) + " KB)";
+            string url = job.BaseUrl + "/" + layer + "?world=" + Uri.EscapeDataString(job.World) + (job.Size > 0 ? "&size=" + job.Size : "");
+            long code;
+            string reqError;
+            using (var req = UnityWebRequest.Put(url, job.Bytes[i]))
+            {
+                req.SetRequestHeader("Content-Type", "image/png");
+                req.SetRequestHeader("Authorization", "Bearer " + PrConfig.Token);
+                req.timeout = 180;
+                yield return req.SendWebRequest();
+                code = req.responseCode;
+                reqError = req.error;
+            }
+            if (code >= 200 && code < 300) sent++;
+            else { error = layer + ": " + (code > 0 ? "HTTP " + code : reqError); break; }
+        }
+        running = false;
+        if (error != null) { Fail("upload failed (" + error + ")"); yield break; }
+        doneFor = job.World;
+        Status = "up to date for " + job.World + " (" + (job.Size > 0 ? job.Size + " m, " : "") + sent + " sent, " + kept + " already there, " +
+                 DateTime.Now.ToString("HH:mm:ss") + ")";
+        if (sent > 0) Log.Out(AzraelPoiRegistry.Tag + " World map uploaded: " + string.Join(", ", job.Layers.ToArray()) + " from " + job.Folder + ".");
+    }
+
+    static void Fail(string why)
+    {
+        nextTry = Time.time + RetryAfterFailure;
+        if (Status != "failed: " + why) Log.Warning(AzraelPoiRegistry.Tag + " Map: " + why + ". Tries again in 30 min, or type poi map.");
+        Status = "failed: " + why;
+    }
+
+    static string WorldName()
+    {
+        try { return GamePrefs.GetString(EnumGamePrefs.GameWorld) ?? ""; } catch { return ""; }
+    }
+
+    // The page's map endpoint next to the ingest URL: https://host/api/poi/map.
+    static string MapBaseUrl()
+    {
+        var u = new Uri(PrConfig.PostUrl);
+        string path = u.AbsolutePath;
+        int at = path.IndexOf("/api/poi", StringComparison.Ordinal);
+        string prefix = at >= 0 ? path.Substring(0, at) : "";
+        return u.Scheme + "://" + u.Authority + prefix + "/api/poi/map";
+    }
+
+    // Generated worlds live in the user data folder, the shipped ones (Navezgane) in the game's Data/Worlds.
+    // GameIO is called by name, because its helpers differ between game versions.
+    static string FindWorldFolder(string world)
+    {
+        var tries = new List<string>();
+        if (!string.IsNullOrEmpty(PrConfig.MapFolder)) tries.Add(PrConfig.MapFolder);
+        tries.Add(GameIOPath("GetWorldDir"));
+        string user = GameIOPath("GetUserGameDataDir");
+        if (user != null) tries.Add(Path.Combine(Path.Combine(user, "GeneratedWorlds"), world));
+        string app = GameIOPath("GetApplicationPath");
+        if (app != null) tries.Add(Path.Combine(Path.Combine(Path.Combine(app, "Data"), "Worlds"), world));
+        try { tries.Add(Path.Combine(Path.Combine(Path.Combine(Path.Combine(Application.dataPath, ".."), "Data"), "Worlds"), world)); } catch { }
+        foreach (var dir in tries)
+        {
+            if (string.IsNullOrEmpty(dir)) continue;
+            try
+            {
+                if (File.Exists(Path.Combine(dir, "biomes.png")) || File.Exists(Path.Combine(dir, "splat3.png"))) return Path.GetFullPath(dir);
+            }
+            catch { }
+        }
+        return null;
+    }
+
+    static string GameIOPath(string method)
+    {
+        try
+        {
+            var m = typeof(GameIO).GetMethod(method, Type.EmptyTypes);
+            return m != null ? m.Invoke(null, null) as string : null;
+        }
+        catch { return null; }
+    }
+
+    // map_info.xml: <property name="HeightMapSize" value="8192,8192" />. 0 lets the page use the image width.
+    static int WorldSize(string folder)
+    {
+        try
+        {
+            string file = Path.Combine(folder, "map_info.xml");
+            if (!File.Exists(file)) return 0;
+            var m = Regex.Match(File.ReadAllText(file), "name=\"HeightMapSize\"\\s+value=\"\\s*(\\d+)\\s*,\\s*(\\d+)");
+            return m.Success ? Math.Max(int.Parse(m.Groups[1].Value), int.Parse(m.Groups[2].Value)) : 0;
+        }
+        catch { return 0; }
+    }
+
+    static string Sha256(byte[] bytes)
+    {
+        using (var sha = SHA256.Create())
+        {
+            var sb = new StringBuilder();
+            foreach (byte b in sha.ComputeHash(bytes)) sb.Append(b.ToString("x2"));
+            return sb.ToString();
+        }
+    }
+
+    // Tiny readers for the status JSON ({ "world": "...", "size": 8192, "layers": { "biomes": { "hash": "..." } } }).
+    static string JsonText(string json, string key)
+    {
+        var m = Regex.Match(json, "\"" + key + "\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\"");
+        if (!m.Success) return null;
+        try { return Regex.Unescape(m.Groups[1].Value); } catch { return m.Groups[1].Value; }
+    }
+
+    static int JsonNumber(string json, string key)
+    {
+        var m = Regex.Match(json, "\"" + key + "\"\\s*:\\s*(\\d+)");
+        return m.Success ? int.Parse(m.Groups[1].Value) : -1;
+    }
+
+    static string LayerHash(string json, string layer)
+    {
+        var m = Regex.Match(json, "\"" + layer + "\"\\s*:\\s*\\{[^}]*\"hash\"\\s*:\\s*\"([0-9a-f]{64})\"");
+        return m.Success ? m.Groups[1].Value : null;
     }
 }
