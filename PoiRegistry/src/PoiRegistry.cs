@@ -348,8 +348,7 @@ public static class PrBuilder
         };
 
         var livePairs = new HashSet<string>();
-        var prefabs = new List<PrefabInstance>();
-        dpd.GetPOIPrefabs(prefabs);
+        var prefabs = PrPois.Collect(dpd);
         foreach (PrefabInstance pi in prefabs)
         {
             if (pi == null || pi.prefab == null) continue;
@@ -1062,8 +1061,7 @@ public static class PrFind
         if (dpd == null) { lines.Add("The world is not loaded yet."); return lines; }
         string needle = text.Trim().ToLowerInvariant();
 
-        var pois = new List<PrefabInstance>();
-        dpd.GetPOIPrefabs(pois);
+        var pois = PrPois.Collect(dpd);
         var poiSet = new HashSet<PrefabInstance>(pois);
         List<PrefabInstance> all = AllPrefabs(dpd);
         var listed = new HashSet<string>();
@@ -1083,7 +1081,7 @@ public static class PrFind
             int x = pi.boundingBoxPosition.x, z = pi.boundingBoxPosition.z;
             string key = name + "@" + x + "," + z;
             string why;
-            if (!poiSet.Contains(pi)) why = "NOT on the page: the game does not count it as a POI (not in GetPOIPrefabs)";
+            if (!poiSet.Contains(pi)) why = "NOT on the page: not a POI (no quest tags and no POI name, or smaller than " + PrPois.MinSize + "x" + PrPois.MinSize + ")";
             else if (pi.prefab.bTraderArea && PrConfig.HideTraders) why = "NOT on the page: it is a trader and HideTraders=on";
             else if (listed.Contains(key)) why = "on the page";
             else why = "in the POI list but not in the last snapshot (type poi now)";
@@ -1112,5 +1110,36 @@ public static class PrFind
             return f != null ? f.GetValue(dpd) as List<PrefabInstance> : null;
         }
         catch { return null; }
+    }
+}
+
+// Which placed prefabs count as POIs. The game's GetPOIPrefabs only returns prefabs with QuestTags, so buildings
+// that can't be quested (every remnant_house_*, e.g. remnant_house_15 "The Washington Residence") are missing
+// from it. This takes the world's placed prefabs (GetWorldPrefabs) and keeps the game's POIs plus any other
+// prefab that has its own POI name in Localization and is at least MinSize x MinSize, which leaves out road
+// pieces, fences and other filler.
+public static class PrPois
+{
+    public const int MinSize = 8;
+
+    public static List<PrefabInstance> Collect(DynamicPrefabDecorator dpd)
+    {
+        var pois = new List<PrefabInstance>();
+        dpd.GetPOIPrefabs(pois);
+        var seen = new HashSet<PrefabInstance>(pois);
+        var world = new List<PrefabInstance>();
+        try { dpd.GetWorldPrefabs(world); } catch (Exception) { return pois; }
+        foreach (var pi in world)
+        {
+            if (pi == null || pi.prefab == null || seen.Contains(pi)) continue;
+            if (pi.boundingBoxSize.x < MinSize || pi.boundingBoxSize.z < MinSize) continue;
+            string name = pi.prefab.PrefabName;
+            string shown = null;
+            try { shown = pi.prefab.LocalizedName; } catch { }
+            if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(shown) || shown == name) continue;
+            seen.Add(pi);
+            pois.Add(pi);
+        }
+        return pois;
     }
 }
