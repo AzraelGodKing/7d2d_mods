@@ -42,6 +42,18 @@ Never commit a real token. `settings.txt` in the repo has it blank.
 | `poi here` | The POI you stand in (in game) |
 | `poi now` | Recompute and push right away |
 | `poi reload` | Re-read `settings.txt` |
+| `poi map` | Upload the world map to the page again |
+
+`poiowners` works as a second name for `poi`. The command is admin only (permission level 0).
+
+## World map
+
+With `UploadMap=on` (the default) and `ShowCoordinates=on`, the mod uploads the world's `biomes.png` and `splat3.png`
+(roads) from the world folder after the first good post, to `PUT <site>/api/poi/map/<layer>?world=<name>&size=<m>`
+with the same token. It asks `GET /api/poi/map/status` first and only sends an image whose SHA-256 the page
+doesn't have, so normally once per world. The size comes from `map_info.xml` (`HeightMapSize`). The folder is found
+through `GameIO` (generated worlds in the user data folder, shipped ones in `Data/Worlds`); set `MapFolder` if not.
+On a failure it tries again after 30 minutes; `poi` shows the map status on its last line.
 
 ## What the page receives
 
