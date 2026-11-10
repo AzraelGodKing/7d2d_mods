@@ -14,12 +14,14 @@ Token=
 # Shown on the page.
 ServerName=
 
-# Seconds between claim checks. A post is only sent when something changed.
-IntervalSeconds=60
-# Minutes between "still alive" posts when nothing changed.
-HeartbeatMinutes=5
+# Seconds between quick looks at the claim list. Ownership is only recalculated when a claim was placed,
+# removed or destroyed, or a player joined or left. A post is only sent when the result changed.
+IntervalSeconds=10
+# Minutes between "still alive" posts when nothing changed (this also catches claims that expired with time).
+HeartbeatMinutes=10
 
 # What goes to the web. Player ids are always a salted hash, never a Steam or platform id.
+# With ShowCoordinates=off the POI ids are hashed too, because the normal id holds the position.
 ShowNames=on
 ShowCoordinates=off
 

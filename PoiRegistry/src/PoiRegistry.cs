@@ -14,14 +14,18 @@ using UnityEngine.Networking;
 // How it decides (all from data the server already keeps):
 // - Claims: PersistentPlayerList.m_lpBlockMap (claim block position -> owner). A claim counts when the owner's
 //   protection is still valid (World.IsLandProtectionValidForPlayer, so the offline expiry works like vanilla) and
-//   the block is the primary claim block (TEFeatureLandClaim.IsPrimary). Its area is the block position plus or
+//   the block is not a non-primary one (TEFeatureLandClaim.IsPrimary, only known while its chunk is loaded). Its area is the block position plus or
 //   minus (LandClaimSize - 1) / 2 on X and Z, the same square RepairPad and CraftFromChests use.
 // - POIs: DynamicPrefabDecorator's prefab instances, each with a bounding box.
 // - A POI is claimed when a claim square overlaps its box by at least MinOverlapBlocks (x * z). The owner is the
 //   player with a claim block inside the box, else the biggest overlap. Allies of the owner are co-owners. Anyone
 //   else who overlaps makes the POI contested.
-// The result is written to poi-owners.json and, if PostUrl is set, pushed to the web page. Nothing is patched:
-// the mod polls every IntervalSeconds, so a game update can't break a Harmony patch here.
+// The result is written to poi-owners.json and, if PostUrl is set, pushed to the web page.
+//
+// When it recalculates: only when something changed. Every IntervalSeconds it takes a fingerprint of the claim
+// list (one pass over the claim map, no allocation, no world lookups) and recalculates only if that differs, a
+// player joined or left, or a heartbeat is due (which also catches claims that expired with time). Nothing is
+// patched, so a game update can't break a Harmony patch here.
 public class AzraelPoiRegistry : IModApi
 {
     public const string Tag = "[PoiRegistry]";
@@ -33,6 +37,8 @@ public class AzraelPoiRegistry : IModApi
         ModEvents.GameStartDone.RegisterHandler(PrRunner.OnGameStart);
         ModEvents.GameUpdate.RegisterHandler(PrRunner.OnUpdate);
         ModEvents.GameShutdown.RegisterHandler(PrRunner.OnShutdown);
+        ModEvents.PlayerSpawnedInWorld.RegisterHandler(PrRunner.OnPlayerSpawned);
+        ModEvents.PlayerDisconnected.RegisterHandler(PrRunner.OnPlayerDisconnected);
         Log.Out(Tag + " Loaded. " + PrConfig.Describe() + " Players do not install this mod.");
     }
 }
@@ -44,8 +50,8 @@ public static class PrConfig
     public static string PostUrl = "";
     public static string Token = "";
     public static string ServerName = "";
-    public static int IntervalSeconds = 60;
-    public static int HeartbeatMinutes = 5;
+    public static int IntervalSeconds = 10;
+    public static int HeartbeatMinutes = 10;
     public static bool ShowNames = true;
     public static bool ShowCoordinates = false;
     public static int MinOverlapBlocks = 16;
@@ -58,7 +64,7 @@ public static class PrConfig
 
     public static void Load()
     {
-        Enabled = true; PostUrl = ""; Token = ""; ServerName = ""; IntervalSeconds = 60; HeartbeatMinutes = 5;
+        Enabled = true; PostUrl = ""; Token = ""; ServerName = ""; IntervalSeconds = 10; HeartbeatMinutes = 10;
         ShowNames = true; ShowCoordinates = false; MinOverlapBlocks = 16; HideTraders = true; WriteFile = true;
         try
         {
@@ -75,7 +81,7 @@ public static class PrConfig
         if (!string.IsNullOrEmpty(envUrl)) PostUrl = envUrl.Trim();
         if (!string.IsNullOrEmpty(envToken)) Token = envToken.Trim();
 
-        IntervalSeconds = Math.Max(15, Math.Min(3600, IntervalSeconds));
+        IntervalSeconds = Math.Max(5, Math.Min(3600, IntervalSeconds));
         HeartbeatMinutes = Math.Max(1, Math.Min(120, HeartbeatMinutes));
         MinOverlapBlocks = Math.Max(1, MinOverlapBlocks);
     }
@@ -134,9 +140,9 @@ public static class PrConfig
     {
         if (!Enabled) return "Enabled=off.";
         string where = UrlProblem();
-        string push = where == null ? "Pushing to " + MaskedUrl() + " every change (and every " + HeartbeatMinutes + " min)"
+        string push = where == null ? "Pushing to " + MaskedUrl() + " on every change (and every " + HeartbeatMinutes + " min)"
                                     : "Not pushing (" + where + ")";
-        return push + ". Checks claims every " + IntervalSeconds + "s. Names " + (ShowNames ? "shown" : "hidden") +
+        return push + ". Looks for claim changes every " + IntervalSeconds + "s. Names " + (ShowNames ? "shown" : "hidden") +
                ", coordinates " + (ShowCoordinates ? "shown" : "hidden") + ".";
     }
 
@@ -150,7 +156,8 @@ public static class PrConfig
 // One POI in the result.
 public class PrPoi
 {
-    public string Id, Name, DisplayName, Status, ClaimedSince;
+    // Key is the mod's own id (name@x,z). Id is what the page sees: the same, or a hash when coordinates are hidden.
+    public string Key, Id, Name, DisplayName, Status, ClaimedSince;
     public int Tier, X, Z, SizeX, SizeZ, Claims;
     public bool Trader;
     public PrPlayer Owner;
@@ -174,6 +181,7 @@ public class PrSnapshot
     public List<PrPlayer> Players = new List<PrPlayer>();
     public int ClaimCount;
     public string BuiltAt;
+    public double BuildMs;
 }
 
 public static class PrBuilder
@@ -236,18 +244,53 @@ public static class PrBuilder
         string raw = null;
         try { raw = p.PrimaryId != null ? p.PrimaryId.CombinedString : null; } catch { }
         if (string.IsNullOrEmpty(raw)) raw = "entity" + p.EntityId;
+        return Hash("p_", raw, 5);
+    }
+
+    static string Hash(string prefix, string raw, int bytes)
+    {
         using (var sha = SHA1.Create())
         {
             var h = sha.ComputeHash(Encoding.UTF8.GetBytes(salt + "|" + raw));
-            var sb = new StringBuilder("p_");
-            for (int i = 0; i < 5; i++) sb.Append(h[i].ToString("x2"));
+            var sb = new StringBuilder(prefix);
+            for (int i = 0; i < bytes; i++) sb.Append(h[i].ToString("x2"));
             return sb.ToString();
         }
+    }
+
+    // The page refuses a whole snapshot that holds anything shaped like a platform id or an IP address.
+    // Nothing the mod sends is one, but a player could pick such a name, so text like that is left out.
+    static readonly System.Text.RegularExpressions.Regex Personal = new System.Text.RegularExpressions.Regex(
+        @"7656119\d{10}|STEAM_[0-5]:[01]:\d+|\[U:1:\d+\]|(Steam|EOS|XBL|PSN)_[0-9A-Za-z]{6,}|(\d{1,3}\.){3}\d{1,3}|[0-9a-f]{1,4}(:[0-9a-f]{1,4}){7}",
+        System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+    static string Safe(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return null;
+        text = text.Trim();
+        if (text.Length > 60) text = text.Substring(0, 60);
+        return text.Length == 0 || Personal.IsMatch(text) ? null : text;
     }
 
     static string Iso(DateTime t)
     {
         return t.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture);
+    }
+
+    // A cheap fingerprint of the claim list: which blocks exist and who owns them. One pass, no allocation.
+    public static long ClaimFingerprint()
+    {
+        var gm = GameManager.Instance;
+        var lp = gm != null ? gm.persistentPlayers : null;
+        if (lp == null || lp.m_lpBlockMap == null) return 0;
+        long sum = lp.m_lpBlockMap.Count;
+        foreach (var kv in lp.m_lpBlockMap)
+        {
+            long h = kv.Key.x * 73856093L ^ kv.Key.y * 19349663L ^ kv.Key.z * 83492791L;
+            if (kv.Value != null) h ^= kv.Value.EntityId * 2654435761L;
+            sum += h * 31 + (h >> 7); // order of the map doesn't matter
+        }
+        return sum;
     }
 
     public static PrSnapshot Build()
@@ -259,6 +302,7 @@ public static class PrBuilder
         if (world == null || dpd == null || lp == null || lp.m_lpBlockMap == null) return null;
         LoadState();
 
+        var watch = System.Diagnostics.Stopwatch.StartNew();
         DateTime now = DateTime.UtcNow;
         int half = Math.Max(0, (GameStats.GetInt(EnumGameStats.LandClaimSize) - 1) / 2);
 
@@ -271,9 +315,11 @@ public static class PrBuilder
             try
             {
                 if (!world.IsLandProtectionValidForPlayer(owner)) continue;
-                TEFeatureLandClaim feature = world.GetTileEntity(kv.Key) != null
-                    ? world.GetTileEntity(kv.Key).GetSelfOrFeature<TEFeatureLandClaim>() : null;
-                if (feature == null || !feature.IsPrimary()) continue;
+                // The claim block's own data is only there while its chunk is loaded. When it is, skip blocks
+                // that are not the primary one; when it isn't (nobody near), the claim still counts.
+                TileEntity te = world.GetTileEntity(kv.Key);
+                TEFeatureLandClaim feature = te != null ? te.GetSelfOrFeature<TEFeatureLandClaim>() : null;
+                if (feature != null && !feature.IsPrimary()) continue;
             }
             catch (Exception) { continue; }
             claims.Add(new Claim { Pos = kv.Key, Owner = owner, X0 = kv.Key.x - half, X1 = kv.Key.x + half, Z0 = kv.Key.z - half, Z1 = kv.Key.z + half });
@@ -288,7 +334,7 @@ public static class PrBuilder
             {
                 string name = null;
                 try { name = p.PlayerName != null ? p.PlayerName.DisplayName : null; } catch { }
-                pl = new PrPlayer { Id = PlayerKey(p), Name = name };
+                pl = new PrPlayer { Id = PlayerKey(p), Name = Safe(name) };
                 people[p] = pl;
             }
             return pl;
@@ -308,9 +354,10 @@ public static class PrBuilder
             int px1 = px0 + sx - 1, pz1 = pz0 + sz - 1;
             string pname = pi.prefab.PrefabName ?? pi.name ?? "unknown";
 
+            string key = pname + "@" + px0 + "," + pz0;
             var poi = new PrPoi
             {
-                Id = pname + "@" + px0 + "," + pz0, Name = pname, X = px0, Z = pz0, SizeX = sx, SizeZ = sz,
+                Key = key, Id = PrConfig.ShowCoordinates ? key : Hash("poi_", key, 6), Name = pname, X = px0, Z = pz0, SizeX = sx, SizeZ = sz,
                 Trader = trader, Status = "unclaimed"
             };
             try { poi.Tier = pi.prefab.DifficultyTier; } catch { }
@@ -349,7 +396,7 @@ public static class PrBuilder
                 }
                 if (poi.Contested.Count > 0) poi.Status = "contested";
 
-                string pair = poi.Id + "|" + poi.Owner.Id;
+                string pair = poi.Key + "|" + poi.Owner.Id;
                 livePairs.Add(pair);
                 string first;
                 if (!since.TryGetValue(pair, out first)) { first = Iso(now); since[pair] = first; stateDirty = true; }
@@ -384,6 +431,7 @@ public static class PrBuilder
         SaveState();
         snap.Signature = Signature(snap);
         snap.Json = ToJson(snap, world, now);
+        snap.BuildMs = watch.Elapsed.TotalMilliseconds;
         return snap;
     }
 
@@ -446,8 +494,8 @@ public static class PrBuilder
 
         var sb = new StringBuilder(8192);
         sb.Append("{\n  \"schema\": 1,\n");
-        sb.Append("  \"server\": { \"name\": ").Append(Q(string.IsNullOrEmpty(PrConfig.ServerName) ? null : PrConfig.ServerName))
-          .Append(", \"world\": ").Append(Q(worldName)).Append(", \"seed\": null, \"gameVersion\": ").Append(Q(version))
+        sb.Append("  \"server\": { \"name\": ").Append(Q(Safe(PrConfig.ServerName)))
+          .Append(", \"world\": ").Append(Q(Safe(worldName))).Append(", \"seed\": null, \"gameVersion\": ").Append(Q(version))
           .Append(", \"day\": ").Append(day).Append(" },\n");
         sb.Append("  \"generatedAt\": ").Append(Q(Iso(now))).Append(",\n");
         sb.Append("  \"settings\": { \"landClaimSize\": ").Append(N(GameStats.GetInt(EnumGameStats.LandClaimSize)))
@@ -488,21 +536,32 @@ public static class PrBuilder
 
 public static class PrRunner
 {
+    // The page takes one post per 5 seconds and answers 429 otherwise.
+    const float MinPostGap = 6f;
+
     static bool active;
+    static bool dirty;
+    static bool worldReady;
     static float nextCheck;
+    static float nextFull;
+    static long lastFingerprint;
     static float lastPostAt = -1e9f;
+    static float lastAttemptAt = -1e9f;
     static float nextPostAllowed;
     static int failures;
     static bool posting;
     static string lastPostedSignature;
     static string lastWrittenSignature;
+    static string lastLoggedProblem;
     public static PrSnapshot Last;
     public static string PostStatus = "no post yet";
 
     public static void OnGameStart(ref ModEvents.SGameStartDoneData _d)
     {
         active = PrConfig.Enabled && SingletonMonoBehaviour<ConnectionManager>.Instance.IsServer;
-        nextCheck = Time.time + 20f; // let the world and the claim list finish loading
+        worldReady = false;
+        dirty = true;
+        nextCheck = Time.time + 5f;
         if (active) Log.Out(AzraelPoiRegistry.Tag + " Running. " + PrConfig.Describe());
     }
 
@@ -511,14 +570,42 @@ public static class PrRunner
         active = false;
     }
 
+    public static void OnPlayerSpawned(ref ModEvents.SPlayerSpawnedInWorldData _d) { dirty = true; }
+    public static void OnPlayerDisconnected(ref ModEvents.SPlayerDisconnectedData _d) { dirty = true; }
+
+    // Runs every frame but returns at once except every IntervalSeconds, and then only takes the claim
+    // fingerprint. Ownership is recalculated only when that changed, a player joined or left, or the
+    // heartbeat is due.
     public static void OnUpdate(ref ModEvents.SGameUpdateData _d)
     {
-        if (!active || Time.time < nextCheck) return;
-        nextCheck = Time.time + PrConfig.IntervalSeconds;
-        Refresh(false);
+        if (!active) return;
+        float now = Time.time;
+        if (now < nextCheck) return;
+
+        if (!worldReady)
+        {
+            // First run after a restart: as soon as the POI list and the claim list exist.
+            var gm = GameManager.Instance;
+            if (gm == null || gm.World == null || gm.GetDynamicPrefabDecorator() == null || gm.persistentPlayers == null)
+            {
+                nextCheck = now + 2f;
+                return;
+            }
+            worldReady = true;
+        }
+        nextCheck = now + PrConfig.IntervalSeconds;
+
+        long fp = PrBuilder.ClaimFingerprint();
+        bool full = now >= nextFull;
+        if (fp != lastFingerprint || dirty || full)
+        {
+            lastFingerprint = fp;
+            Refresh(false);
+        }
+        else TryPost(false);
     }
 
-    // Recomputes, writes the file, and posts when something changed or the heartbeat is due.
+    // Recalculates ownership, writes the file if it changed, and posts if needed.
     public static PrSnapshot Refresh(bool forcePost)
     {
         PrSnapshot snap = null;
@@ -526,6 +613,8 @@ public static class PrRunner
         catch (Exception e) { Log.Error(AzraelPoiRegistry.Tag + " Could not work out ownership: " + e); return Last; }
         if (snap == null) return Last;
         Last = snap;
+        dirty = false;
+        nextFull = Time.time + PrConfig.HeartbeatMinutes * 60f;
 
         if (PrConfig.WriteFile && snap.Signature != lastWrittenSignature)
         {
@@ -539,50 +628,84 @@ public static class PrRunner
             }
             catch (Exception e) { Log.Warning(AzraelPoiRegistry.Tag + " Could not write poi-owners.json: " + e.Message); }
         }
-
-        if (PrConfig.UrlProblem() != null) { PostStatus = "not pushing: " + PrConfig.UrlProblem(); return snap; }
-        float now = Time.time;
-        bool changed = snap.Signature != lastPostedSignature;
-        bool heartbeat = now - lastPostAt >= PrConfig.HeartbeatMinutes * 60f;
-        if (!posting && now >= nextPostAllowed && (forcePost || changed || heartbeat))
-        {
-            posting = true;
-            GameManager.Instance.StartCoroutine(Post(snap));
-        }
+        TryPost(forcePost);
         return snap;
     }
 
+    // Sends the latest snapshot when it changed or the heartbeat is due, never more often than the page allows,
+    // and not before a failed post's wait is over.
+    static void TryPost(bool force)
+    {
+        PrSnapshot snap = Last;
+        if (snap == null) return;
+        string problem = PrConfig.UrlProblem();
+        if (problem != null) { PostStatus = "not pushing: " + problem; return; }
+        float now = Time.time;
+        if (posting || now < nextPostAllowed || now - lastAttemptAt < MinPostGap) return;
+        bool changed = snap.Signature != lastPostedSignature;
+        bool heartbeat = now - lastPostAt >= PrConfig.HeartbeatMinutes * 60f;
+        if (!force && !changed && !heartbeat) return;
+        posting = true;
+        lastAttemptAt = now;
+        GameManager.Instance.StartCoroutine(Post(snap));
+    }
+
+    // UnityWebRequest in a coroutine: the request runs in the background and the game never waits for it.
     static IEnumerator Post(PrSnapshot snap)
     {
         long code = 0;
         string error = null;
+        string retryAfter = null;
         using (var req = new UnityWebRequest(PrConfig.PostUrl, "POST"))
         {
             req.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(snap.Json));
             req.downloadHandler = new DownloadHandlerBuffer();
             req.SetRequestHeader("Content-Type", "application/json");
             req.SetRequestHeader("Authorization", "Bearer " + PrConfig.Token);
-            req.timeout = 15;
-            yield return req.SendWebRequest(); // async: never blocks the server tick
+            req.timeout = 10;
+            yield return req.SendWebRequest();
             code = req.responseCode;
             error = req.error;
+            retryAfter = req.GetResponseHeader("Retry-After");
         }
         posting = false;
         if (code >= 200 && code < 300)
         {
+            if (failures > 0) Log.Out(AzraelPoiRegistry.Tag + " Push is working again.");
             failures = 0;
+            lastLoggedProblem = null;
             lastPostAt = Time.time;
             lastPostedSignature = snap.Signature;
             PostStatus = "sent OK (" + DateTime.Now.ToString("HH:mm:ss") + ")";
             yield break;
         }
-        failures++;
-        float wait = Mathf.Min(600f, 30f * (float)Math.Pow(2, Math.Min(failures - 1, 5)));
+
+        float wait;
+        string problem;
+        if (code == 429)
+        {
+            // The page's rate limit: wait as told and try again, without counting it as a failure.
+            int seconds;
+            wait = int.TryParse(retryAfter, out seconds) ? Mathf.Clamp(seconds, 5, 300) + 1f : 10f;
+            problem = "the page asked to slow down (HTTP 429)";
+        }
+        else
+        {
+            failures++;
+            wait = Mathf.Min(600f, 30f * (float)Math.Pow(2, Math.Min(failures - 1, 5)));
+            problem = code > 0
+                ? "HTTP " + code + (code == 401 || code == 403 ? " (is Token the page's ingest token?)" :
+                                    code == 400 ? " (the page refused the snapshot)" : "")
+                : error + " (can the server reach " + PrConfig.MaskedUrl() + "?)";
+        }
         nextPostAllowed = Time.time + wait;
-        PostStatus = code > 0
-            ? "failed: HTTP " + code + (code == 401 || code == 403 ? " (is Token the page's ingest token?)" : "")
-            : "failed: " + error + " (can the server reach " + PrConfig.MaskedUrl() + "?)";
-        Log.Warning(AzraelPoiRegistry.Tag + " Push " + PostStatus + ". Trying again in " + (int)wait + "s.");
+        PostStatus = "failed: " + problem + ", next try in " + (int)wait + "s";
+        // One log line per kind of problem, not one per try.
+        if (problem != lastLoggedProblem)
+        {
+            lastLoggedProblem = problem;
+            Log.Warning(AzraelPoiRegistry.Tag + " Push failed: " + problem + ". It keeps trying quietly; type poi for the status.");
+        }
     }
 }
 
@@ -596,7 +719,7 @@ public class ConsoleCmdPoiRegistry : ConsoleCmdAbstract
         return "poi              - summary and push status\n" +
                "poi list [name]  - POIs with an owner (optionally only a player's, part of the name works)\n" +
                "poi here         - the POI you are standing in (in game)\n" +
-               "poi now          - recompute and push right away\n" +
+               "poi now          - recompute and push now (the page allows one post per 5 seconds)\n" +
                "poi reload       - re-read settings.txt";
     }
 
@@ -643,7 +766,8 @@ public class ConsoleCmdPoiRegistry : ConsoleCmdAbstract
         int claimed = s.Pois.Count(p => p.Status != "unclaimed");
         int contested = s.Pois.Count(p => p.Status == "contested");
         con.Output(s.Pois.Count + " POIs: " + claimed + " claimed (" + contested + " contested), " + (s.Pois.Count - claimed) +
-                   " unclaimed. " + s.ClaimCount + " active claims, " + s.Players.Count + " players. Updated " + s.BuiltAt + ".");
+                   " unclaimed. " + s.ClaimCount + " active claims, " + s.Players.Count + " players. Updated " + s.BuiltAt +
+                   " (took " + s.BuildMs.ToString("0.0", CultureInfo.InvariantCulture) + " ms).");
         con.Output("Push: " + PrRunner.PostStatus + ". " + PrConfig.Describe());
     }
 
