@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -347,8 +348,7 @@ public static class PrBuilder
         };
 
         var livePairs = new HashSet<string>();
-        var prefabs = new List<PrefabInstance>();
-        dpd.GetPOIPrefabs(prefabs);
+        var prefabs = PrPois.Collect(dpd);
         foreach (PrefabInstance pi in prefabs)
         {
             if (pi == null || pi.prefab == null) continue;
@@ -747,13 +747,20 @@ public class ConsoleCmdPoiRegistry : ConsoleCmdAbstract
                "poi here         - the POI you are standing in (in game)\n" +
                "poi now          - recompute and push now (the page allows one post per 5 seconds)\n" +
                "poi reload       - re-read settings.txt\n" +
-               "poi map          - upload the world map (biomes.png, splat3.png) to the page again";
+               "poi map          - upload the world map (biomes.png, splat3.png) to the page again\n" +
+               "poi find <text>  - look up a POI by name, and why it is or isn't on the page";
     }
 
     public override void Execute(List<string> _params, CommandSenderInfo _senderInfo)
     {
         var con = SingletonMonoBehaviour<SdtdConsole>.Instance;
         string sub = _params.Count > 0 ? _params[0].ToLowerInvariant() : "";
+        if (sub == "find")
+        {
+            if (_params.Count < 2) { con.Output("Usage: poi find <part of the POI name>"); return; }
+            foreach (var line in PrFind.Run(string.Join(" ", _params.Skip(1).ToArray()))) con.Output(line);
+            return;
+        }
         if (sub == "map")
         {
             PrMap.Kick(true);
@@ -1037,5 +1044,102 @@ public static class PrMap
     {
         var m = Regex.Match(json, "\"" + layer + "\"\\s*:\\s*\\{[^}]*\"hash\"\\s*:\\s*\"([0-9a-f]{64})\"");
         return m.Success ? m.Groups[1].Value : null;
+    }
+}
+
+// poi find: looks a name up in every prefab the world placed, not only the ones the game hands out as POIs, and
+// says for each match whether it is on the page and, if not, why.
+public static class PrFind
+{
+    const int MaxLines = 25;
+
+    public static List<string> Run(string text)
+    {
+        var lines = new List<string>();
+        var gm = GameManager.Instance;
+        var dpd = gm != null ? gm.GetDynamicPrefabDecorator() : null;
+        if (dpd == null) { lines.Add("The world is not loaded yet."); return lines; }
+        string needle = text.Trim().ToLowerInvariant();
+
+        var pois = PrPois.Collect(dpd);
+        var poiSet = new HashSet<PrefabInstance>(pois);
+        List<PrefabInstance> all = AllPrefabs(dpd);
+        var listed = new HashSet<string>();
+        if (PrRunner.Last != null) foreach (var p in PrRunner.Last.Pois) listed.Add(p.Key);
+
+        int found = 0;
+        foreach (var pi in all ?? pois)
+        {
+            if (pi == null || pi.prefab == null) continue;
+            string name = pi.prefab.PrefabName ?? pi.name ?? "";
+            string shown = null;
+            try { shown = pi.prefab.LocalizedName; } catch { }
+            if (name.ToLowerInvariant().IndexOf(needle, StringComparison.Ordinal) < 0 &&
+                (shown ?? "").ToLowerInvariant().IndexOf(needle, StringComparison.Ordinal) < 0) continue;
+            found++;
+            if (found > MaxLines) continue;
+            int x = pi.boundingBoxPosition.x, z = pi.boundingBoxPosition.z;
+            string key = name + "@" + x + "," + z;
+            string why;
+            if (!poiSet.Contains(pi)) why = "NOT on the page: not a POI (no quest tags and no POI name, or smaller than " + PrPois.MinSize + "x" + PrPois.MinSize + ")";
+            else if (pi.prefab.bTraderArea && PrConfig.HideTraders) why = "NOT on the page: it is a trader and HideTraders=on";
+            else if (listed.Contains(key)) why = "on the page";
+            else why = "in the POI list but not in the last snapshot (type poi now)";
+            lines.Add(name + (shown != null && shown != name ? " \"" + shown + "\"" : "") + " at " + x + "," + z +
+                      " size " + pi.boundingBoxSize.x + "x" + pi.boundingBoxSize.z + ": " + why);
+        }
+        if (found > MaxLines) lines.Add("... and " + (found - MaxLines) + " more. Type more of the name.");
+        lines.Add(found + " match(es) for '" + text.Trim() + "'. The game lists " + pois.Count + " POIs" +
+                  (all != null ? " out of " + all.Count + " placed prefabs." : " (could not read the full prefab list)."));
+        return lines;
+    }
+
+    // Every placed prefab. Called by name, because the member differs between game versions.
+    static List<PrefabInstance> AllPrefabs(DynamicPrefabDecorator dpd)
+    {
+        try
+        {
+            var m = dpd.GetType().GetMethod("GetDynamicPrefabs", Type.EmptyTypes);
+            var list = m != null ? m.Invoke(dpd, null) as List<PrefabInstance> : null;
+            if (list != null) return list;
+        }
+        catch { }
+        try
+        {
+            var f = dpd.GetType().GetField("allPrefabs", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            return f != null ? f.GetValue(dpd) as List<PrefabInstance> : null;
+        }
+        catch { return null; }
+    }
+}
+
+// Which placed prefabs count as POIs. The game's GetPOIPrefabs only returns prefabs with QuestTags, so buildings
+// that can't be quested (every remnant_house_*, e.g. remnant_house_15 "The Washington Residence") are missing
+// from it. This takes the world's placed prefabs (GetWorldPrefabs) and keeps the game's POIs plus any other
+// prefab that has its own POI name in Localization and is at least MinSize x MinSize, which leaves out road
+// pieces, fences and other filler.
+public static class PrPois
+{
+    public const int MinSize = 8;
+
+    public static List<PrefabInstance> Collect(DynamicPrefabDecorator dpd)
+    {
+        var pois = new List<PrefabInstance>();
+        dpd.GetPOIPrefabs(pois);
+        var seen = new HashSet<PrefabInstance>(pois);
+        var world = new List<PrefabInstance>();
+        try { dpd.GetWorldPrefabs(world); } catch (Exception) { return pois; }
+        foreach (var pi in world)
+        {
+            if (pi == null || pi.prefab == null || seen.Contains(pi)) continue;
+            if (pi.boundingBoxSize.x < MinSize || pi.boundingBoxSize.z < MinSize) continue;
+            string name = pi.prefab.PrefabName;
+            string shown = null;
+            try { shown = pi.prefab.LocalizedName; } catch { }
+            if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(shown) || shown == name) continue;
+            seen.Add(pi);
+            pois.Add(pi);
+        }
+        return pois;
     }
 }

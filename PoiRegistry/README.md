@@ -12,7 +12,9 @@ or the release workflow's list, and it is not in the main README table. `build.p
 - Claims come from `PersistentPlayerList.m_lpBlockMap`. A claim counts when the owner's protection is still valid
   (`World.IsLandProtectionValidForPlayer`, so offline expiry works like vanilla) and it is not a non-primary claim block
   (`TEFeatureLandClaim.IsPrimary`, which is only known while the block's chunk is loaded; an unloaded claim counts). Its area is the block position +/- `(LandClaimSize - 1) / 2` on X and Z.
-- POIs come from `DynamicPrefabDecorator.GetPOIPrefabs`, each with a bounding box.
+- POIs come from `DynamicPrefabDecorator.GetPOIPrefabs`, each with a bounding box. That list only has prefabs with
+  `QuestTags`, so the mod also takes `GetWorldPrefabs` entries that have their own POI name in Localization and are at
+  least 8 x 8 (every `remnant_house_*`, e.g. `remnant_house_15` "The Washington Residence"). Road pieces and filler have no POI name.
 - A claim counts for a POI when it overlaps the POI by at least `MinOverlapBlocks` (x * z).
 - Owner = the player with a claim block inside the POI, else the biggest overlap. Allies of the owner are
   `coOwners`. Any non-allied player who also overlaps makes the POI `contested`.
@@ -43,6 +45,7 @@ Never commit a real token. `settings.txt` in the repo has it blank.
 | `poi now` | Recompute and push right away |
 | `poi reload` | Re-read `settings.txt` |
 | `poi map` | Upload the world map to the page again |
+| `poi find <text>` | Look a POI up by name and say why it is or isn't on the page |
 
 `poiowners` works as a second name for `poi`. The command is admin only (permission level 0).
 

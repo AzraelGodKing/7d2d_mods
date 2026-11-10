@@ -3,7 +3,7 @@
   <PropertyGroup>
     <AssemblyName>AzraelPoiRegistry</AssemblyName>
     <RootNamespace>AzraelPoiRegistry</RootNamespace>
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="UnityEngine.UnityWebRequestModule"><HintPath>$(ManagedDir)\UnityEngine.UnityWebRequestModule.dll</HintPath><Private>false</Private></Reference>
