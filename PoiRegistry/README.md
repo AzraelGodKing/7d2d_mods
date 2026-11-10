@@ -43,6 +43,7 @@ Never commit a real token. `settings.txt` in the repo has it blank.
 | `poi now` | Recompute and push right away |
 | `poi reload` | Re-read `settings.txt` |
 | `poi map` | Upload the world map to the page again |
+| `poi find <text>` | Look a POI up by name and say why it is or isn't on the page |
 
 `poiowners` works as a second name for `poi`. The command is admin only (permission level 0).
 
